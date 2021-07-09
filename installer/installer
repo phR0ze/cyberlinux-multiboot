@@ -1,0 +1,741 @@
+#!/bin/bash
+#MIT License
+#Copyright (c) 2017-2020 phR0ze
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
+# Booting Linux Systems:
+# http://archlinux.me/brain0/2010/02/13/early-userspace-in-arch-linux/
+# -----------------------------------------------------------------------------
+# BIOS Firmware
+# BIOS looks for a partition on the primary disk that contains the Master Boot
+# Record (MBR) and loads the boot manager from there (e.g. Syslinux/ISOlinux)
+# which in turn loads the chosen Linux kernel and initramfs (early userspace)
+# which then bootstraps then bootstraps the system to the point where it can
+# access the real root filesystem at which point the initramfs turns control
+# over to systemd to complete the boot process.
+#
+# UEFI Firmware
+# UEFI firmware identifies the ESP (i.e. partition with code ef00 formatted as
+# FAT) and loads the binary at /EFI/BOOT/BOOTx86.efi which can be either a boot
+# manager or bootloader. Either way the binary loads the target kernel or target
+# bootloader which loads the target kernel
+# -----------------------------------------------------------------------------
+none="\e[m"
+red="\e[1;31m"
+cyan="\e[0;36m"
+
+exit_to_shell()
+{
+    alias ll='ls -lah'
+    export PS1="${cyber}[rootfs:\w]\$ ${none}"
+    echo -e "\n${cyan}:: Interactive Shell${none}"
+    launch_interactive_shell
+}
+
+fail_to_shell()
+{
+    echo -e "${red}failed!${none}"
+    launch_interactive_shell
+}
+
+check_status()
+{
+    if [ $? -ne 0 ]; then
+        fail_to_shell
+    else
+        [ "$1" != "nomsg" ] && echo -e "${cyan}success!${none}"
+    fi
+}
+
+# Get a simple user input
+getinput()
+{
+    local _result=$1                                # Return value container
+    local input=$2                                  # User input value to prompt for
+    local result=$3                                 # Default value to use if not set
+    local silent=$4                                 # Don't echo when set
+
+    echo -en "   Enter ${input} (default=${cyan}${result}${none}): "
+    [ "x$vagrant" != "x0" ] && echo ''
+    if [ "x$vagrant" == "x0" ]; then
+        if [ $silent ]; then
+            read -s value
+            echo ''
+        else
+            read value
+        fi
+        [ "$value" == "exit" ] && exit_to_shell
+        [ "x$value" != "x" ] && local result=$value
+    fi
+
+    eval $_result=$result
+}
+
+getsel()
+{
+    local _result=$1                                # Return value container
+    local options=$2                                # Space separate options
+
+    local result=''
+    local out_of_bounds=1
+    for x in $options; do
+        local out_of_bounds=$(($out_of_bounds+1))
+    done
+    while true; do
+        echo -en "   Enter a number (default=${cyan}1${none}): "
+        [ "x$vagrant" != "x0" ] && echo '' || read choice
+        [ "$choice" == "exit" ] && exit_to_shell
+        [ "x$choice" == "x" ] && choice=1
+        if [ $choice -gt 0 ] && [ $choice -le $out_of_bounds ]; then
+            local result=$(echo $options | awk "{print \$$choice}")
+            break
+        else
+            echo -e "   ${red}Invalid selection, please try again${none}"
+       fi
+    done
+
+    eval $_result=$result
+}
+
+mount_layers()
+{
+    local images_path=$1                            # e.g. ${iso_mnt}/images
+    local layered_mnt=$2                            # e.g. ${write_mnt}/root
+    local layered_tmp=$3                            # e.g. ${write_mnt}/temp
+
+    # Mount all implicated sqfs images
+    local layer_dirs=""
+    echo -e ":: Mounting implicated layers for install"
+    for x in ${layers//,/ }; do
+        local img_mnt="${read_mnt}/${x}"             # i.e. ${read_mnt}/{base,devel,lite, etc...}
+        local img_path="${images_path}/${x}.sqfs"   # e.g. ${iso_mnt}/images/base.sqfs
+        layer_dirs="${layer_dirs}${img_mnt}:"
+
+        echo -en ":: Mounting ${img_path} at ${img_mnt}..."
+        mkdir -p "${img_mnt}"
+        mount -r -t squashfs ${img_path} ${img_mnt} &>/dev/null
+        check_status
+        mounts="${mounts}${img_mnt} "
+    done
+    layer_dirs=${layer_dirs%?}
+
+    # Layer squashfs images as implicated by $(layers)
+    # e.g. new writable root = (live,heavy,lite,devel,base)
+    echo -en ":: Overlay squashfs layers ${layer_dirs}..."
+    mkdir -p ${layered_mnt}
+    mkdir -p ${layered_tmp}
+    mount -t overlay -o lowerdir=${layer_dirs},upperdir=${layered_mnt},workdir=${layered_tmp} none ${layered_mnt}
+    check_status
+    mounts="${mounts}${layered_mnt} "
+}
+
+# Wait for install device to register with system then mount it.
+# Use kernel cmdline disk label to detect its existance
+mount_iso()
+{
+    echo -en ":: Locating install device labeled ${label}..."
+
+    local i=0
+    local success=0
+    while [ $success -eq 0 ]; do
+        sleep 0.25 # Sleep for a bit
+
+        # Find device by label
+        isodev=$(blkid -L ${label}) &>/dev/null
+        if [ "x${isodev}" != "x" ]; then
+            check_status
+
+            # Get fstype trimming device partition off if type not correct
+            # /dev/sda3 to /dev/sda in USB case
+            # /dev/sr0 in CD/ISO case
+            local fstype=$(blkid -s TYPE -o value ${isodev}) &>/dev/null
+            if [ "x${fstype}" != "xiso9660" ]; then
+                isodev=${isodev%?}
+                fstype=$(blkid -s TYPE -o value ${isodev}) &>/dev/null
+            fi
+
+            # Get device type and trim to first word
+            local install_type=$(echo $(lsblk -nl -o TYPE ${isodev})) &>/dev/null
+            install_type=${install_type%% *}
+
+            # Mount iso device found by label with correct fstype
+            echo -en "   Mounting install ${cyan}${install_type}${none} [${cyan}${isodev}${none}] to ${iso_mnt}..."
+            mount -r -t ${fstype} -o noatime ${isodev} ${iso_mnt} &>/dev/null
+            check_status && success=1
+        fi
+
+        # Timeout if takes more than 10 seconds
+        let "i+1"
+        [ $i -eq 40 ] && fail_to_shell
+    done
+}
+
+get_disks()
+{
+    disks=""
+    disk_details=""
+
+    ifs=$IFS
+    IFS=$'\n'
+    local i=0
+    local alldisks=$(lsblk -dn -o NAME,SIZE,VENDOR,MODEL,TYPE -x NAME | grep disk)
+    for x in $alldisks; do
+        local details=""
+        local disk=$(echo $x | awk '{print $1}')
+        local size=$(echo $x | awk '{print $2}')
+        local vendor=$(echo $x | awk '{print $3}')
+        local model=$(echo $x | awk '{print $4}')
+        [ "x${size}" != "x" ] && details="${size}"
+        [ "x${vendor}" != "x" ] && details="${details} ${vendor}"
+        [ "x${model}" != "x" ] && details="${details} ${model}"
+
+        # Limit to disks over 4GB in size
+        local factor=1
+        [ "${size#*G}" != "${size}" ] && factor=1024
+        size=${size//M}         # Drop M suffix
+        size=${size//G}         # Drop G suffix
+        size=${size%.*}         # Drop decimal suffix
+        size=$((size*factor))
+        if [ ${size} -gt 4096 ]; then
+
+            # Exclude the device the iso was mounted from
+            local dev=/dev/${disk}
+            if [ "${isodev#*$dev}" == "${isodev}" ]; then
+                local i=$((i+1))
+                disks="${disks} /dev/${disk}"
+                if [ "$disk_details" == "" ]; then
+                    disk_details="$details"
+                else
+                    disk_details="${disk_details},${detail}"
+                fi
+            fi
+        fi
+    done
+    IFS=$ifs
+}
+
+# Partition disk and mount for install at ${rootmnt}
+partition_and_mount_disk()
+{
+    # Wipe, partition and format disk
+    #---------------------------------------------------------------------------
+    echo -en ":: Disk ${cyan}${install_dev}${none} identified as install disk..."
+    [ "x${install_dev}" != "x" ]
+    check_status
+
+    echo -en ":: Destroy any magic strings and/or signatures on ${install_dev}..."
+    wipefs --all --force ${install_dev} &>/dev/null
+    check_status
+
+    echo -en ":: Wiping partition table on ${install_dev}..."
+    sgdisk --zap ${install_dev} &>/dev/null
+    check_status
+
+    # Set partition identifiers
+    if [ "$chromebook" == "0" ]; then
+        part_boot="${install_dev}1"
+        part_swap="${install_dev}2"
+        part_root="${install_dev}3"
+    else
+        part_boot="${install_dev}p1"
+        part_root="${install_dev}p2"
+    fi
+
+    # EFI: Create a GPT boot disk
+    # https://wiki.archlinux.org/index.php/EFI_System_Partition#Create_the_partition
+    if [ "x${efi}" == "x1" ]; then
+
+        # Create ESP boot partition
+        echo -en ":: Creating ${part_boot} as ESP boot partition..."
+        sgdisk -n 0:0:+10M -t 0:ef00 -c 0:"EFI System" ${install_dev} &>/dev/null
+        check_status
+        echo -en ":: Formatting ${part_boot} (ESP) as FAT..."
+        mkfs.fat -n "EFI System" ${part_boot} &>/dev/null
+        check_status
+
+        # Create SWAP for non chromebooks
+        if [ "${chromebook}" == "0" ]; then
+            echo -en ":: Creating ${part_swap} as Linux swap partition..."
+            sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${install_dev} &>/dev/null
+            check_status
+        fi
+
+        # Create root partition and set boot flag
+        echo -en ":: Creating ${part_root} as Linux filesystem partition..."
+        sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${install_dev} &>/dev/null
+        check_status
+        echo -en ":: Setting boot flag on ${install_dev}..."
+        sgdisk ${install_dev} --attributes=3:set:2 &>/dev/null
+        check_status
+
+    # BIOS: Create a MBR boot disk
+    else
+        echo -en ":: Partitioning ${install_dev} with MBR..."
+        echo ',2M,0' > layout
+        echo ',4G,82' >> layout
+        echo ',+,83,*' >> layout
+        cat layout | sfdisk ${install_dev} &>/dev/null
+        check_status
+        rm -f layout
+    fi
+
+    # Configure swap for non chromebooks
+    if [ "${chromebook}" == "0" ]; then
+        echo -en ":: Formatting ${part_swap} as (swap)..."
+        mkswap ${part_swap} &>/dev/null
+        check_status
+        echo -en ":: Starting swap on ${part_swap}..."
+        swapon ${part_swap} &>/dev/null
+        check_status
+    fi
+
+    echo -en ":: Formatting ${part_root} as (ext4)..."
+    # -F            force creation even if some params don't make sense
+    # -L            set volume name to 'cyberlinux' used by bootloaders
+    # -m 0          don't reserve blocks for super user daemons
+    # -q            run in quiet mode for scripts
+    mkfs.ext4 -F -m 0 -q -L <%=distro%> ${part_root} &>/dev/null
+    check_status
+
+    # Mount root as rootmnt and disable access time writes (speeds things up)
+    echo -en ":: Mounting ${part_root} as ${rootmnt}..."
+    mount -o noatime ${part_root} ${rootmnt} &>/dev/null
+    check_status
+}
+
+# GRUB has the ability to set the gfxmode and have the kernel keep it
+# https://wiki.archlinux.org/index.php/GRUB
+# https://blog.heckel.xyz/2017/05/28/creating-a-bios-gpt-and-uefi-gpt-grub-bootable-linux-system/
+install_bootloader()
+{
+    platform=x86_64-efi
+    esp_mnt=${rootmnt}/mnt
+    grub_path=${rootmnt}/mnt/grub
+
+    # Prepare GRUB (/new_root/boot/grub), EFI (/new_root/mnt/boot/grub)
+    #---------------------------------------------------------------------------
+    if [ "x${efi}" == "x1" ]; then
+        echo -en ":: Mount ${part_boot} (ESP) as ${esp_mnt}..."
+        mount ${part_boot} ${esp_mnt} &>/dev/null
+        check_status
+        rm -rf ${rootmnt}/boot/grub
+    else
+        platform=i386-pc
+        grub_path=${rootmnt}/boot/grub
+    fi
+
+    # Install GRUB bootloader to the MBR on i386-pc and ESP for EFI system
+    # grub-install populates the $grub_path with everything needed to boot
+    # the system, all we need is to customize the 'grub.cfg'
+    #---------------------------------------------------------------------------
+    shared_modules="ext2 all_video font gfxterm"
+    if [ "x${efi}" == "x1" ]; then
+        echo -en ":: Create GRUB bootloader path ${esp_mnt}/EFI/BOOT..."
+        mkdir -p ${esp_mnt}/EFI/BOOT &>/dev/null
+        check_status
+
+        # Arch Linux standard ESP mount point is /boot used for kernel upgrades
+        # Tianocore UEFI only supports fallback location EFI/BOOT/BOOTX64.efi
+        # /grub is used as the target as this is in the context of the partition
+        echo -en ":: Install GRUB bootloader to ${bootloader}..."
+        chroot ${rootmnt} grub-mkimage -d /mnt/grub/${platform} -o /mnt/EFI/BOOT/BOOTX64.efi \
+            -O ${platform} -p /grub part_gpt fat efi_gop efi_uga ${shared_modules} &>/dev/null
+        check_status
+    else
+        echo -en ":: Install GRUB BIOS bootloader to ${install_dev}..."
+        chroot ${rootmnt} grub-install --target=${platform} \
+            --modules="part_msdos ${shared_modules}" ${install_dev} &>/dev/null
+        check_status
+    fi
+
+    # Install custom GRUB configuration file 'grub.cfg' to the ESP for EFI
+    # or /boot/grub for BIOS# which is read by GRUB once it has booted up.
+    echo -en ":: Install GRUB config at ${grub_path}..."
+    echo -e "default=0\ntimeout=0\n" > ${grub_path}/grub.cfg
+    echo -e 'set gfxmode="<%=gfxmode%>"' >> ${grub_path}/grub.cfg
+    echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
+    echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
+    echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
+    echo -e 'menuentry "<%=distro%>" {' >> ${grub_path}/grub.cfg
+    echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
+    echo -e "    search --no-floppy --set=root --label <%=distro%>" >> ${grub_path}/grub.cfg
+    echo -e "    linux /boot/vmlinuz-${kernel} root=LABEL=<%=distro%> rw <%=kernel_params%>" >> ${grub_path}/grub.cfg
+    echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${kernel}.img" >> ${grub_path}/grub.cfg
+    echo -e "}" >> ${grub_path}/grub.cfg
+    check_status
+
+    # Unmount ESP if EFI mode
+    if [ "x${efi}" == "x1" ]; then
+        echo -en ":: Umount ${part_boot} (ESP) at ${esp_mnt}..."
+        umount -f ${esp_mnt} &>/dev/null
+        check_status
+    fi
+
+    echo -en ":: Generate new initramfs specific to this machine..."
+    chroot ${rootmnt} mkinitcpio -p $kernel &>/dev/null
+    check_status
+}
+
+mount_chroot_dirs()
+{
+    # Ensure mount point directories exist
+    for x in "sys proc dev dev/pts"; do
+        mkdir -p ${rootmnt}/${x} &>/dev/null
+    done
+
+    # Mount current system in newchroot
+    mount -t sysfs sysfs ${rootmnt}/sys &>/dev/null
+    mount -t proc /proc ${rootmnt}/proc &>/dev/null
+    mount -o bind /dev ${rootmnt}/dev &>/dev/null
+    mount -t devpts /dev/pts ${rootmnt}/dev/pts &>/dev/null
+}
+
+umount_chroot_dirs()
+{
+    for x in "sys proc dev/pts dev"; do
+        umount -f ${rootmnt}/${x} &>/dev/null
+    done
+}
+
+umount_all()
+{
+    mounts="${mounts}${iso_mnt}"
+    for x in ${mounts}; do
+        echo -en ":: Unmounting ${x}..."
+        umount -f ${x} &>/dev/null
+        check_status
+    done
+}
+
+config_system()
+{
+    echo -en ":: Set root user password..."
+    chroot ${rootmnt} usermod -p ${pass} root
+    check_status
+
+    # Filter groups down to just those that exist
+    local groups=""
+    for x in ${all_groups//,/ }; do
+        if [ $(grep -E "^$x:" ${rootmnt}/etc/group) ]; then
+            [ $groups ] && groups="${groups},${x}" || groups="${x}"
+        fi
+    done
+
+    # Configure wifi before user is created to pick up autostart
+    if [ "x$enable_wifi" == "x1" ]; then
+        echo -en ":: Enable Wifi..."
+        chroot ${rootmnt} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
+        chroot ${rootmnt} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
+        check_status
+    fi
+
+    echo -en ":: Create user group '${user}'..."
+    chroot ${rootmnt} groupadd ${user}
+    check_status
+
+    echo -en ":: Create user '${user}' with groups '${groups}'..."
+    chroot ${rootmnt} useradd -m -g ${user} -G ${groups} -s /bin/bash ${user}
+    check_status
+
+    echo -en ":: Set user password..."
+    chroot ${rootmnt} usermod -p ${pass} ${user}
+    check_status
+
+    echo -en ":: Add new user to sudoers list..."
+    chroot ${rootmnt} /bin/bash -c "echo '${user} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
+    check_status
+
+    # Set hostname to chosen layer
+    echo -en ":: Set hostname to ${hostname}..."
+    echo $hostname > "${rootmnt}/etc/hostname"
+    check_status
+
+    # Configure timezone
+    echo -en ":: Set timezone to ${timezone}..."
+    chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$timezone /etc/localtime &>/dev/null
+    check_status
+
+    # Configure networking
+    # https://www.freedesktop.org/software/systemd/man/systemd.network.html#
+    netmatch='en* eth*'
+    if [ "x${netip}" != "xDHCP" ]; then
+        # Static LAN
+        local conf="${rootmnt}/etc/systemd/network/10-static.network"
+        echo -en ":: Configuring static networking..."
+        echo -e "[Match]\nName=${netmatch}\n" > $conf
+        echo -e "[Network]\nAddress=${netip}\nGateway=${gateway}\nDNS=${dns1}\nDNS=${dns2}" >> $conf
+        echo -e "IPForward=kernel" >> $conf
+        check_status
+    else
+        # DHCP LAN
+        local conf="${rootmnt}/etc/systemd/network/20-dhcp.network"
+        echo -en ":: Configuring dhcp networking..."
+        echo -e "[Match]\nName=${netmatch}\n" > $conf
+        echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
+        echo -e "[DHCP]\nUseDomains=true" >> $conf
+        check_status
+    fi
+
+    # DHCP Wireless
+    local conf="${rootmnt}/etc/systemd/network/30-wireless.network"
+    echo -en ":: Configuring dhcp wireless networking..."
+    echo -e "[Match]\nName=wl*\n" > $conf
+    echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
+    echo -e "[DHCP]\nRouteMetric=20\nUseDomains=true" >> $conf
+    check_status
+
+    if [ $proxy ] && [ "x$proxy" != "xNone" ]; then
+        echo -en ":: Set proxy to ${proxy}..."
+        if [ $no_proxy ] && [ "x$no_proxy" != "xNone" ]; then
+            chroot ${rootmnt} /opt/$distro/bin/setproxy enable $proxy $no_proxy &>/dev/null
+        else
+            chroot ${rootmnt} /opt/$distro/bin/setproxy enable $proxy &>/dev/null
+        fi
+        check_status
+    fi
+
+    # Configure root access for sshd if vagrant deployment
+    if [ -e "${rootmnt}/etc/ssh/sshd_config" ]; then
+        if [ "x$vagrant" != "x0" ]; then
+            echo -en ":: Enable sshd root access for vagrant..."
+            sed -i -e 's/^PermitRootLogin.*/PermitRootLogin yes/' "${rootmnt}/etc/ssh/sshd_config"
+            check_status
+        fi
+    fi
+
+    # Autologin if lxdm exists and parameter is set
+    if [ -e "${rootmnt}/etc/lxdm/lxdm.conf" ]; then
+        if [ "x$autologin" == "x1" ]; then
+            echo -en ":: Enable autologin for LXDM..."
+            sed -i -e "s/^#\s*autologin=.*/autologin=${user}/" "${rootmnt}/etc/lxdm/lxdm.conf"
+            check_status
+        fi
+    fi
+}
+
+# Create a new system mount then overlay layers as specified
+# called by initcpio system with /new_root as param
+installer()
+{
+    # Welcome message, centered
+    #---------------------------------------------------------------------------
+    local msg="--===<<<[[ ${label} ]]>>>===--"
+    local len=$((105 - ${#msg}))
+    local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
+    local padright=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
+    [ $((len%2)) == 1 ] && local padright="$padright "
+    echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+    echo -e "${cyan}:: *${padleft}${msg}${padright}*${none}"
+    echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+    echo -e "   ${params}"
+
+    # Mount install source device
+    #---------------------------------------------------------------------------
+    mount_iso
+
+    # Set defaults for live or vagrant deployments
+    #---------------------------------------------------------------------------
+    vagrant=0
+    chromebook=0
+    enable_wifi=0
+    hostname="${distro}-${target_layer}"
+    netip='DHCP'
+    proxy='None'
+    no_proxy='localhost,127.0.0.1'
+    user='vagrant'
+    pass=$(mkpasswd -m sha 'vagrant')
+
+    # Ask for user input if not live deployment
+    #---------------------------------------------------------------------------
+    if [ "$target_layer" != 'live' ]; then
+        get_disks
+        install_dev=$(echo $disks | awk '{print $1}')
+
+        # Determine if this is a vagrant deployment
+        echo -e "\n${cyan}:: Vagrant deployment?${none}"
+        getinput vagrant 'vagrant mode' 0
+        if [ "x$vagrant" != "x0" ]; then
+            autologin=1
+            echo -e "\n${cyan}:: Vagrant deployment mode selected...${none}"
+            echo -e "   vagrant=${vagrant}"
+            echo -e "   hostname=${hostname}"
+            echo -e "   networking=${netip}"
+            echo -e "   proxy=${proxy}"
+            echo -e "   no_proxy=${no_proxy}"
+            echo -e "   user=${user}"
+            echo -e "   pass=vagrant"
+            echo -e "   install_dev=${install_dev}"
+        else
+            # Collect install destination device
+            #-----------------------------------------------------------------------
+            echo -e "\n${cyan}:: Select a disk as your install destination:${none}"
+            local i=0
+            for disk in $disks; do
+                local i=$((i+1))
+                local details=$(echo "$disk_details" | awk -F, "{print \$${i}}")
+                echo -e "   ${i}) [${cyan}${disk}${none}] - ${details}"
+            done
+            getsel install_dev $disks
+
+            # Determine the type of storage from the three most common types:
+            # SCSI: /dev/sda        partition1: /dev/sda1
+            # NVMe: /dev/nvme0n1    partition1: /dev/nvme0n1p1
+            # MMC: /dev/mmcblk0     partition1: /dev/mmcblk0p1
+            [ ${install_dev//mmc} != ${install_dev} ] && chromebook=1
+
+            # Configure networking
+            #----------------------------------------------------------------------
+            echo -e "\n${cyan}:: Configure networking:${none}"
+            getinput hostname 'hostname' $hostname
+            getinput netip 'static IP, e.g. 192.168.1.2/24' 'DHCP'
+            if [ "x${netip}" != "xDHCP" ]; then
+                getinput gateway 'gateway' $(echo $netip | awk -F. '{print $1"."$2"."$3".1"}')
+            fi
+            getinput proxy 'proxy, url:port format' $proxy
+            [ "x${proxy}" != "xNone" ] && getinput no_proxy 'no_proxy, comma delim' $no_proxy
+            getinput enable_wifi 'wifi state' 0
+
+            # Configure timezone
+            #----------------------------------------------------------------------
+            echo -e "\n${cyan}:: Configure timezone:${none}"
+            getinput timezone 'timezone' $timezone
+
+            # Create new user account
+            #----------------------------------------------------------------------
+            echo -e "\n${cyan}:: Create new user account:${none}"
+            getinput user 'new username' $user
+            while true; do
+                getinput pass 'new password' 'vagrant' 1
+                getinput pass2 'password again' 'vagrant' 1
+                if [ "x$pass" != "x$pass2" ]; then
+                    echo -e "   ${red}Passwords don't match, please try again${none}"
+                else
+                    break
+               fi
+            done
+            pass=$(mkpasswd -m sha $pass)
+
+            # Prompt for autologin
+            if [ "x$autologin" != "x1" ]; then
+                getinput autologin 'autologin' 0
+            fi
+        fi
+    fi
+
+    # Mount live system / Install to local disk
+    #---------------------------------------------------------------------------
+    rootmnt="${1}"                          # /new_root passed in as 1st param
+    local rw_ram_size="75%"
+    local mode=$([ "$target_layer" == 'live' ] && echo 'Starting' || echo 'Installing')
+    echo -e "\n${cyan}:: ${mode} '${target_layer}' system with layers '${layers}'${none}"
+    echo -e "${cyan}:: --------------------------------------------------------------------${none}"
+    echo -e ":: New Root path '${rootmnt}'"
+    if [ $target_layer == "live" ]; then
+        echo -en ":: Creating live tmpfs filesystem for writes, size=${rw_ram_size}..."
+        mount -t tmpfs -o "size=${rw_ram_size}",mode=0755 none ${write_mnt} &>/dev/null
+        check_status
+        mount_layers "${iso_mnt}/images" ${write_mnt}/root ${write_mnt}/temp
+
+        echo -en ":: Re-bind ${write_mnt}/root to new root location ${rootmnt}..."
+        mount -o bind ${write_mnt}/root ${rootmnt} &>/dev/null
+        check_status
+    else
+        # Copies /mnt/read/root/ to /new_root
+        mount_layers "${iso_mnt}/images" ${read_mnt}/root ${read_mnt}/temp
+        partition_and_mount_disk
+        echo -e ":: Copying ${read_mnt}/root to ${rootmnt}"
+        rsync -ah --info=progress2 ${read_mnt}/root/* ${rootmnt}
+    fi
+
+    # Configure system
+    #---------------------------------------------------------------------------
+    mount_chroot_dirs
+    config_system
+    echo -en ":: Set unique machine-id..."
+    chroot ${rootmnt} dbus-uuidgen --ensure=/etc/machine-id &>/dev/null
+    chroot ${rootmnt} ln -sf /etc/machine-id /var/lib/dbus/machine-id &>/dev/null
+    check_status
+
+    # Install bootloader and initramfs
+    #---------------------------------------------------------------------------
+    if [ $target_layer != "live" ]; then
+        install_bootloader
+    fi
+    umount_chroot_dirs
+
+    # Unmount everything after install
+    [ $target_layer != "live" ] && umount_all
+
+    # Successfully deployed
+    #---------------------------------------------------------------------------
+    if [ $target_layer != "live" ]; then
+        local msg="--===<<<[[ SUCCESS ]]>>>===--"
+        local len=$((105 - ${#msg}))
+        local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
+        local padright=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
+        [ $((len%2)) == 1 ] && local padright="$padright "
+        echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+        echo -e "${cyan}:: *${padleft}${msg}${padright}*${none}"
+        echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+
+        # Eject media and reboot
+        [ "x$vagrant" != "x1" ] && eject &>/dev/null
+    fi
+}
+
+#----------------------------------------------------------------------------------------
+# Early user space hook
+#----------------------------------------------------------------------------------------
+run_hook()
+{
+    # Set cmdline params as variables to use during install
+    params=$(cat /proc/cmdline)
+    for x in ${params}; do
+        case "${x}" in
+            'efi'=*) efi=${x//efi=} ;;
+            'kernel'=*) kernel=${x//kernel=} ;;
+            'layers'=*) layers=${x//layers=} ;;
+            'autologin'=*) autologin=${x//autologin=} ;;
+            *) continue ;;
+        esac
+    done
+
+    # Set additional variables
+    mounts=""
+    iso_mnt=/mnt/iso
+    read_mnt=/mnt/read
+    write_mnt=/mnt/write
+
+    # Resolve template variables
+    label="<%=label%>"
+    distro="<%=distro%>"
+    timezone="<%=timezone%>"
+    all_groups="<%=groups%>"
+    dns1="<%=dns1%>"
+    dns2="<%=dns2%>"
+
+    target_layer=$(echo $layers | awk -F, '{print $1}')
+    [ "$target_layer" == "live" ] && autologin=1
+
+    # Custom handler defined above.
+    mount_handler="installer"
+}
+
+# vim: ft=sh:ts=4:sw=4:sts=4
