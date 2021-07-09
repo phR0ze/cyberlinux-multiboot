@@ -1,7 +1,16 @@
-# cyberlinux-multiboot
-[![license-badge](https://img.shields.io/crates/l/cyberlinux-multiboot.svg)](https://opensource.org/licenses/MIT)
+cyberlinux-multiboot
+[![build-badge](https://travis-ci.com/phR0ze/cyberlinux-multiboot.svg?branch=master)](https://travis-ci.com/phR0ze/cyberlinux-multiboot)
+[![license-badge](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+====================================================================================================
 
-***GRUB2 based installer and recovery system for cyberlinux***
+<img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
+<b>cyberlinux-multiboot</b> provides a GRUB2 based installer and recovery system for the
+<b>cyberlinux project</b>.
+
+### Disclaimer
+***cyberlinux-boot*** comes with absolutely no guarantees or support of any kind. It is to be used at
+your own risk.  Any damages, issues, losses or problems caused by the use of ***cyberlinux-boot*** are
+strictly the responsiblity of the user and not the developer/creator of ***cyberlinux-boot***.
 
 ### Quick links
 * [GRUB2 bootloader](#grub2-bootloader)
