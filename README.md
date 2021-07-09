@@ -5,7 +5,8 @@ cyberlinux-multiboot
 
 <img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
 <b>cyberlinux-multiboot</b> provides a GRUB2 based installer and recovery system for the
-<b>cyberlinux project</b>.
+<b>cyberlinux project</b> including documentation on how to build a multiboot USB that supports both
+BIOS and UEFI systems.
 
 ### Disclaimer
 ***cyberlinux-boot*** comes with absolutely no guarantees or support of any kind. It is to be used at
