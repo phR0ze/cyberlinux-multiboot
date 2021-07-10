@@ -14,10 +14,11 @@ your own risk.  Any damages, issues, losses or problems caused by the use of ***
 strictly the responsiblity of the user and not the developer/creator of ***cyberlinux-boot***.
 
 ### Quick links
+* [Usage](#usage)
+  * [Create multiboot USB](#create-multiboot-usb)
 * [GRUB2 bootloader](#grub2-bootloader)
   * [GRUB2 configuration](#grub2-configuration)
   * [GFXMenu module](#gfxmenu-module)
-  * [Create GRUB2 USB](#create-grub2-usb)
 * [Contribute](#contribute)
   * [Git-Hook](#git-hook)
 * [License](#license)
@@ -26,6 +27,23 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 * [Changelog](#changelog)
 
 ---
+
+# Usage <a name="grub2-bootloader"/></a>
+
+## Install prerequisites <a name="install-prerequisites"/></a>
+**For building grub boot images:**
+```bash
+$ sudo pacman -S arch-install-scripts grub libisoburn
+```
+
+**For testing grub boot images:**
+```bash
+$ sudo pacman -S virtualbox virtualbox-host-modules-arch
+```
+
+## Create multiboot USB <a name="create-multiboot-usb"/></a>
+We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
+systems so make this as universal as possible.
 
 # GRUB2 bootloader <a name="grub2-bootloader"/></a>
 [GRUB2](https://www.gnu.org/software/grub) offers the ability to easily create a bootable USB drive
@@ -69,19 +87,6 @@ child components.
 The GUI component instances are created by the theme loader in `gfxmenu/theme_loader.c` when a them
 is loaded.
 
-### Create GRUB2 USB <a name="create-grub2-usb"/></a>
-We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
-systems so make this as universal as possible.
-
-1. Create a directory from which to work
-   ```bash
-   $ mkdir grub_usb; cd grub_usb
-   ```
-2. Create deployment entries in `boot.cfg`
-   ```bash
-   $ 
-   ```
-
 
 # Installer <a name="installer"/></a>
 **Goals:** *boot speed*, *simplicity*, and *automation*
@@ -104,44 +109,6 @@ environment containing all the tooling required to setup our system.
 ### Create initramfs installer <a name="create-initramfs-installer"/></a>
 An initramfs is made by creating a `cpio` archive, which is an old simple archive format comparable
 to tar. This archive is then compressed using `gzip`.
-
-
-
-
-
-# Boot process <a name="boot-process"/></a>
-In order for an Arch Linux system to boot, a Linux-capable boot loader must be set up. The boot
-loader is responsible for loading the kernel and initial ramdisk before initiating the boot process.
-
-**References**:
-* [IBM Linux boot process](https://developer.ibm.com/articles/l-linuxboot/)
-* [Arch boot process](https://wiki.archlinux.org/title/Arch_boot_process)
-
-1. System switched on and power on self test (POST) is executed
-2. Stage 1 bootloader e.g. Master Boot Record or EFI application
-3. Stage 2 bootloader e.g. GRUB or Systemd
-4. Linux kernel
-5. init e.g. systemd
-
-## Stage 1 bootloader <a name="stage-1-bootloader"/></a>
-
-### BIOS boot process <a name="bios-boot-process"/></a>
-1. After POST, BIOS initializes the hardware required for booting (disk, keyboard controllers etc...)
-2. BIOS launches the first 440 bytes (i.e. the Master Boot Record bootstrap code MBR) of the target disk
-3. The MBR boot code launches the actual boot loader e.g. GRUB on BIOS boot partition
-4. The boot loader then loads the operating system either by chain-loading or directly loading the
-   kernel
-
-### UEFI boot process <a name="bios-boot-process"/></a>
-1. After POST, UEFI initializes the hardware required for booting (disk, keyboard controllers etc...)
-
-## Stage 2 bootloader <a name="stage-2-bootloader"/></a>
-
-### GRUB2 <a name="grub2"/></a>
-
-### Systemd boot <a name="systemd-boot"/></a>
-Previously called `gummiboot` is GRUB's new competitor. It only supports EFI systems. It is a much
-more minimal way of booting an environment. Text only and much simpler.
 
 ---
 
@@ -169,6 +136,6 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Build bootable installer
+* Build bootable USB with custom menus
 
 # Changelog <a name="changelog"/></a>

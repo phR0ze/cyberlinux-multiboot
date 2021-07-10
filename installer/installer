@@ -44,7 +44,7 @@ cyan="\e[0;36m"
 exit_to_shell()
 {
     alias ll='ls -lah'
-    export PS1="${cyber}[rootfs:\w]\$ ${none}"
+    export PS1="${cyan}[rootfs:\w]\$ ${none}"
     echo -e "\n${cyan}:: Interactive Shell${none}"
     launch_interactive_shell
 }
