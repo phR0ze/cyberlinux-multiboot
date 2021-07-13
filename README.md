@@ -33,12 +33,13 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 ## Install prerequisites <a name="install-prerequisites"/></a>
 **For building grub boot images:**
 ```bash
-$ sudo pacman -S arch-install-scripts grub libisoburn
+$ sudo pacman -S arch-install-scripts grub mtools libisoburn 
 ```
 
 **For testing grub boot images:**
 ```bash
 $ sudo pacman -S virtualbox virtualbox-host-modules-arch
+$ sudo usermod -aG vboxusers <user>
 ```
 
 ## Create multiboot USB <a name="create-multiboot-usb"/></a>
