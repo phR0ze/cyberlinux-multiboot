@@ -150,13 +150,13 @@ echo -e ":: Building an ISOHYBRID bootable image..."
 #   -no-emul-boot
 # Setup a partition table to block other disk partition tools from manipulating this disk
 #   --protective-msdos-label
-# El Torito boot image to use
+# El Torito boot image to use to make this iso CD-ROM bootable by BIOS
 #   -b $TEMP/eltorito.img
 # Patch an EL TORITO BOOT INFO TABLE into eltorito.img
 #   -boot-info-table
-# Bootable isohybrid image
+# Bootable isohybrid image to make this iso USB stick bootable by BIOS
 #   --embedded-boot $TEMP/isohybrid.img
-# EFI boot image to use
+# EFI boot image to use to make this iso USB stick bootable by UEFI
 #   --efi-boot /efi/boot/bootx84.efi
 # Specify the output iso file path and location to turn into an ISO
 #   -o boot.iso $ISO
@@ -166,9 +166,9 @@ xorriso -as mkisofs \
     --modification-date=$(date -u +%Y%m%d%H%M%S00) \
     -graft-points \
     -no-emul-boot \
+    -boot-info-table \
     --protective-msdos-label \
     -b boot/grub/i386-pc/eltorito.img \
-    -boot-info-table \
     --embedded-boot $ISO/boot/grub/i386-pc/isohybrid.img \
     -o boot.iso $ISO
 
