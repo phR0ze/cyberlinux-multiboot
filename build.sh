@@ -50,19 +50,6 @@ cp $GRUB/grub.cfg $ISO/boot/grub
 cp $GRUB/loopback.cfg $ISO/boot/grub
 cp -r $GRUB/themes $ISO/boot/grub
 cp $TEMP/usr/share/grub/unicode.pf2 $ISO/boot/grub
-# Create early boot config for grub
-cat > $ISO/boot/grub/load_cfg <<EOF
-insmod part_acorn
-insmod part_amiga
-insmod part_apple
-insmod part_bsd
-insmod part_dvh
-insmod part_gpt
-insmod part_msdos
-insmod part_plan
-insmod part_sun
-insmod part_sunpc
-EOF
 check
 
 # 4. Install kernel, intel ucode patch and memtest
@@ -89,9 +76,9 @@ rm -f $ISO/boot/grub/i386-pc/*.img
 # -p /boot/grub                     Directory to find grub once booted
 # -d $TEMP/usr/lib/grub/i386-pc     Use resources from this location when building the boot image
 # -o $TEMP/bios.img                 Output destination
-# iso9660                           Grub module to support reading your ISO9660 boot media
-# biosdisk                          Grub module to support booting off live media
-grub-mkimage -O i386-pc -p /boot/grub -d $TEMP/usr/lib/grub/i386-pc -o $TEMP/bios.img iso9660 biosdisk
+grub-mkimage -O i386-pc -p /boot/grub -d $TEMP/usr/lib/grub/i386-pc -o $TEMP/bios.img  \
+  biosdisk disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
+  search_fs_file true iso9660 search_label gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
 check
 echo -en ":: Concatenate cdboot.img to bios.img to create the CD-ROM bootable Eltorito $TEMP/eltorito.img..."
 cat $TEMP/usr/lib/grub/i386-pc/cdboot.img $TEMP/bios.img > $ISO/boot/grub/i386-pc/eltorito.img
@@ -100,30 +87,22 @@ echo -en ":: Concatenate boot.img to bios.img to create isohybrid $TEMP/isohybri
 cat $TEMP/usr/lib/grub/i386-pc/boot.img $TEMP/bios.img > $ISO/boot/grub/i386-pc/isohybrid.img
 check
 
-# 6. Make bootable ISO
-#grub-mkrescue \
-#  # Use resources from this location when building the boot image
-#  -d $TEMP/usr/lib/grub/x86_64-efi \
-#  # Specify the output iso file path and location to turn into an ISO
-#  -o boot.iso $ISO
-#exit
-
 # 6. Install UEFI boot files
 # /efi/boot/bootx64.efi is a well known boot file location for compatibility
 # -------------------------------------------------------------------------------------------------
-#echo -en ":: Creating UEFI boot files..."
-#mkdir -p $ISO/efi/boot
-#cp -r $TEMP/usr/lib/grub/x86_64-efi $ISO/boot/grub
-#rm -f $ISO/grub/x86_64-efi/*.img
-## -O x86_64-efi                     Format of the image to generate
-## -p /boot/grub                     Directory to find grub once booted
-## -d $TEMP/usr/lib/grub/x86_64-efi  Use resources from this location when building the boot image
-## -o $ISO/efi/boot/bootx64.efi      Output destination, using wellknown compatibility location
-#grub-mkimage -O x86_64-efi -p /boot/grub -d $TEMP/usr/lib/grub/x86_64-efi -o $ISO/efi/boot/bootx64.efi \
-#  disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
-#  search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
-#  ntfs cat echo ls memdisk tar
-#check
+echo -en ":: Creating UEFI boot files..."
+mkdir -p $ISO/efi/boot
+cp -r $TEMP/usr/lib/grub/x86_64-efi $ISO/boot/grub
+rm -f $ISO/grub/x86_64-efi/*.img
+# -O x86_64-efi                     Format of the image to generate
+# -p /boot/grub                     Directory to find grub once booted
+# -d $TEMP/usr/lib/grub/x86_64-efi  Use resources from this location when building the boot image
+# -o $ISO/efi/boot/bootx64.efi      Output destination, using wellknown compatibility location
+grub-mkimage -O x86_64-efi -p /boot/grub -d $TEMP/usr/lib/grub/x86_64-efi -o $ISO/efi/boot/bootx64.efi \
+  disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
+  search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
+  ntfs cat echo ls memdisk tar
+check
 
 # 7. Build the ISO
 # -------------------------------------------------------------------------------------------------
@@ -156,8 +135,9 @@ echo -e ":: Building an ISOHYBRID bootable image..."
 #   -boot-info-table
 # Bootable isohybrid image to make this iso USB stick bootable by BIOS
 #   --embedded-boot $TEMP/isohybrid.img
-# EFI boot image to use to make this iso USB stick bootable by UEFI
-#   --efi-boot /efi/boot/bootx84.efi
+# EFI boot image location on the iso post creation to use to make this iso USB stick bootable by UEFI
+# Note the use of the well known compatibility path /efi/boot/bootx64.efi
+#   --efi-boot /efi/boot/bootx64.efi 
 # Specify the output iso file path and location to turn into an ISO
 #   -o boot.iso $ISO
 xorriso -as mkisofs \
@@ -168,8 +148,9 @@ xorriso -as mkisofs \
     -no-emul-boot \
     -boot-info-table \
     --protective-msdos-label \
-    -b boot/grub/i386-pc/eltorito.img \
+    -b /boot/grub/i386-pc/eltorito.img \
     --embedded-boot $ISO/boot/grub/i386-pc/isohybrid.img \
+    --efi-boot /efi/boot/bootx64.efi \
     -o boot.iso $ISO
 
 # vim: ft=sh:ts=4:sw=4:sts=4
