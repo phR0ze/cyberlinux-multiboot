@@ -4,9 +4,9 @@ cyberlinux-multiboot
 ====================================================================================================
 
 <img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
-<b>cyberlinux-multiboot</b> provides a GRUB2 based installer and recovery system for the
-<b>cyberlinux project</b> including documentation on how to build a multiboot USB that supports both
-BIOS and UEFI systems.
+<b>cyberlinux-multiboot</b> provides a reference implementation for a GRUB2 based installer and
+recovery system for the <b>cyberlinux project</b> including documentation to build a fully functional
+multiboot ISO that supports booting on both BIOS and UEFI hardware systems as a USB stick or CD-ROM.
 
 ### Disclaimer
 ***cyberlinux-boot*** comes with absolutely no guarantees or support of any kind. It is to be used at
@@ -15,7 +15,11 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 
 ### Quick links
 * [Usage](#usage)
+  * [Install prerequisites](#install-prerequisites)
   * [Create multiboot USB](#create-multiboot-usb)
+* [Installer](#installer)
+  * [initramfs installer](#initramfs-installer)
+    * [create initramfs installer](#create-initramfs-installer)
 * [GRUB2 bootloader](#grub2-bootloader)
   * [GRUB2 configuration](#grub2-configuration)
   * [GFXMenu module](#gfxmenu-module)
@@ -40,11 +44,41 @@ $ sudo pacman -S arch-install-scripts grub mtools libisoburn
 ```bash
 $ sudo pacman -S virtualbox virtualbox-host-modules-arch
 $ sudo usermod -aG vboxusers <user>
+$ sudo reboot
 ```
 
 ## Create multiboot USB <a name="create-multiboot-usb"/></a>
 We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
-systems so make this as universal as possible.
+systems to make this as universal as possible.
+
+```bash
+$ ./build.sh
+```
+
+# Installer <a name="installer"/></a>
+**Goals:** *boot speed*, *simplicity*, and *automation*
+
+Installing Linux on a target system typically consists of booting into a full live system and then
+launch a full GUI with wizard to walk you through the installtion process. The downsides of this are
+it takes a long time to boot into the live system and it isn't well suited for automating an install
+process from boot. The other method which I'll use for `cyberlinux` is a minimal graphical
+environment that launches from a pre-boot environment. Fedora's Anaconda or Ubuntu's minimal ncurses
+based installers are examples of this. The concept is to build an early user space image typically
+known as an `initramfs` that will contain enough tooling to setup and install your system.
+
+We'll use GRUB to handle booting and presenting the same boot menu regardless of the under lying BIOS
+or UEFI hardware systems. The GRUB menu will then launch our installer.
+
+## initramfs installer <a name="initramfs-installer"/></a>
+The initial ramdisk is in essence a very small environment (a.k.a early userspace) which contains
+customizable tooling and instructions to load kernel modules as needed to set up necessary things
+before handing over control to `init`. We can leverage this early userspace to build a custom install
+environment containing all the tooling required to setup our system before than rebooting into it.
+
+### Create initramfs installer <a name="create-initramfs-installer"/></a>
+An initramfs is made by creating a `cpio` archive, which is an old simple archive format comparable
+to tar. This archive is then compressed using `gzip`.
+
 
 # GRUB2 bootloader <a name="grub2-bootloader"/></a>
 [GRUB2](https://www.gnu.org/software/grub) offers the ability to easily create a bootable USB drive
@@ -87,29 +121,6 @@ child components.
 
 The GUI component instances are created by the theme loader in `gfxmenu/theme_loader.c` when a them
 is loaded.
-
-
-# Installer <a name="installer"/></a>
-**Goals:** *boot speed*, *simplicity*, and *automation*
-
-Installing Linux on a target system typically consists of booting into a full live system and then
-launch a full GUI with wizard to walk you through the installtion process. The downsides of this are
-it takes a long time to boot into the live system and it isn't well suited for automating an install
-process. The other method which I'll use for `cyberlinux` is a minimal graphical environment that
-launches from a pre-boot environment. Fedora's Anaconda or Ubuntu's minimal ncurses based installers
-are examples of this. The concept is to build an early user space image typically known as an
-`initramfs` that will contain enough tooling to setup and install your system.
-
-
-## initramfs installer <a name="initramfs-installer"/></a>
-The initial ramdisk is in essence a very small environment (a.k.a early userspace) which contains
-customizable tooling and instructions to load kernel modules as needed to set up necessary things
-before handing over control to `init`. We can leverage this early userspace to build a custom install
-environment containing all the tooling required to setup our system.
-
-### Create initramfs installer <a name="create-initramfs-installer"/></a>
-An initramfs is made by creating a `cpio` archive, which is an old simple archive format comparable
-to tar. This archive is then compressed using `gzip`.
 
 ---
 

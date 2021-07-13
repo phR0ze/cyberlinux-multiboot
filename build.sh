@@ -47,6 +47,7 @@ fi
 mkdir -p $ISO/boot/grub/themes
 echo -en ":: Copying GRUB config and theme to ${ISO}/boot/grub ..."
 cp $GRUB/grub.cfg $ISO/boot/grub
+cp $GRUB/boot.cfg $ISO/boot/grub
 cp $GRUB/loopback.cfg $ISO/boot/grub
 cp -r $GRUB/themes $ISO/boot/grub
 cp $TEMP/usr/share/grub/unicode.pf2 $ISO/boot/grub
