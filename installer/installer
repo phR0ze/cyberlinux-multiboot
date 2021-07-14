@@ -147,7 +147,7 @@ mount_layers()
 }
 
 # Wait for install device to register with system then mount it.
-# Use kernel cmdline disk label to detect its existance
+# Use wellknown install device label to detect its existance
 mount_iso()
 {
     echo -en ":: Locating install device labeled ${label}..."
@@ -311,7 +311,7 @@ partition_and_mount_disk()
     # -L            set volume name to 'cyberlinux' used by bootloaders
     # -m 0          don't reserve blocks for super user daemons
     # -q            run in quiet mode for scripts
-    mkfs.ext4 -F -m 0 -q -L <%=distro%> ${part_root} &>/dev/null
+    mkfs.ext4 -F -m 0 -q -L ${label} ${part_root} &>/dev/null
     check_status
 
     # Mount root as rootmnt and disable access time writes (speeds things up)
@@ -373,10 +373,10 @@ install_bootloader()
     echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
     echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
     echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
-    echo -e 'menuentry "<%=distro%>" {' >> ${grub_path}/grub.cfg
+    echo -e "menuentry \"${label}\" {" >> ${grub_path}/grub.cfg
     echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
-    echo -e "    search --no-floppy --set=root --label <%=distro%>" >> ${grub_path}/grub.cfg
-    echo -e "    linux /boot/vmlinuz-${kernel} root=LABEL=<%=distro%> rw <%=kernel_params%>" >> ${grub_path}/grub.cfg
+    echo -e "    search --no-floppy --set=root --label ${label}" >> ${grub_path}/grub.cfg
+    echo -e "    linux /boot/vmlinuz-${kernel} root=LABEL=${label} rw <%=kernel_params%>" >> ${grub_path}/grub.cfg
     echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${kernel}.img" >> ${grub_path}/grub.cfg
     echo -e "}" >> ${grub_path}/grub.cfg
     check_status
@@ -709,7 +709,6 @@ run_hook()
     params=$(cat /proc/cmdline)
     for x in ${params}; do
         case "${x}" in
-            'efi'=*) efi=${x//efi=} ;;
             'kernel'=*) kernel=${x//kernel=} ;;
             'layers'=*) layers=${x//layers=} ;;
             'autologin'=*) autologin=${x//autologin=} ;;
@@ -723,13 +722,14 @@ run_hook()
     read_mnt=/mnt/read
     write_mnt=/mnt/write
 
-    # Resolve template variables
-    label="<%=label%>"
-    distro="<%=distro%>"
-    timezone="<%=timezone%>"
-    all_groups="<%=groups%>"
-    dns1="<%=dns1%>"
-    dns2="<%=dns2%>"
+    # Variables
+    label="CYBERLINUX"
+    distro="cyberlinux"
+    timezone="America/Boise"
+    all_groups="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
+    dns1="1.1.1.1"
+    dns2="1.0.0.1"
+    efi=0
 
     target_layer=$(echo $layers | awk -F, '{print $1}')
     [ "$target_layer" == "live" ] && autologin=1

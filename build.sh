@@ -63,9 +63,11 @@ config_build_env() {
   echo -e ":: Creating ${cyan}${ISO}/boot/grub/boot.cfg${none} ..."
   echo -e "menuentry --class=deployment 'Start cyberlinux recovery' {" >> ${BOOT_CFG}
   echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> ${BOOT_CFG}
-  echo -e "  multiboot /boot/memtest" >> ${BOOT_CFG}
-  #echo -e "  linux	/boot/vmlinuz-linux layers=shell,lite" >> ${BOOT_CFG}
-  #echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
+  echo -e '  echo -e "\n\n    Transfering control to\n"' >> ${BOOT_CFG}
+  echo -e '  echo -e "        CYBERLINUX early boot environment..."' >> ${BOOT_CFG}
+  echo -e "  sleep 5" >> ${BOOT_CFG}
+  echo -e "  linux	/boot/vmlinuz-linux kernel=linux layers=live,shell,lite" >> ${BOOT_CFG}
+  echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
   echo -e "}" >> ${BOOT_CFG}
 }
 
