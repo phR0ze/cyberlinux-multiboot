@@ -28,6 +28,8 @@ check() {
 # `mkinitcpio-vt-colors`  provides terminal coloring at boot time for output messages
 # `rsync`                 used by the installer to copy install data to the install target
 # `gptfdisk`              used by the installer to prepare target media for install
+# `linux`                 need to load the kernel to satisfy GRUB
+# `intel-ucode`           standard practice to load the intel-ucode
 config_build_env() {
   echo -en ":: Configuring build environment..."
   mkdir -p $ISO/boot/grub
@@ -41,8 +43,8 @@ config_build_env() {
 
   # Install kernel, intel ucode patch and memtest
   echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO}/boot..."
-  #cp $ROOT/boot/intel-ucode.img $ISO/boot
-  #cp $ROOT/boot/vmlinuz-linux.img $ISO/boot
+  cp $ROOT/boot/intel-ucode.img $ISO/boot
+  cp $ROOT/boot/vmlinuz-linux $ISO/boot
   cp $ROOT/boot/memtest86+/memtest.bin $ISO/boot/memtest
   check
 
@@ -59,12 +61,10 @@ config_build_env() {
   # Create the GRUB menu items
   # Pass through options as kernel paramaters
   echo -e ":: Creating ${cyan}${ISO}/boot/grub/boot.cfg${none} ..."
-  #echo -e "menuentry --class=deployment 'Start cyberlinux recovery' {" >> ${BOOT_CFG}
-  #echo -e "  load_video" >> ${BOOT_CFG}
-  #echo -e "  set gfxpayload=keep" >> ${BOOT_CFG}
-  #echo -e "  linux	/boot/vmlinuz-linux efi=0 layers=shell,lite autologin=1" >> ${BOOT_CFG}
-  #echo -e "  initrd	/boot/intel-ucode.img /boot/initramfs-linux.img" >> ${BOOT_CFG}
-  #echo -e "}" >> ${BOOT_CFG}
+  echo -e "menuentry --class=deployment 'Start cyberlinux recovery' {" >> ${BOOT_CFG}
+  echo -e "  linux	/boot/vmlinuz-linux layers=shell,lite" >> ${BOOT_CFG}
+  echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
+  echo -e "}" >> ${BOOT_CFG}
 }
 
 # Install BIOS boot files
