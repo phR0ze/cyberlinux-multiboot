@@ -35,17 +35,16 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 # Usage <a name="grub2-bootloader"/></a>
 
 ## Install prerequisites <a name="install-prerequisites"/></a>
-**For building grub boot images:**
-```bash
-$ sudo pacman -S arch-install-scripts grub mtools libisoburn 
-```
-
-**For testing grub boot images:**
-```bash
-$ sudo pacman -S virtualbox virtualbox-host-modules-arch
-$ sudo usermod -aG vboxusers <user>
-$ sudo reboot
-```
+1. Install dependencies for building boot images:
+   ```bash
+   $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio
+   ```
+2. Install dependencies for testing boot images:
+   ```bash
+   $ sudo pacman -S virtualbox virtualbox-host-modules-arch
+   $ sudo usermod -aG vboxusers USER
+   $ sudo reboot
+   ```
 
 ## Create multiboot USB <a name="create-multiboot-usb"/></a>
 We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI

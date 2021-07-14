@@ -19,6 +19,15 @@ check() {
 }
 
 # Configure build environment
+# `coreutils`             provides basic linux tooling
+# `pacman`                provides the ability to add additional packages via a chroot to our build env
+# `grub`                  is needed by the installer for creating the EFI and BIOS boot partitions
+# `sed`                   is used by the installer to update configuration files as needed
+# `dosfstoosl`            provides `mkfs.fat` needed by the installer for creating the EFI boot partition
+# `mkinitcpio`            provides the tooling to build the initramfs early userspace installer
+# `mkinitcpio-vt-colors`  provides terminal coloring at boot time for output messages
+# `rsync`                 used by the installer to copy install data to the install target
+# `gptfdisk`              used by the installer to prepare target media for install
 config_build_env() {
   echo -en ":: Configuring build environment..."
   mkdir -p $ISO/boot/grub
@@ -27,37 +36,17 @@ config_build_env() {
     echo -e ":: Installing build environment dependencies..."
     sudo mkdir -p $ROOT
     sudo pacstrap -c -G -M $ROOT coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
-      mkinitcpio-vt-colors
+      mkinitcpio-vt-colors dosfstools rsync gptfdisk
   fi
-}
 
-# Build the initramfs based installer
-build_installer() {
-  echo -en ":: Build the initramfs based installer..."
-  sudo cp installer/installer $ROOT/usr/lib/initcpio/hooks
-  sudo cp installer/installer.conf $ROOT/usr/lib/initcpio/install/installer
-  sudo cp installer/mkinitcpio.conf $ROOT/etc
-  sudo mount --bind $ROOT $ROOT
-  sudo arch-chroot $ROOT mkinitcpio -g /installer.img
-  cp $ROOT/installer.img $ISO/boot
-  sudo umount $ROOT
+  # Install kernel, intel ucode patch and memtest
+  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO}/boot..."
+  #cp $ROOT/boot/intel-ucode.img $ISO/boot
+  #cp $ROOT/boot/vmlinuz-linux.img $ISO/boot
+  cp $ROOT/boot/memtest86+/memtest.bin $ISO/boot/memtest
   check
-}
 
-# Create the GRUB menu items
-# Pass through options as kernel paramaters
-create_boot_menu() {
-  echo -e ":: Creating ${cyan}${ISO}/boot/grub/boot.cfg${none} ..."
-  #echo -e "menuentry --class=deployment 'Start cyberlinux recovery' {" >> ${BOOT_CFG}
-  #echo -e "  load_video" >> ${BOOT_CFG}
-  #echo -e "  set gfxpayload=keep" >> ${BOOT_CFG}
-  #echo -e "  linux	/boot/vmlinuz-linux efi=0 layers=shell,lite autologin=1" >> ${BOOT_CFG}
-  #echo -e "  initrd	/boot/intel-ucode.img /boot/initramfs-linux.img" >> ${BOOT_CFG}
-  #echo -e "}" >> ${BOOT_CFG}
-}
-
-# Install GRUB config and theme
-install_grub() {
+  # Install GRUB config and theme
   mkdir -p $ISO/boot/grub/themes
   echo -en ":: Copying GRUB config and theme to ${ISO}/boot/grub ..."
   cp $GRUB/grub.cfg $ISO/boot/grub
@@ -66,15 +55,16 @@ install_grub() {
   cp -r $GRUB/themes $ISO/boot/grub
   cp $ROOT/usr/share/grub/unicode.pf2 $ISO/boot/grub
   check
-}
 
-# Install kernel, intel ucode patch and memtest
-install_boot_targets() {
-  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO}/boot..."
-  #cp $ROOT/boot/intel-ucode.img $ISO/boot
-  #cp $ROOT/boot/vmlinuz-linux.img $ISO/boot
-  cp $ROOT/boot/memtest86+/memtest.bin $ISO/boot/memtest
-  check
+  # Create the GRUB menu items
+  # Pass through options as kernel paramaters
+  echo -e ":: Creating ${cyan}${ISO}/boot/grub/boot.cfg${none} ..."
+  #echo -e "menuentry --class=deployment 'Start cyberlinux recovery' {" >> ${BOOT_CFG}
+  #echo -e "  load_video" >> ${BOOT_CFG}
+  #echo -e "  set gfxpayload=keep" >> ${BOOT_CFG}
+  #echo -e "  linux	/boot/vmlinuz-linux efi=0 layers=shell,lite autologin=1" >> ${BOOT_CFG}
+  #echo -e "  initrd	/boot/intel-ucode.img /boot/initramfs-linux.img" >> ${BOOT_CFG}
+  #echo -e "}" >> ${BOOT_CFG}
 }
 
 # Install BIOS boot files
@@ -115,6 +105,19 @@ create_efi_boot_images() {
     disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
     ntfs cat echo ls memdisk tar
+  check
+}
+
+# Build the initramfs based installer
+build_installer() {
+  echo -en ":: Build the initramfs based installer..."
+  sudo cp installer/installer $ROOT/usr/lib/initcpio/hooks
+  sudo cp installer/installer.conf $ROOT/usr/lib/initcpio/install/installer
+  sudo cp installer/mkinitcpio.conf $ROOT/etc
+  sudo mount --bind $ROOT $ROOT
+  sudo arch-chroot $ROOT mkinitcpio -g /root/installer
+  sudo cp $ROOT/root/installer $ISO/boot
+  sudo umount $ROOT
   check
 }
 
@@ -169,21 +172,32 @@ build_iso() {
 
 # Main entry point
 # -------------------------------------------------------------------------------------------------
+build() {
+  config_build_env
+  create_bios_boot_images
+  create_efi_boot_images
+}
 usage() {
   echo -e "${cyan}CYBERLINUX${none} initramfs based installer automation"
   echo -e "Usage: ${cyan}./`basename $0`${none} [options]"
   echo -e "Options:"
   echo -e "-c  Clean the build artifacts before building"
+  echo -e "-f  Force boot images to be rebuilt"
+  echo -e "-i  Build the initramfs"
   echo -e "-h  Display usage help"
   exit 1
 }
-while getopts ":cih" opt; do
+while getopts ":cfih" opt; do
   case $opt in
     c)
       echo "Cleaning build artifacts before building"
       sudo rm -rf $TEMP 
       ;;
+    f)
+      build
+      ;;
     i)
+      [ ! -d $TEMP ] && build
       build_installer
       ;;
     h)
@@ -196,12 +210,7 @@ while getopts ":cih" opt; do
   esac
 done
 
-config_build_env
-create_boot_menu
-install_grub
-install_boot_targets
-create_bios_boot_images
-create_efi_boot_images
+[ ! -d $TEMP ] && build
 build_iso
 
 # vim: ft=sh:ts=2:sw=2:sts=2
