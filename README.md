@@ -75,6 +75,11 @@ customizable tooling and instructions to load kernel modules as needed to set up
 before handing over control to `init`. We can leverage this early userspace to build a custom install
 environment containing all the tooling required to setup our system before than rebooting into it.
 
+The installer is composed of three files:
+1. `installer` is an initcpio hook and the heart of the installer
+2. `installer.conf` initcpio hook configuration for what to include in the installer hook
+3. `mkinitcpio.conf` configuration file to construct the initramfs early userspace environment
+
 ### Create initramfs installer <a name="create-initramfs-installer"/></a>
 An initramfs is made by creating a `cpio` archive, which is an old simple archive format comparable
 to tar. This archive is then compressed using `gzip`.
