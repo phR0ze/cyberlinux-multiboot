@@ -122,11 +122,20 @@ mount_layers()
 
     # Mount all implicated sqfs images
     local layer_dirs=""
-    echo -e ":: Mounting implicated layers for install"
+    echo -e ":: Mounting implicated layers"
     for x in ${layers//,/ }; do
         local img_mnt="${read_mnt}/${x}"             # i.e. ${read_mnt}/{base,devel,lite, etc...}
         local img_path="${images_path}/${x}.sqfs"   # e.g. ${iso_mnt}/images/base.sqfs
         layer_dirs="${layer_dirs}${img_mnt}:"
+
+        echo -en ":: Detecting presence of layer ${img_path}..."
+        if [ ! -f ${img_path} ]; then
+            echo -e "${red}failed!${none}"
+            echo -e ":: ${red}Please build and include the missing deployment layer!${none}\n"
+            launch_interactive_shell
+        else
+            [ "$1" != "nomsg" ] && echo -e "${cyan}success!${none}"
+        fi
 
         echo -en ":: Mounting ${img_path} at ${img_mnt}..."
         mkdir -p "${img_mnt}"
@@ -249,13 +258,14 @@ partition_and_mount_disk()
     check_status
 
     # Set partition identifiers
-    if [ "$chromebook" == "0" ]; then
+    if [ "x${ssd}" == "x1" ]; then
+        part_boot="${install_dev}p1"
+        part_swap="${install_dev}p2"
+        part_root="${install_dev}p3"
+    else
         part_boot="${install_dev}1"
         part_swap="${install_dev}2"
         part_root="${install_dev}3"
-    else
-        part_boot="${install_dev}p1"
-        part_root="${install_dev}p2"
     fi
 
     # EFI: Create a GPT boot disk
@@ -264,18 +274,16 @@ partition_and_mount_disk()
 
         # Create ESP boot partition
         echo -en ":: Creating ${part_boot} as ESP boot partition..."
-        sgdisk -n 0:0:+10M -t 0:ef00 -c 0:"EFI System" ${install_dev} &>/dev/null
+        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI System" ${install_dev} &>/dev/null
         check_status
         echo -en ":: Formatting ${part_boot} (ESP) as FAT..."
-        mkfs.fat -n "EFI System" ${part_boot} &>/dev/null
+        mkfs.fat -n "ESP" ${part_boot} &>/dev/null
         check_status
 
-        # Create SWAP for non chromebooks
-        if [ "${chromebook}" == "0" ]; then
-            echo -en ":: Creating ${part_swap} as Linux swap partition..."
-            sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${install_dev} &>/dev/null
-            check_status
-        fi
+        # Create SWAP partition
+        echo -en ":: Creating ${part_swap} as Linux swap partition..."
+        sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${install_dev} &>/dev/null
+        check_status
 
         # Create root partition and set boot flag
         echo -en ":: Creating ${part_root} as Linux filesystem partition..."
@@ -296,15 +304,13 @@ partition_and_mount_disk()
         rm -f layout
     fi
 
-    # Configure swap for non chromebooks
-    if [ "${chromebook}" == "0" ]; then
-        echo -en ":: Formatting ${part_swap} as (swap)..."
-        mkswap ${part_swap} &>/dev/null
-        check_status
-        echo -en ":: Starting swap on ${part_swap}..."
-        swapon ${part_swap} &>/dev/null
-        check_status
-    fi
+    # Configure swap partition
+    echo -en ":: Formatting ${part_swap} as (swap)..."
+    mkswap -L SWAP ${part_swap} &>/dev/null
+    check_status
+    echo -en ":: Starting swap on ${part_swap}..."
+    swapon ${part_swap} &>/dev/null
+    check_status
 
     echo -en ":: Formatting ${part_root} as (ext4)..."
     # -F            force creation even if some params don't make sense
@@ -318,6 +324,12 @@ partition_and_mount_disk()
     echo -en ":: Mounting ${part_root} as ${rootmnt}..."
     mount -o noatime ${part_root} ${rootmnt} &>/dev/null
     check_status
+
+    # Mount the ESP on top of the root at /boot
+    if [ "x${efi}" == "x1" ]; then
+        mkdir -p $rootmnt/boot
+        mount ${part_boot} $rootmnt/boot
+    fi
 }
 
 # GRUB has the ability to set the gfxmode and have the kernel keep it
@@ -552,8 +564,8 @@ installer()
 
     # Set defaults for live or vagrant deployments
     #---------------------------------------------------------------------------
+    ssd=0
     vagrant=0
-    chromebook=0
     enable_wifi=0
     hostname="${distro}-${target_layer}"
     netip='DHCP'
@@ -595,10 +607,12 @@ installer()
             getsel install_dev $disks
 
             # Determine the type of storage from the three most common types:
+            # SSD type storage either NVMe or MMC both use a similar partition naming
+            # convention so we really only need to determine if its not an HDD.
             # SCSI: /dev/sda        partition1: /dev/sda1
             # NVMe: /dev/nvme0n1    partition1: /dev/nvme0n1p1
             # MMC: /dev/mmcblk0     partition1: /dev/mmcblk0p1
-            [ ${install_dev//mmc} != ${install_dev} ] && chromebook=1
+            [ ${install_dev//sda} != "/dev/" ] && ssd=1
 
             # Configure networking
             #----------------------------------------------------------------------
