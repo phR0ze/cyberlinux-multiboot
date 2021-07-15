@@ -32,12 +32,13 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 
 ---
 
-# Usage <a name="grub2-bootloader"/></a>
+# Usage <a name="usage"/></a>
 
 ## Install prerequisites <a name="install-prerequisites"/></a>
 1. Install dependencies for building boot images:
    ```bash
-   $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio
+   $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio sudo \
+     util-linux
    ```
 2. Install dependencies for testing boot images:
    ```bash
@@ -45,6 +46,9 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
    $ sudo usermod -aG vboxusers USER
    $ sudo reboot
    ```
+3. Ensure user has passwordless sudo access  
+   a. Edit `/etc/sudoers`  
+   b. Append for your user: `YOUR_USER ALL=(ALL) NOPASSWD: ALL`  
 
 ## Create multiboot USB <a name="create-multiboot-usb"/></a>
 We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
@@ -144,7 +148,7 @@ This project is licensed under either of:
  * MIT license [LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT
  * Apache License, Version 2.0 [LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0
 
-## Contribution <a name="contribution"/></a>
+### Contribution <a name="contribution"/></a>
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in
 this project by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without
 any additional terms or conditions.
