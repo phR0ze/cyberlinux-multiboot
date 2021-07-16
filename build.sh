@@ -4,12 +4,26 @@ red="\e[1;31m"
 cyan="\e[0;36m"
 
 TEMP=temp                             # Temp directory for build artifacts
-ISO=${TEMP}/iso                       # Build location for staging iso/boot files
+ISO_PATH=${TEMP}/iso                  # Build location for staging iso/boot files
 ROOT=${TEMP}/root                     # Root mount point for layered filesystems
 BUILD=${TEMP}/build                   # Build location for packages extraction and builds
-LAYERS=${TEMP}/layers                 # Layered filesystems to include in the ISO
+LAYERS_PATH=${TEMP}/layers            # Layered filesystems to include in the ISO
 GRUB=grub                             # Location to pull persisted Grub configuration files from
-BOOT_CFG="${ISO}/boot/grub/boot.cfg"  # Boot menu entries to read in
+BOOT_CFG="${ISO_PATH}/boot/grub/boot.cfg"  # Boot menu entries to read in
+MULTIBOOT_PATH=$(dirname $BASH_SOURCE[0])
+PROFILES_PATH="${MULTIBOOT_PATH}/../cyberlinux-profiles"
+
+# Ensure the current user has passwordless sudo access
+if ! sudo -l | grep -q "NOPASSWD: ALL"; then
+  echo -e ":: ${red}Failed${none} - Passwordless sudo access is required see README.md..."
+  exit
+fi
+
+# Ensure the profiles repo is accessible
+if [ ! -d $PROFILES_PATH ]; then
+  echo -e ":: ${red}Failed${none} - Please clone https://github.com/phR0ze/cyberlinux-profiles to $PROFILES_PATH"
+  exit
+fi
 
 check()
 {
@@ -38,12 +52,6 @@ release()
 trap release EXIT
 trap release SIGINT
 
-# Ensure the current user has passwordless sudo access
-if ! sudo -l | grep -q "NOPASSWD: ALL"; then
-  echo -e ":: Passwordless sudo access is required see README.md..."
-  exit
-fi
-
 # Configure build environment
 # `coreutils`             provides basic linux tooling
 # `pacman`                provides the ability to add additional packages via a chroot to our build env
@@ -71,33 +79,37 @@ build_env()
 build_multiboot()
 {
   echo -e ":: Building multiboot components..."
-  mkdir -p $ISO/boot/grub/themes
+  mkdir -p $ISO_PATH/boot/grub/themes
 
-  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO}/boot..."
-  cp $BUILD/boot/intel-ucode.img $ISO/boot
-  cp $BUILD/boot/vmlinuz-linux $ISO/boot
-  cp $BUILD/boot/memtest86+/memtest.bin $ISO/boot/memtest
+  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO_PATH}/boot..."
+  cp $BUILD/boot/intel-ucode.img $ISO_PATH/boot
+  cp $BUILD/boot/vmlinuz-linux $ISO_PATH/boot
+  cp $BUILD/boot/memtest86+/memtest.bin $ISO_PATH/boot/memtest
   check
 
-  echo -en ":: Copying GRUB config and theme to ${ISO}/boot/grub ..."
-  cp $GRUB/grub.cfg $ISO/boot/grub
-  cp $GRUB/boot.cfg $ISO/boot/grub
-  cp $GRUB/loopback.cfg $ISO/boot/grub
-  cp -r $GRUB/themes $ISO/boot/grub
-  cp $BUILD/usr/share/grub/unicode.pf2 $ISO/boot/grub
+  echo -en ":: Copying GRUB config and theme to ${ISO_PATH}/boot/grub ..."
+  cp $GRUB/grub.cfg $ISO_PATH/boot/grub
+  cp $GRUB/loopback.cfg $ISO_PATH/boot/grub
+  cp -r $GRUB/themes $ISO_PATH/boot/grub
+  cp $BUILD/usr/share/grub/unicode.pf2 $ISO_PATH/boot/grub
   check
 
-  echo -e ":: Creating ${cyan}${ISO}/boot/grub/boot.cfg${none} ..."
-  echo -e "menuentry --class=deployment 'Start cyberlinux live' {" >> ${BOOT_CFG}
-  echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> ${BOOT_CFG}
-  echo -e "  sleep 5" >> ${BOOT_CFG}
-  echo -e "  linux	/boot/vmlinuz-linux kernel=linux layers=shell,lite" >> ${BOOT_CFG}
-  echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
-  echo -e "}" >> ${BOOT_CFG}
+  # Create the target profile's boot entries
+  rm -f $BOOT_CFG
+  for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
+    deployment $layer
+    echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_PATH}/boot/grub/boot.cfg${none}"
+    echo -e "menuentry --class=deployment '${LABEL}' {" >> ${BOOT_CFG}
+    echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> ${BOOT_CFG}
+    echo -e "  sleep 5" >> ${BOOT_CFG}
+    echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS}" >> ${BOOT_CFG}
+    echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
+    echo -e "}" >> ${BOOT_CFG}
+  done
 
   echo -en ":: Creating core BIOS $BUILD/bios.img..."
-  cp -r $BUILD/usr/lib/grub/i386-pc $ISO/boot/grub
-  rm -f $ISO/boot/grub/i386-pc/*.img
+  cp -r $BUILD/usr/lib/grub/i386-pc $ISO_PATH/boot/grub
+  rm -f $ISO_PATH/boot/grub/i386-pc/*.img
   # We need to create our bios.img that contains just enough code to find the grub configuration and
   # grub modules in /boot/grub/i386-pc directory we'll stage in the next step
   # -O i386-pc                        Format of the image to generate
@@ -109,21 +121,21 @@ build_multiboot()
     search_fs_file true iso9660 search_label gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
   check
   echo -en ":: Concatenate cdboot.img to bios.img to create the CD-ROM bootable Eltorito $TEMP/eltorito.img..."
-  cat $BUILD/usr/lib/grub/i386-pc/cdboot.img $TEMP/bios.img > $ISO/boot/grub/i386-pc/eltorito.img
+  cat $BUILD/usr/lib/grub/i386-pc/cdboot.img $TEMP/bios.img > $ISO_PATH/boot/grub/i386-pc/eltorito.img
   check
   echo -en ":: Concatenate boot.img to bios.img to create isohybrid $TEMP/isohybrid.img..."
-  cat $BUILD/usr/lib/grub/i386-pc/boot.img $TEMP/bios.img > $ISO/boot/grub/i386-pc/isohybrid.img
+  cat $BUILD/usr/lib/grub/i386-pc/boot.img $TEMP/bios.img > $ISO_PATH/boot/grub/i386-pc/isohybrid.img
   check
 
   echo -en ":: Creating UEFI boot files..."
-  mkdir -p $ISO/efi/boot
-  cp -r $BUILD/usr/lib/grub/x86_64-efi $ISO/boot/grub
-  rm -f $ISO/grub/x86_64-efi/*.img
+  mkdir -p $ISO_PATH/efi/boot
+  cp -r $BUILD/usr/lib/grub/x86_64-efi $ISO_PATH/boot/grub
+  rm -f $ISO_PATH/grub/x86_64-efi/*.img
   # -O x86_64-efi                     Format of the image to generate
   # -p /boot/grub                     Directory to find grub once booted
   # -d $BUILD/usr/lib/grub/x86_64-efi  Use resources from this location when building the boot image
-  # -o $ISO/efi/boot/bootx64.efi      Output destination, using wellknown compatibility location
-  grub-mkimage -O x86_64-efi -p /boot/grub -d $BUILD/usr/lib/grub/x86_64-efi -o $ISO/efi/boot/bootx64.efi \
+  # -o $ISO_PATH/efi/boot/bootx64.efi      Output destination, using wellknown compatibility location
+  grub-mkimage -O x86_64-efi -p /boot/grub -d $BUILD/usr/lib/grub/x86_64-efi -o $ISO_PATH/efi/boot/bootx64.efi \
     disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
     ntfs cat echo ls memdisk tar
@@ -131,9 +143,10 @@ build_multiboot()
 }
 
 # Build the initramfs based installer
-build_installer() {
+build_installer()
+{
   echo -en ":: Build the initramfs based installer..."
-  mkdir -p $ISO/boot
+  mkdir -p $ISO_PATH/boot
   sudo cp installer/installer $BUILD/usr/lib/initcpio/hooks
   sudo cp installer/installer.conf $BUILD/usr/lib/initcpio/install/installer
   sudo cp installer/mkinitcpio.conf $BUILD/etc
@@ -142,7 +155,7 @@ build_installer() {
   # umount is handled by the release function on exit
   sudo mount --bind $BUILD $BUILD
   sudo arch-chroot $BUILD mkinitcpio -g /root/installer
-  sudo cp $BUILD/root/installer $ISO/boot
+  sudo cp $BUILD/root/installer $ISO_PATH/boot
   check
 }
 
@@ -178,8 +191,9 @@ build_installer() {
 # Note the use of the well known compatibility path /efi/boot/bootx64.efi
 #   --efi-boot /efi/boot/bootx64.efi 
 # Specify the output iso file path and location to turn into an ISO
-#   -o boot.iso $ISO
-build_iso() {
+#   -o boot.iso $ISO_PATH
+build_iso()
+{
   echo -e ":: Building an ISOHYBRID bootable image..."
   xorriso -as mkisofs \
     -r -iso-level 3 \
@@ -190,23 +204,48 @@ build_iso() {
     -boot-info-table \
     --protective-msdos-label \
     -b /boot/grub/i386-pc/eltorito.img \
-    --embedded-boot $ISO/boot/grub/i386-pc/isohybrid.img \
+    --embedded-boot $ISO_PATH/boot/grub/i386-pc/isohybrid.img \
     --efi-boot /efi/boot/bootx64.efi \
-    -o boot.iso $ISO
+    -o boot.iso $ISO_PATH
 }
 
 # Build deployments
 build_deployments() 
 {
   echo -e ":: Building deployments ${cyan}${1}${none}..."
+  mkdir -p $LAYERS_PATH
+
+  for layer in ${1//,/ }; do
+    echo -e ":: Building deployment ${cyan}${layer}${none}..."
+    deployment $layer
+
+    #local pkg="cyberlinux-${layer}-profile"
+#    if [ ! -d $BUILD ]; then
+#      echo -en ":: Building deployment ${DEPLOYMENT}..."
+#      sudo mkdir -p $BUILD
+#      sudo pacstrap -c -G -M $BUILD coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
+#        mkinitcpio-vt-colors dosfstools rsync gptfdisk
+#    fi
+  done
+}
+
+# Retrieve the deployment's properties
+deployment()
+{
+  local layer=$(echo "$PROFILE_JSON" | jq '.[] | select(.name=="'$1'")')
+  LABEL=$(echo "$layer" | jq '.label')
+  KERNEL=$(echo "$layer" | jq -r '.kernel')
+  LAYERS=$(echo "$layer" | jq -r '.layers')
 }
 
 # Main entry point
 # -------------------------------------------------------------------------------------------------
-header() {
+header()
+{
   echo -e "${cyan}CYBERLINUX${none} builder automation for a multiboot installer ISO"
 }
-usage() {
+usage()
+{
   header
   echo -e "Usage: ${cyan}./$(basename $0)${none} [options]"
   echo -e "Options:"
@@ -214,25 +253,34 @@ usage() {
   echo -e "-d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
   echo -e "-i               Build the initramfs installer"
   echo -e "-m               Build the grub multiboot environment"
+  echo -e "-I               Build the acutal ISO image"
+  echo -e "-p               Set the profile to use, default: personal"
   echo -e "-c               Clean the build artifacts before building"
   echo -e "-h               Display usage help\n"
   echo -e "Examples:"
   echo -e "Build everything: ./$(basename $0) -a"
+  echo -e "Build shell deployment: ./$(basename $0) -d shell"
   exit 1
 }
-while getopts ":ad:imch" opt; do
+while getopts ":ad:imIp:ch" opt; do
   case $opt in
     c) CLEAN=1;;
     a) ALL=1;;
     i) INSTALLER=1;;
     d) DEPLOYMENTS=$OPTARG;;
     m) MULTIBOOT=1;;
+    I) ISO=1;;
+    p) PROFILE=$OPTARG;;
     h) usage;;
     \?) echo -e "Invalid option: ${red}-${OPTARG}${none}\n"; usage;;
     :) echo -e "Option ${red}-${OPTARG}${none} requires an argument\n"; usage;;
   esac
 done
 [ $(($OPTIND -1)) -eq 0 ] && usage
+
+# Set varible defaults
+[ -z ${PROFILE+x} ] && PROFILE="personal"
+PROFILE_JSON=$(jq -r '.' $PROFILES_PATH/profiles/$PROFILE.json)
 
 # Execute build
 header
@@ -256,6 +304,11 @@ if [ ! -z ${ALL+x} ] || [ ! -z ${MULTIBOOT+x} ]; then
 fi
 if [ ! -z ${ALL+x} ] || [ ! -z ${INSTALLER+x} ]; then
   build_installer
+fi
+
+# Build the actual ISO
+if [ ! -z ${ALL+x} ] || [ ! -z ${ISO+x} ]; then
+  build_iso
 fi
 
 # vim: ft=sh:ts=2:sw=2:sts=2

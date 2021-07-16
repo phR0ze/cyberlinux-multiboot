@@ -38,7 +38,7 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 1. Install dependencies for building boot images:
    ```bash
    $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio sudo \
-     util-linux
+     util-linux pacutils jq
    ```
 2. Install dependencies for testing boot images:
    ```bash
@@ -49,6 +49,13 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 3. Ensure user has passwordless sudo access  
    a. Edit `/etc/sudoers`  
    b. Append for your user: `YOUR_USER ALL=(ALL) NOPASSWD: ALL`  
+
+4. Clone the profiles repo at the same level as the multiboot repo:
+   ```bash
+   $ cd ~/Projects
+   $ git clone git@github.com:phR0ze/cyberlinux-multiboot
+   $ git clone git@github.com:phR0ze/cyberlinux-profiles
+   ```
 
 ## Create multiboot USB <a name="create-multiboot-usb"/></a>
 We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
