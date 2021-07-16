@@ -215,17 +215,21 @@ build_deployments()
   echo -e ":: Building deployments ${cyan}${1}${none}..."
   mkdir -p $LAYERS_PATH
 
-  for layer in ${1//,/ }; do
-    echo -e ":: Building deployment ${cyan}${layer}${none}..."
-    deployment $layer
+  for target in ${1//,/ }; do
+    echo -e ":: Building deployment ${cyan}${target}${none}..."
+    deployment $target
 
-    #local pkg="cyberlinux-${layer}-profile"
+    for layer in ${LAYERS//,/ }; do
+      echo -e ":: Building layer ${cyan}${layer}${none}..."
+      local pkg="cyberlinux-${PROFILE}-${layer}"
+      echo $pkg
 #    if [ ! -d $BUILD ]; then
 #      echo -en ":: Building deployment ${DEPLOYMENT}..."
 #      sudo mkdir -p $BUILD
 #      sudo pacstrap -c -G -M $BUILD coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
 #        mkinitcpio-vt-colors dosfstools rsync gptfdisk
 #    fi
+    done
   done
 }
 
