@@ -1,7 +1,9 @@
 #!/bin/bash
 none="\e[m"
 red="\e[1;31m"
-cyan="\e[0;36m"
+cyan="\e[1;36m"
+green="\e[1;32m"
+yellow="\e[1;33m"
 
 TEMP=temp                             # Temp directory for build artifacts
 ISO_PATH=${TEMP}/iso                  # Build location for staging iso/boot files
@@ -31,7 +33,7 @@ check()
     echo -e "${red}failed!${none}"
     exit 1
   else
-    echo -e "${cyan}success!${none}"
+    echo -e "${green}success!${none}"
   fi
 }
 
@@ -67,7 +69,7 @@ trap release SIGINT
 build_env()
 {
   if [ ! -d $BUILD ]; then
-    echo -en ":: Configuring build environment..."
+    echo -en "${yellow}:: Configuring build environment...${none}"
     sudo mkdir -p $BUILD
     sudo pacstrap -c -G -M $BUILD coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
       mkinitcpio-vt-colors dosfstools rsync gptfdisk
@@ -78,7 +80,7 @@ build_env()
 # the ISO bootable as a CD or USB stick on BIOS and UEFI systems with the same presentation.
 build_multiboot()
 {
-  echo -e ":: Building multiboot components..."
+  echo -e "${yellow}:: Building multiboot components...${none}"
   mkdir -p $ISO_PATH/boot/grub/themes
 
   echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO_PATH}/boot..."
@@ -145,7 +147,7 @@ build_multiboot()
 # Build the initramfs based installer
 build_installer()
 {
-  echo -en ":: Build the initramfs based installer..."
+  echo -en "${yellow}:: Build the initramfs based installer...${none}"
   mkdir -p $ISO_PATH/boot
   sudo cp installer/installer $BUILD/usr/lib/initcpio/hooks
   sudo cp installer/installer.conf $BUILD/usr/lib/initcpio/install/installer
@@ -194,7 +196,7 @@ build_installer()
 #   -o boot.iso $ISO_PATH
 build_iso()
 {
-  echo -e ":: Building an ISOHYBRID bootable image..."
+  echo -e "${yellow}:: Building an ISOHYBRID bootable image...${none}"
   xorriso -as mkisofs \
     -r -iso-level 3 \
     -volid CYBERLINUX \
@@ -212,7 +214,7 @@ build_iso()
 # Build deployments
 build_deployments() 
 {
-  echo -e ":: Building deployments ${cyan}${1}${none}..."
+  echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   mkdir -p $LAYERS_PATH
 
   for target in ${1//,/ }; do
@@ -253,7 +255,7 @@ usage()
   header
   echo -e "Usage: ${cyan}./$(basename $0)${none} [options]"
   echo -e "Options:"
-  echo -e "-a               Build all buildable options"
+  echo -e "-a               Build all components"
   echo -e "-d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
   echo -e "-i               Build the initramfs installer"
   echo -e "-m               Build the grub multiboot environment"
