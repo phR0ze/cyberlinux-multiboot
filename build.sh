@@ -5,15 +5,16 @@ cyan="\e[1;36m"
 green="\e[1;32m"
 yellow="\e[1;33m"
 
-TEMP=temp                             # Temp directory for build artifacts
-ISO_PATH=${TEMP}/iso                  # Build location for staging iso/boot files
-ROOT=${TEMP}/root                     # Root mount point for layered filesystems
-BUILD=${TEMP}/build                   # Build location for packages extraction and builds
-LAYERS_PATH=${TEMP}/layers            # Layered filesystems to include in the ISO
-GRUB=grub                             # Location to pull persisted Grub configuration files from
-BOOT_CFG="${ISO_PATH}/boot/grub/boot.cfg"  # Boot menu entries to read in
-MULTIBOOT_PATH=$(dirname $BASH_SOURCE[0])
-PROFILES_PATH="${MULTIBOOT_PATH}/../cyberlinux-profiles"
+TEMP=temp                                 # Temp directory for build artifacts
+ISO_PATH=${TEMP}/iso                      # Build location for staging iso/boot files
+ROOT=${TEMP}/root                         # Root mount point to build layered filesystems
+BUILD=${TEMP}/build                       # Build location for packages extraction and builds
+LAYERS_PATH=${TEMP}/layers                # Layered filesystems to include in the ISO
+GRUB=grub                                 # Location to pull persisted Grub configuration files from
+MOUNTPOINTS=("$BUILD" "$ROOT")            # Array of mount points to ensure get unmounted when done
+BOOT_CFG="${ISO_PATH}/boot/grub/boot.cfg" # Boot menu entries to read in
+MULTIBOOT_PATH=$(dirname $BASH_SOURCE[0]) # Determine the root path of the project
+PROFILES_PATH="${MULTIBOOT_PATH}/../cyberlinux-profiles" # Compute the path to the profiles project
 
 # Ensure the current user has passwordless sudo access
 if ! sudo -l | grep -q "NOPASSWD: ALL"; then
@@ -43,11 +44,13 @@ release()
 {
   if [ $RELEASED -ne 1 ]; then
     RELEASED=1
-    if mountpoint -q $BUILD; then
-      echo -en ":: Releasing mount point ${cyan}${BUILD}${none}..."
-      sudo umount -R $BUILD
-      check
-    fi
+    for x in ${MOUNTPOINTS[@]}; do
+      if mountpoint -q $x; then
+        echo -en ":: Releasing mount point ${cyan}${x}${none}..."
+        sudo umount -R $x
+        check
+      fi
+    done
   fi
   exit
 }
@@ -104,7 +107,7 @@ build_multiboot()
     echo -e "menuentry --class=deployment '${LABEL}' {" >> ${BOOT_CFG}
     echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> ${BOOT_CFG}
     echo -e "  sleep 5" >> ${BOOT_CFG}
-    echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS}" >> ${BOOT_CFG}
+    echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> ${BOOT_CFG}
     echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
     echo -e "}" >> ${BOOT_CFG}
   done
@@ -215,22 +218,35 @@ build_iso()
 build_deployments() 
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
+  mkdir -p $ROOT
   mkdir -p $LAYERS_PATH
 
   for target in ${1//,/ }; do
-    echo -e ":: Building deployment ${cyan}${target}${none}..."
     deployment $target
+    echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
 
-    for layer in ${LAYERS//,/ }; do
+    for layer in ${LAYERS[@]}; do
       echo -e ":: Building layer ${cyan}${layer}${none}..."
-      local pkg="cyberlinux-${PROFILE}-${layer}"
-      echo $pkg
-#    if [ ! -d $BUILD ]; then
-#      echo -en ":: Building deployment ${DEPLOYMENT}..."
-#      sudo mkdir -p $BUILD
-#      sudo pacstrap -c -G -M $BUILD coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
-#        mkinitcpio-vt-colors dosfstools rsync gptfdisk
-#    fi
+
+      # Ensure the layer destination path exists
+      local layer_path="${LAYERS_PATH}/${layer}"
+      mkdir -p $layer_path
+
+      # Mount the layer destination path 
+      if [ ${#LAYERS[@]} -gt 1 ]; then
+        echo -e ":: Mounting layer ${cyan}${layer}${none} to root ${cyan}${ROOT}${none}..."
+        check
+      else
+        echo -en ":: Bind mount layer ${cyan}${layer}${none} to root ${cyan}${ROOT}${none}..."
+        sudo mount --bind $layer_path $ROOT
+        check
+      fi
+
+      # Install the target layer packages onto the layer
+      #local pkg="cyberlinux-${PROFILE}-${layer}"
+      local pkg="cyberlinux-shell-profile"
+      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT}${none}"
+      sudo pacstrap -c -G -M $ROOT $pkg
     done
   done
 }
@@ -241,7 +257,12 @@ deployment()
   local layer=$(echo "$PROFILE_JSON" | jq '.[] | select(.name=="'$1'")')
   LABEL=$(echo "$layer" | jq '.label')
   KERNEL=$(echo "$layer" | jq -r '.kernel')
-  LAYERS=$(echo "$layer" | jq -r '.layers')
+  LAYERS_STR=$(echo "$layer" | jq -r '.layers')
+  
+  # Create an array out of the layers as well
+  ifs=$IFS; IFS=",";
+  read -ra LAYERS <<< "${LAYERS_STR}"
+  IFS=$ifs
 }
 
 # Main entry point
