@@ -243,8 +243,7 @@ build_deployments()
       fi
 
       # Install the target layer packages onto the layer
-      #local pkg="cyberlinux-${PROFILE}-${layer}"
-      local pkg="cyberlinux-shell-profile"
+      local pkg="cyberlinux-${PROFILE}-${layer}"
       echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT}${none}"
       sudo pacstrap -c -G -M $ROOT $pkg
     done
