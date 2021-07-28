@@ -5,18 +5,20 @@ cyan="\e[1;36m"
 green="\e[1;32m"
 yellow="\e[1;33m"
 
-TEMP_PATH=temp                            # Temp directory for build artifacts
-GRUB_PATH=grub                            # Location to pull persisted Grub configuration files from
-PROFILES_PATH=profiles                    # Location for profile descriptions, packages and configs
-INSTALLER_PATH=installer                  # Location to pull installer hooks from
-ROOT_PATH=${TEMP_PATH}/root               # Root mount point to build layered filesystems
-REPO_PATH=${TEMP_PATH}/x86_64             # Local repo location to stage packages being built
-ISO_PATH=${TEMP_PATH}/iso                 # Build location for staging iso/boot files
-BUILD_PATH=${TEMP_PATH}/build             # Build location for packages extraction and builds
-LAYERS_PATH=${TEMP_PATH}/layers           # Layered filesystems to include in the ISO
-MOUNTPOINTS=("$BUILD_PATH" "$ROOT_PATH")  # Array of mount points to ensure get unmounted when done
-BOOT_CFG="${ISO_PATH}/boot/grub/boot.cfg" # Boot menu entries to read in
-PROJECT_ROOT=$(dirname $BASH_SOURCE[0])   # Determine the root path of the project
+# Determine the absolute root path of the project
+PROJECT_DIR=$(readlink -f $(dirname $BASH_SOURCE[0]))
+
+TEMP_DIR="${PROJECT_DIR}/temp"            # Temp directory for build artifacts
+GRUB_DIR="${PROJECT_DIR}/grub"            # Location to pull persisted Grub configuration files from
+PROFILES_DIR="${PROJECT_DIR}/profiles"    # Location for profile descriptions, packages and configs
+INSTALLER_DIR="${PROJECT_DIR}/installer"  # Location to pull installer hooks from
+ROOT_DIR="${TEMP_DIR}/root"               # Root mount point to build layered filesystems
+REPO_DIR="${TEMP_DIR}/x86_64"             # Local repo location to stage packages being built
+ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot files
+BUILD_DIR="${TEMP_DIR}/build"             # Build location for packages extraction and builds
+LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
+MOUNTPOINTS=("$BUILD_DIR" "$ROOT_DIR")    # Array of mount points to ensure get unmounted when done
+BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
 
 # Ensure the current user has passwordless sudo access
 if ! sudo -l | grep -q "NOPASSWD: ALL"; then
@@ -67,10 +69,10 @@ trap release SIGINT
 # `intel-ucode`           standard practice to load the intel-ucode
 build_env()
 {
-  if [ ! -d $BUILD_PATH ]; then
+  if [ ! -d "$BUILD_DIR" ]; then
     echo -en "${yellow}:: Configuring build environment...${none}"
-    sudo mkdir -p $BUILD_PATH
-    sudo pacstrap -c -G -M $BUILD_PATH coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
+    sudo mkdir -p "$BUILD_DIR"
+    sudo pacstrap -c -G -M "$BUILD_DIR" coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
       mkinitcpio-vt-colors dosfstools rsync gptfdisk
   fi
 }
@@ -80,63 +82,63 @@ build_env()
 build_multiboot()
 {
   echo -e "${yellow}:: Building multiboot components...${none}"
-  mkdir -p $ISO_PATH/boot/grub/themes
+  mkdir -p "${ISO_DIR}/boot/grub/themes"
 
-  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO_PATH}/boot..."
-  cp $BUILD_PATH/boot/intel-ucode.img $ISO_PATH/boot
-  cp $BUILD_PATH/boot/vmlinuz-linux $ISO_PATH/boot
-  cp $BUILD_PATH/boot/memtest86+/memtest.bin $ISO_PATH/boot/memtest
+  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO_DIR}/boot..."
+  cp "${BUILD_DIR}/boot/intel-ucode.img" "${ISO_DIR}/boot"
+  cp "${BUILD_DIR}/boot/vmlinuz-linux" "${ISO_DIR}/boot"
+  cp "${BUILD_DIR}/boot/memtest86+/memtest.bin" "${ISO_DIR}/boot/memtest"
   check
 
-  echo -en ":: Copying GRUB config and theme to ${ISO_PATH}/boot/grub ..."
-  cp ${GRUB_PATH}/grub.cfg $ISO_PATH/boot/grub
-  cp ${GRUB_PATH}/loopback.cfg $ISO_PATH/boot/grub
-  cp -r ${GRUB_PATH}/themes $ISO_PATH/boot/grub
-  cp $BUILD_PATH/usr/share/grub/unicode.pf2 $ISO_PATH/boot/grub
+  echo -en ":: Copying GRUB config and theme to ${ISO_DIR}/boot/grub ..."
+  cp "${GRUB_DIR}/grub.cfg" "${ISO_DIR}/boot/grub"
+  cp "${GRUB_DIR}/loopback.cfg" "${ISO_DIR}/boot/grub"
+  cp -r "${GRUB_DIR}/themes" "${ISO_DIR}/boot/grub"
+  cp "${BUILD_DIR}/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
   check
 
   # Create the target profile's boot entries
-  rm -f $BOOT_CFG
+  rm -f "$BOOT_CFG_PATH"
   for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
-    deployment $layer
-    echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_PATH}/boot/grub/boot.cfg${none}"
-    echo -e "menuentry --class=deployment '${LABEL}' {" >> ${BOOT_CFG}
-    echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> ${BOOT_CFG}
-    echo -e "  sleep 5" >> ${BOOT_CFG}
-    echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> ${BOOT_CFG}
-    echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> ${BOOT_CFG}
-    echo -e "}" >> ${BOOT_CFG}
+    read_deployment $layer
+    echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
+    echo -e "menuentry --class=deployment '${LABEL}' {" >> "${BOOT_CFG_PATH}"
+    echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
+    echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
+    echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
+    echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> "${BOOT_CFG_PATH}"
+    echo -e "}" >> "${BOOT_CFG_PATH}"
   done
 
-  echo -en ":: Creating core BIOS $BUILD_PATH/bios.img..."
-  cp -r $BUILD_PATH/usr/lib/grub/i386-pc $ISO_PATH/boot/grub
-  rm -f $ISO_PATH/boot/grub/i386-pc/*.img
+  echo -en ":: Creating core BIOS $BUILD_DIR/bios.img..."
+  cp -r "${BUILD_DIR}/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
+  rm -f "${ISO_DIR}/boot/grub/i386-pc/*.img"
   # We need to create our bios.img that contains just enough code to find the grub configuration and
   # grub modules in /boot/grub/i386-pc directory we'll stage in the next step
   # -O i386-pc                        Format of the image to generate
   # -p /boot/grub                     Directory to find grub once booted
-  # -d $BUILD_PATH/usr/lib/grub/i386-pc    Use resources from this location when building the boot image
-  # -o $BUILD_PATH/bios.img                Output destination
-  grub-mkimage -O i386-pc -p /boot/grub -d $BUILD_PATH/usr/lib/grub/i386-pc -o $TEMP_PATH/bios.img  \
+  # -d $BUILD_DIR/usr/lib/grub/i386-pc    Use resources from this location when building the boot image
+  # -o $BUILD_DIR/bios.img                Output destination
+  grub-mkimage -O i386-pc -p /boot/grub -d "$BUILD_DIR/usr/lib/grub/i386-pc" -o "$TEMP_DIR/bios.img"  \
     biosdisk disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
   check
-  echo -en ":: Concatenate cdboot.img to bios.img to create the CD-ROM bootable Eltorito $TEMP_PATH/eltorito.img..."
-  cat $BUILD_PATH/usr/lib/grub/i386-pc/cdboot.img $TEMP_PATH/bios.img > $ISO_PATH/boot/grub/i386-pc/eltorito.img
+  echo -en ":: Concatenate cdboot.img to bios.img to create the CD-ROM bootable Eltorito $TEMP_DIR/eltorito.img..."
+  cat "$BUILD_DIR/usr/lib/grub/i386-pc/cdboot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/eltorito.img"
   check
-  echo -en ":: Concatenate boot.img to bios.img to create isohybrid $TEMP_PATH/isohybrid.img..."
-  cat $BUILD_PATH/usr/lib/grub/i386-pc/boot.img $TEMP_PATH/bios.img > $ISO_PATH/boot/grub/i386-pc/isohybrid.img
+  echo -en ":: Concatenate boot.img to bios.img to create isohybrid $TEMP_DIR/isohybrid.img..."
+  cat "$BUILD_DIR/usr/lib/grub/i386-pc/boot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/isohybrid.img"
   check
 
   echo -en ":: Creating UEFI boot files..."
-  mkdir -p $ISO_PATH/efi/boot
-  cp -r $BUILD_PATH/usr/lib/grub/x86_64-efi $ISO_PATH/boot/grub
-  rm -f $ISO_PATH/grub/x86_64-efi/*.img
+  mkdir -p "$ISO_DIR/efi/boot"
+  cp -r "$BUILD_DIR/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
+  rm -f "$ISO_DIR/grub/x86_64-efi/*.img"
   # -O x86_64-efi                     Format of the image to generate
   # -p /boot/grub                     Directory to find grub once booted
-  # -d $BUILD_PATH/usr/lib/grub/x86_64-efi  Use resources from this location when building the boot image
-  # -o $ISO_PATH/efi/boot/bootx64.efi      Output destination, using wellknown compatibility location
-  grub-mkimage -O x86_64-efi -p /boot/grub -d $BUILD_PATH/usr/lib/grub/x86_64-efi -o $ISO_PATH/efi/boot/bootx64.efi \
+  # -d "$BUILD_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
+  # -o "$ISO_DIR/efi/boot/bootx64.efi"      Output destination, using wellknown compatibility location
+  grub-mkimage -O x86_64-efi -p /boot/grub -d "$BUILD_DIR/usr/lib/grub/x86_64-efi" -o "$ISO_DIR/efi/boot/bootx64.efi" \
     disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
     ntfs cat echo ls memdisk tar
@@ -147,16 +149,16 @@ build_multiboot()
 build_installer()
 {
   echo -en "${yellow}:: Build the initramfs based installer...${none}"
-  mkdir -p $ISO_PATH/boot
-  sudo cp ${INSTALLER_PATH}/installer $BUILD_PATH/usr/lib/initcpio/hooks
-  sudo cp ${INSTALLER_PATH}/installer.conf $BUILD_PATH/usr/lib/initcpio/install/installer
-  sudo cp ${INSTALLER_PATH}/mkinitcpio.conf $BUILD_PATH/etc
+  mkdir -p "$ISO_DIR/boot"
+  sudo cp "${INSTALLER_DIR}/installer" "$BUILD_DIR/usr/lib/initcpio/hooks"
+  sudo cp "${INSTALLER_DIR}/installer.conf" "$BUILD_DIR/usr/lib/initcpio/install/installer"
+  sudo cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILD_DIR/etc"
 
   # Mount as bind mount to satisfy arch-chroot requirement
   # umount is handled by the release function on exit
-  sudo mount --bind $BUILD_PATH $BUILD_PATH
-  sudo arch-chroot $BUILD_PATH mkinitcpio -g /root/installer
-  sudo cp $BUILD_PATH/root/installer $ISO_PATH/boot
+  sudo mount --bind "$BUILD_DIR" "$BUILD_DIR"
+  sudo arch-chroot "$BUILD_DIR" mkinitcpio -g /root/installer
+  sudo cp "$BUILD_DIR/root/installer" "$ISO_DIR/boot"
   check
 }
 
@@ -187,12 +189,12 @@ build_installer()
 # Patch an EL TORITO BOOT INFO TABLE into eltorito.img
 #   -boot-info-table
 # Bootable isohybrid image to make this iso USB stick bootable by BIOS
-#   --embedded-boot $TEMP_PATH/isohybrid.img
+#   --embedded-boot "$TEMP_DIR/isohybrid.img"
 # EFI boot image location on the iso post creation to use to make this iso USB stick bootable by UEFI
 # Note the use of the well known compatibility path /efi/boot/bootx64.efi
 #   --efi-boot /efi/boot/bootx64.efi 
 # Specify the output iso file path and location to turn into an ISO
-#   -o boot.iso $ISO_PATH
+#   -o boot.iso "$ISO_DIR"
 build_iso()
 {
   echo -e "${yellow}:: Building an ISOHYBRID bootable image...${none}"
@@ -205,49 +207,59 @@ build_iso()
     -boot-info-table \
     --protective-msdos-label \
     -b /boot/grub/i386-pc/eltorito.img \
-    --embedded-boot $ISO_PATH/boot/grub/i386-pc/isohybrid.img \
+    --embedded-boot "$ISO_DIR/boot/grub/i386-pc/isohybrid.img" \
     --efi-boot /efi/boot/bootx64.efi \
-    -o boot.iso $ISO_PATH
+    -o boot.iso "$ISO_DIR"
+}
+
+# Build packages
+build_packages() 
+{
+  echo -e "${yellow}:: Building packages for ${none} ${cyan}${1}${none} profile..."
+  mkdir -p "$REPO_DIR"
+  pushd "${PROFILE_DIR}"
+  BUILDDIR="${TEMP_DIR}" PKGDEST="${REPO_DIR}" makepkg
+  popd
 }
 
 # Build deployments
 build_deployments() 
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
-  mkdir -p $ROOT_PATH
-  mkdir -p $LAYERS_PATH
+  mkdir -p "$ROOT_DIR"
+  mkdir -p "$LAYERS_DIR"
 
   for target in ${1//,/ }; do
-    deployment $target
+    read_deployment $target
     echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
 
     for layer in ${LAYERS[@]}; do
       echo -e ":: Building layer ${cyan}${layer}${none}..."
 
       # Ensure the layer destination path exists
-      local layer_path="${LAYERS_PATH}/${layer}"
-      mkdir -p $layer_path
+      local layer_path="${LAYERS_DIR}/${layer}"
+      mkdir -p "$layer_path"
 
       # Mount the layer destination path 
       if [ ${#LAYERS[@]} -gt 1 ]; then
-        echo -e ":: Mounting layer ${cyan}${layer}${none} to root ${cyan}${ROOT_PATH}${none}..."
+        echo -e ":: Mounting layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
         check
       else
-        echo -en ":: Bind mount layer ${cyan}${layer}${none} to root ${cyan}${ROOT_PATH}${none}..."
-        sudo mount --bind $layer_path $ROOT_PATH
+        echo -en ":: Bind mount layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
+        sudo mount --bind "$layer_path" "$ROOT_DIR"
         check
       fi
 
       # Install the target layer packages onto the layer
       local pkg="cyberlinux-${PROFILE}-${layer}"
-      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT_PATH}${none}"
-      sudo pacstrap -c -G -M $ROOT_PATH $pkg
+      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT_DIR}${none}"
+      sudo pacstrap -c -G -M "$ROOT_DIR" "$pkg"
     done
   done
 }
 
 # Retrieve the deployment's properties
-deployment()
+read_deployment()
 {
   local layer=$(echo "$PROFILE_JSON" | jq '.[] | select(.name=="'$1'")')
   LABEL=$(echo "$layer" | jq '.label')
@@ -258,6 +270,17 @@ deployment()
   ifs=$IFS; IFS=",";
   read -ra LAYERS <<< "${LAYERS_STR}"
   IFS=$ifs
+}
+
+# Read the given profile from disk
+# $1 is expected to be the name of the profile
+read_profile()
+{
+  PROFILE_DIR="${PROFILES_DIR}/${1}"
+  PROFILE_PATH="${PROFILE_DIR}/profile.json"
+  echo -en "${yellow}:: Using profile${none} ${cyan}${PROFILE_PATH}${none}..."
+  PROFILE_JSON=$(jq -r '.' "$PROFILE_PATH")
+  check
 }
 
 # Main entry point
@@ -302,18 +325,16 @@ done
 [ $(($OPTIND -1)) -eq 0 ] && usage
 header
 
-# Set varible defaults
+# Read profile
 [ -z ${PROFILE+x} ] && PROFILE="personal"
-PROFILE_PATH="${PROFILES_PATH}/${PROFILE}/profile.json"
-echo -e ":: Using profile ${cyan}${PROFILE_PATH}${none}"
-PROFILE_JSON=$(jq -r '.' ${PROFILE_PATH})
+read_profile "$PROFILE"
 
 # Optionally clean artifacts
 if [ ! -z ${CLEAN+x} ]; then
   echo -e ":: Cleaning build artifacts before building"
-  sudo rm -rf $TEMP_PATH
+  sudo rm -rf "$TEMP_DIR"
 fi
-mkdir -p $TEMP_PATH
+mkdir -p "$TEMP_DIR"
 
 # Always build the build environment if any build option is chosen
 if [ ! -z ${ALL+x} ] || [ ! -z ${MULTIBOOT+x} ] || [ ! -z ${INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
