@@ -1,0 +1,14 @@
+# Source the user rc file if it exists
+[ -r ~/.bashrc ] && source ~/.bashrc
+
+# Configure the gtk configuration directory
+export GTK2_RC_FILES="$HOME/.gtkrc-2.0" 
+
+# Generate home directories if they don't exist
+[ -x /usr/bin/xdg-user-dirs-update ] && /usr/bin/xdg-user-dirs-update
+
+# Configure X resources
+xrdb -merge ~/.Xresources
+
+# Configure key repeat delay/rate"
+xset r rate 200 60
