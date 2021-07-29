@@ -1,11 +1,13 @@
 #!/bin/bash
+#set -x
 none="\e[m"
 red="\e[1;31m"
 cyan="\e[1;36m"
 green="\e[1;32m"
 yellow="\e[1;33m"
 
-# Determine the absolute root path of the project
+# Determine the script name and absolute root path of the project
+SCRIPT=$(basename $0)
 PROJECT_DIR=$(readlink -f $(dirname $BASH_SOURCE[0]))
 
 TEMP_DIR="${PROJECT_DIR}/temp"            # Temp directory for build artifacts
@@ -15,9 +17,9 @@ INSTALLER_DIR="${PROJECT_DIR}/installer"  # Location to pull installer hooks fro
 ROOT_DIR="${TEMP_DIR}/root"               # Root mount point to build layered filesystems
 REPO_DIR="${TEMP_DIR}/x86_64"             # Local repo location to stage packages being built
 ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot files
-BUILD_DIR="${TEMP_DIR}/build"             # Build location for packages extraction and builds
+BUILDER_DIR="${TEMP_DIR}/builder"         # Build location for packages extraction and builds
 LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
-MOUNTPOINTS=("$BUILD_DIR" "$ROOT_DIR")    # Array of mount points to ensure get unmounted when done
+MOUNTPOINTS=("$BUILDER_DIR" "$ROOT_DIR")  # Array of mount points to ensure get unmounted when done
 BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
 
 # Ensure the current user has passwordless sudo access
@@ -43,9 +45,9 @@ release()
   if [ $RELEASED -ne 1 ]; then
     RELEASED=1
     for x in ${MOUNTPOINTS[@]}; do
-      if mountpoint -q $x; then
+      if mountpoint -q "$x"; then
         echo -en ":: Releasing mount point ${cyan}${x}${none}..."
-        sudo umount -R $x
+        sudo umount -fR "$x"
         check
       fi
     done
@@ -69,10 +71,14 @@ trap release SIGINT
 # `intel-ucode`           standard practice to load the intel-ucode
 build_env()
 {
-  if [ ! -d "$BUILD_DIR" ]; then
+  if [ ! -d "$BUILDER_DIR" ]; then
     echo -en "${yellow}:: Configuring build environment...${none}"
-    sudo mkdir -p "$BUILD_DIR"
-    sudo pacstrap -c -G -M "$BUILD_DIR" coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
+    sudo mkdir -p "$BUILDER_DIR"
+    # -C use an alternate config file for pacman
+    # -c use the package cache on the host rather than target
+    # -G avoid copying the host's pacman keyring to the target
+    # -M avoid copying the host's mirrorlist to the target
+    sudo pacstrap -c -G -M "$BUILDER_DIR" coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
       mkinitcpio-vt-colors dosfstools rsync gptfdisk
   fi
 }
@@ -85,16 +91,16 @@ build_multiboot()
   mkdir -p "${ISO_DIR}/boot/grub/themes"
 
   echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO_DIR}/boot..."
-  cp "${BUILD_DIR}/boot/intel-ucode.img" "${ISO_DIR}/boot"
-  cp "${BUILD_DIR}/boot/vmlinuz-linux" "${ISO_DIR}/boot"
-  cp "${BUILD_DIR}/boot/memtest86+/memtest.bin" "${ISO_DIR}/boot/memtest"
+  cp "${BUILDER_DIR}/boot/intel-ucode.img" "${ISO_DIR}/boot"
+  cp "${BUILDER_DIR}/boot/vmlinuz-linux" "${ISO_DIR}/boot"
+  cp "${BUILDER_DIR}/boot/memtest86+/memtest.bin" "${ISO_DIR}/boot/memtest"
   check
 
   echo -en ":: Copying GRUB config and theme to ${ISO_DIR}/boot/grub ..."
   cp "${GRUB_DIR}/grub.cfg" "${ISO_DIR}/boot/grub"
   cp "${GRUB_DIR}/loopback.cfg" "${ISO_DIR}/boot/grub"
   cp -r "${GRUB_DIR}/themes" "${ISO_DIR}/boot/grub"
-  cp "${BUILD_DIR}/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
+  cp "${BUILDER_DIR}/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
   check
 
   # Create the target profile's boot entries
@@ -110,35 +116,35 @@ build_multiboot()
     echo -e "}" >> "${BOOT_CFG_PATH}"
   done
 
-  echo -en ":: Creating core BIOS $BUILD_DIR/bios.img..."
-  cp -r "${BUILD_DIR}/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
+  echo -en ":: Creating core BIOS $BUILDER_DIR/bios.img..."
+  cp -r "${BUILDER_DIR}/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
   rm -f "${ISO_DIR}/boot/grub/i386-pc/*.img"
   # We need to create our bios.img that contains just enough code to find the grub configuration and
   # grub modules in /boot/grub/i386-pc directory we'll stage in the next step
   # -O i386-pc                        Format of the image to generate
   # -p /boot/grub                     Directory to find grub once booted
-  # -d $BUILD_DIR/usr/lib/grub/i386-pc    Use resources from this location when building the boot image
-  # -o $BUILD_DIR/bios.img                Output destination
-  grub-mkimage -O i386-pc -p /boot/grub -d "$BUILD_DIR/usr/lib/grub/i386-pc" -o "$TEMP_DIR/bios.img"  \
+  # -d $BUILDER_DIR/usr/lib/grub/i386-pc    Use resources from this location when building the boot image
+  # -o $BUILDER_DIR/bios.img                Output destination
+  grub-mkimage -O i386-pc -p /boot/grub -d "$BUILDER_DIR/usr/lib/grub/i386-pc" -o "$TEMP_DIR/bios.img"  \
     biosdisk disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
   check
   echo -en ":: Concatenate cdboot.img to bios.img to create the CD-ROM bootable Eltorito $TEMP_DIR/eltorito.img..."
-  cat "$BUILD_DIR/usr/lib/grub/i386-pc/cdboot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/eltorito.img"
+  cat "$BUILDER_DIR/usr/lib/grub/i386-pc/cdboot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/eltorito.img"
   check
   echo -en ":: Concatenate boot.img to bios.img to create isohybrid $TEMP_DIR/isohybrid.img..."
-  cat "$BUILD_DIR/usr/lib/grub/i386-pc/boot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/isohybrid.img"
+  cat "$BUILDER_DIR/usr/lib/grub/i386-pc/boot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/isohybrid.img"
   check
 
   echo -en ":: Creating UEFI boot files..."
   mkdir -p "$ISO_DIR/efi/boot"
-  cp -r "$BUILD_DIR/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
+  cp -r "$BUILDER_DIR/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
   rm -f "$ISO_DIR/grub/x86_64-efi/*.img"
   # -O x86_64-efi                     Format of the image to generate
   # -p /boot/grub                     Directory to find grub once booted
-  # -d "$BUILD_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
+  # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
   # -o "$ISO_DIR/efi/boot/bootx64.efi"      Output destination, using wellknown compatibility location
-  grub-mkimage -O x86_64-efi -p /boot/grub -d "$BUILD_DIR/usr/lib/grub/x86_64-efi" -o "$ISO_DIR/efi/boot/bootx64.efi" \
+  grub-mkimage -O x86_64-efi -p /boot/grub -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi" -o "$ISO_DIR/efi/boot/bootx64.efi" \
     disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
     ntfs cat echo ls memdisk tar
@@ -150,15 +156,15 @@ build_installer()
 {
   echo -en "${yellow}:: Build the initramfs based installer...${none}"
   mkdir -p "$ISO_DIR/boot"
-  sudo cp "${INSTALLER_DIR}/installer" "$BUILD_DIR/usr/lib/initcpio/hooks"
-  sudo cp "${INSTALLER_DIR}/installer.conf" "$BUILD_DIR/usr/lib/initcpio/install/installer"
-  sudo cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILD_DIR/etc"
+  sudo cp "${INSTALLER_DIR}/installer" "$BUILDER_DIR/usr/lib/initcpio/hooks"
+  sudo cp "${INSTALLER_DIR}/installer.conf" "$BUILDER_DIR/usr/lib/initcpio/install/installer"
+  sudo cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILDER_DIR/etc"
 
   # Mount as bind mount to satisfy arch-chroot requirement
   # umount is handled by the release function on exit
-  sudo mount --bind "$BUILD_DIR" "$BUILD_DIR"
-  sudo arch-chroot "$BUILD_DIR" mkinitcpio -g /root/installer
-  sudo cp "$BUILD_DIR/root/installer" "$ISO_DIR/boot"
+  sudo mount --bind "$BUILDER_DIR" "$BUILDER_DIR"
+  sudo arch-chroot "$BUILDER_DIR" mkinitcpio -g /root/installer
+  sudo cp "$BUILDER_DIR/root/installer" "$ISO_DIR/boot"
   check
 }
 
@@ -283,6 +289,21 @@ read_profile()
   check
 }
 
+# Clean the various build artifacts as called out
+clean()
+{
+  for x in ${1//,/ }; do
+    local target="${TEMP_DIR}/${x}"
+    echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
+    if [ "${x}" == "all" ]; then
+      sudo rm -rf "${TEMP_DIR}"
+      return
+    else
+      sudo rm -rf "${target}"
+    fi
+  done
+}
+
 # Main entry point
 # -------------------------------------------------------------------------------------------------
 header()
@@ -300,22 +321,26 @@ usage()
   echo -e "-i               Build the initramfs installer"
   echo -e "-m               Build the grub multiboot environment"
   echo -e "-I               Build the acutal ISO image"
+  echo -e "-P               Build packages for deployment/s and/or profile"
   echo -e "-p               Set the profile to use, default: personal"
-  echo -e "-c               Clean the build artifacts before building"
+  echo -e "-c               Clean build artifacts, commad delimited (all|iso|layers/shell|layers)"
   echo -e "-h               Display usage help\n"
   echo -e "Examples:"
-  echo -e "Build everything: ./$(basename $0) -a"
-  echo -e "Build shell deployment: ./$(basename $0) -d shell"
+  echo -e "Build everything: ./${SCRIPT} -a"
+  echo -e "Build shell deployment: ./${SCRIPT} -d shell"
+  echo -e "Build just bootable installer: ./${SCRIPT} -imI"
+  echo
   exit 1
 }
-while getopts ":ad:imIp:ch" opt; do
+while getopts ":ad:imIPp:c:h" opt; do
   case $opt in
-    c) CLEAN=1;;
-    a) ALL=1;;
-    i) INSTALLER=1;;
+    c) CLEAN=$OPTARG;;
+    a) BUILD_ALL=1;;
+    i) BUILD_INSTALLER=1;;
     d) DEPLOYMENTS=$OPTARG;;
-    m) MULTIBOOT=1;;
-    I) ISO=1;;
+    m) BUILD_MULTIBOOT=1;;
+    I) BUILD_ISO=1;;
+    P) BUILD_PACKAGES=1;;
     p) PROFILE=$OPTARG;;
     h) usage;;
     \?) echo -e "Invalid option: ${red}-${OPTARG}${none}\n"; usage;;
@@ -331,29 +356,29 @@ read_profile "$PROFILE"
 
 # Optionally clean artifacts
 if [ ! -z ${CLEAN+x} ]; then
-  echo -e ":: Cleaning build artifacts before building"
-  sudo rm -rf "$TEMP_DIR"
+  clean $CLEAN
 fi
 mkdir -p "$TEMP_DIR"
 
 # Always build the build environment if any build option is chosen
-if [ ! -z ${ALL+x} ] || [ ! -z ${MULTIBOOT+x} ] || [ ! -z ${INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
+  [ ! -z ${BUILD_INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
   build_env
 fi
 
 # Needs to happen before the multiboot as deployments will be boot entries
-if [ ! -z ${ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
   build_deployments $DEPLOYMENTS
 fi
-if [ ! -z ${ALL+x} ] || [ ! -z ${MULTIBOOT+x} ]; then
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
   build_multiboot
 fi
-if [ ! -z ${ALL+x} ] || [ ! -z ${INSTALLER+x} ]; then
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_INSTALLER+x} ]; then
   build_installer
 fi
 
 # Build the actual ISO
-if [ ! -z ${ALL+x} ] || [ ! -z ${ISO+x} ]; then
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_ISO+x} ]; then
   build_iso
 fi
 
