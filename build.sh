@@ -12,14 +12,20 @@ PROJECT_DIR=$(readlink -f $(dirname $BASH_SOURCE[0]))
 
 TEMP_DIR="${PROJECT_DIR}/temp"            # Temp directory for build artifacts
 GRUB_DIR="${PROJECT_DIR}/grub"            # Location to pull persisted Grub configuration files from
+CONFIG_DIR="${PROJECT_DIR}/config"        # Location for config files and templates files
 PROFILES_DIR="${PROJECT_DIR}/profiles"    # Location for profile descriptions, packages and configs
 INSTALLER_DIR="${PROJECT_DIR}/installer"  # Location to pull installer hooks from
+ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot files
 ROOT_DIR="${TEMP_DIR}/root"               # Root mount point to build layered filesystems
 REPO_DIR="${TEMP_DIR}/x86_64"             # Local repo location to stage packages being built
-ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot files
+CACHE_DIR="${TEMP_DIR}/cache"             # Local location to cache packages used in building deployments
 BUILDER_DIR="${TEMP_DIR}/builder"         # Build location for packages extraction and builds
 LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
+PACMAN_CONF="${TEMP_DIR}/pacman.conf"     # Pacman config to use for building deployments
+MIRRORLIST="${TEMP_DIR}/mirrorlist"       # Pacman mirrorlist to use for builder and deployments
+MIRRORLIST_SRC="${CONFIG_DIR}/mirrorlist" # Pacman source mirrorlist to use for builder and deployments
 MOUNTPOINTS=("$BUILDER_DIR" "$ROOT_DIR")  # Array of mount points to ensure get unmounted when done
+PACMAN_CONF_SRC="${CONFIG_DIR}/pacman.tpl" # Pacman config template to turn into the actual config
 BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
 
 # Ensure the current user has passwordless sudo access
@@ -44,7 +50,7 @@ release()
 {
   if [ $RELEASED -ne 1 ]; then
     RELEASED=1
-    for x in ${MOUNTPOINTS[@]}; do
+    for x in "${MOUNTPOINTS[@]}"; do
       if mountpoint -q "$x"; then
         echo -en ":: Releasing mount point ${cyan}${x}${none}..."
         sudo umount -fR "$x"
@@ -56,6 +62,37 @@ release()
 }
 trap release EXIT
 trap release SIGINT
+
+# Stage the pacman config files for use
+stage_pacman_config()
+{
+  echo -e "${yellow}:: Staging pacman configuration${none}"
+
+  # Stage the mirrorlist and pacman.conf
+  cp "${MIRRORLIST_SRC}" "${MIRRORLIST}"
+  cp "${PACMAN_CONF_SRC}" "${PACMAN_CONF}"
+
+  # Ensure template variables are replaced properly
+  sed -i "s|<%CACHE_DIR%>|${CACHE_DIR}|" "${PACMAN_CONF}"
+  sed -i "s|<%BUILD_REPO_PATH%>|${TEMP_DIR}|" "${PACMAN_CONF}"
+  sed -i "s|<%ARCH_MIRROR_LIST_PATH%>|${MIRRORLIST}|" "${PACMAN_CONF}"
+}
+
+# Build packages
+build_packages() 
+{
+  echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
+  rm -rf "${REPO_DIR}"
+  mkdir -p "$REPO_DIR"
+  pushd "${PROFILE_DIR}"
+  BUILDDIR="${TEMP_DIR}" PKGDEST="${REPO_DIR}" makepkg
+  popd
+
+  # Ensure the builder repo exists locally
+  pushd "${REPO_DIR}"
+  repo-add builder.db.tar.gz *.pkg.tar.*
+  popd
+}
 
 # Configure build environment
 # `coreutils`             provides basic linux tooling
@@ -72,14 +109,20 @@ trap release SIGINT
 build_env()
 {
   if [ ! -d "$BUILDER_DIR" ]; then
-    echo -en "${yellow}:: Configuring build environment...${none}"
-    sudo mkdir -p "$BUILDER_DIR"
+    stage_pacman_config
+    build_packages
+
+    echo -e "${yellow}:: Configuring build environment...${none}"
+    mkdir -p "$CACHE_DIR"
+    mkdir -p "$BUILDER_DIR"
+
     # -C use an alternate config file for pacman
     # -c use the package cache on the host rather than target
     # -G avoid copying the host's pacman keyring to the target
     # -M avoid copying the host's mirrorlist to the target
-    sudo pacstrap -c -G -M "$BUILDER_DIR" coreutils pacman grub sed linux intel-ucode memtest86+ mkinitcpio \
-      mkinitcpio-vt-colors dosfstools rsync gptfdisk
+    sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "${BUILDER_DIR}" coreutils pacman grub sed linux \
+      intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
+    check
   fi
 }
 
@@ -144,10 +187,10 @@ build_multiboot()
   # -p /boot/grub                     Directory to find grub once booted
   # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
   # -o "$ISO_DIR/efi/boot/bootx64.efi"      Output destination, using wellknown compatibility location
-  grub-mkimage -O x86_64-efi -p /boot/grub -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi" -o "$ISO_DIR/efi/boot/bootx64.efi" \
-    disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
-    search_fs_file true iso9660 search_label efi_uga efi_gop gfxterm gfxmenu gfxterm_menu ext2 \
-    ntfs cat echo ls memdisk tar
+  grub-mkimage -O x86_64-efi -p /boot/grub -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi" -o \
+    "$ISO_DIR/efi/boot/bootx64.efi" disk part_msdos part_gpt linux linux16 loopback normal \
+    configfile test search search_fs_uuid search_fs_file true iso9660 search_label efi_uga \
+    efi_gop gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
   check
 }
 
@@ -216,16 +259,6 @@ build_iso()
     --embedded-boot "$ISO_DIR/boot/grub/i386-pc/isohybrid.img" \
     --efi-boot /efi/boot/bootx64.efi \
     -o boot.iso "$ISO_DIR"
-}
-
-# Build packages
-build_packages() 
-{
-  echo -e "${yellow}:: Building packages for ${none} ${cyan}${1}${none} profile..."
-  mkdir -p "$REPO_DIR"
-  pushd "${PROFILE_DIR}"
-  BUILDDIR="${TEMP_DIR}" PKGDEST="${REPO_DIR}" makepkg
-  popd
 }
 
 # Build deployments
@@ -317,25 +350,27 @@ usage()
   echo -e "Usage: ${cyan}./$(basename $0)${none} [options]"
   echo -e "Options:"
   echo -e "-a               Build all components"
+  echo -e "-b               Build the builder filesystem"
   echo -e "-d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
   echo -e "-i               Build the initramfs installer"
   echo -e "-m               Build the grub multiboot environment"
   echo -e "-I               Build the acutal ISO image"
   echo -e "-P               Build packages for deployment/s and/or profile"
   echo -e "-p               Set the profile to use, default: personal"
-  echo -e "-c               Clean build artifacts, commad delimited (all|iso|layers/shell|layers)"
+  echo -e "-c               Clean build artifacts, commad delimited (all|builder|iso|layers/shell|layers/lite)"
   echo -e "-h               Display usage help\n"
   echo -e "Examples:"
-  echo -e "Build everything: ./${SCRIPT} -a"
-  echo -e "Build shell deployment: ./${SCRIPT} -d shell"
-  echo -e "Build just bootable installer: ./${SCRIPT} -imI"
+  echo -e "${green}Build everything:${none} ./${SCRIPT} -a"
+  echo -e "${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
+  echo -e "${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
   echo
   exit 1
 }
-while getopts ":ad:imIPp:c:h" opt; do
+while getopts ":abd:imIPp:c:h" opt; do
   case $opt in
     c) CLEAN=$OPTARG;;
     a) BUILD_ALL=1;;
+    b) BUILD_BUILDER=1;;
     i) BUILD_INSTALLER=1;;
     d) DEPLOYMENTS=$OPTARG;;
     m) BUILD_MULTIBOOT=1;;
@@ -360,10 +395,16 @@ if [ ! -z ${CLEAN+x} ]; then
 fi
 mkdir -p "$TEMP_DIR"
 
-# Always build the build environment if any build option is chosen
+# 1. Always build the build environment if any build option is chosen
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
-  [ ! -z ${BUILD_INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
+  [ ! -z ${BUILD_INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ] || \
+  [ ! -z ${BUILD_PACKAGES+x} ] || [ ! -z ${BUILD_BUILDER+x} ]; then
   build_env
+fi
+
+# Build packages
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_PACKAGES+x} ]; then
+  build_packages
 fi
 
 # Needs to happen before the multiboot as deployments will be boot entries

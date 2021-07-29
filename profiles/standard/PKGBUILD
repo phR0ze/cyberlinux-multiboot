@@ -23,9 +23,9 @@
 # Maintainer: phR0ze
 #-------------------------------------------------------------------------------
 pkgname=(
-    'cyberlinux-personal-core'      # smallest set of packages for a container with bash
-    'cyberlinux-personal-base'      # minimal command line system
-    'cyberlinux-personal-shell'     # shell
+    'cyberlinux-standard-core'      # smallest set of packages for a container with bash
+    'cyberlinux-standard-base'      # minimal command line system
+    'cyberlinux-standard-shell'     # shell
 #    'cyberlinux-lite-profile'      # lite
 #    'cyberlinux-server-profile'    # server
 #    'cyberlinux-netbook-profile'   # netbook
@@ -55,7 +55,7 @@ pkg() {
 #  done < <(find . -type f -print0 -o -type l -print0)
 }
 
-package_cyberlinux-personal-core()
+package_cyberlinux-standard-core()
 {
   pkgdesc="Smallest set of packages possible for a functioning container with bash"
   depends=(
@@ -80,7 +80,7 @@ package_cyberlinux-personal-core()
   pkg core
 }
 
-package_cyberlinux-personal-base()
+package_cyberlinux-standard-base()
 {
   pkgdesc="Smallest set of packages possible for a functioning container with bash"
   depends=(
@@ -105,12 +105,12 @@ package_cyberlinux-personal-base()
   pkg core
 }
 
-package_cyberlinux-personal-shell()
+package_cyberlinux-standard-shell()
 {
   pkgdesc="Full bootable shell environment"
   depends=(
     # core-boot                 # Minimal bootable base for any machine
-    'cyberlinux-personal-core'  # Smallest set of packages possible for a functioning container with bash
+    'cyberlinux-standard-core'  # Smallest set of packages possible for a functioning container with bash
     'sudo'                      # Elevate user commands on demand to root
     'systemd'                   # System and service manager
     'systemd-sysvcompat'        # Sysinit compat for systemd

@@ -38,7 +38,7 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 1. Install dependencies for building boot images:
    ```bash
    $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio sudo \
-     util-linux pacutils jq
+     util-linux pacutils jq sed
    ```
 2. Install dependencies for testing boot images:
    ```bash

@@ -11,7 +11,7 @@
 # If you wish to use different paths, uncomment and update the paths.
 #RootDir     = /
 #DBPath      = /var/lib/pacman/
-CacheDir    = ${CACHE_DIR}
+CacheDir    = <%CACHE_DIR%>
 #LogFile     = /var/log/pacman.log
 #GPGDir      = /etc/pacman.d/gnupg/
 #HookDir     = /etc/pacman.d/hooks/
@@ -70,24 +70,22 @@ LocalFileSigLevel = Optional
 # repo name header and Include lines. You can add preferred servers immediately
 # after the header, and they will be used before the default mirrors.
 
-#[testing]
-#Include = /etc/pacman.d/mirrorlist
-[build]
+[builder]
 SigLevel = Optional TrustAll
-Server = ${BUILD_REPO_PATH}
+Server = file://<%BUILD_REPO_PATH%>/$arch
 
 [cyberlinux]
 SigLevel = Optional TrustAll
 Server = https://phr0ze.github.io/cyberlinux-repo/$repo/$arch
 
 [core]
-Include = ${ARCH_MIRROR_LIST_PATH}
+Include = <%ARCH_MIRROR_LIST_PATH%>
 
 [extra]
-Include = ${ARCH_MIRROR_LIST_PATH}
+Include = <%ARCH_MIRROR_LIST_PATH%>
 
 [community]
-Include = ${ARCH_MIRROR_LIST_PATH}
+Include = <%ARCH_MIRROR_LIST_PATH%>
 
 [multilib]
-Include = ${ARCH_MIRROR_LIST_PATH}
+Include = <%ARCH_MIRROR_LIST_PATH%>
