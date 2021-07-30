@@ -73,7 +73,7 @@ stage_pacman_config()
   cp "${PACMAN_CONF_SRC}" "${PACMAN_CONF}"
 
   # Ensure template variables are replaced properly
-  sed -i "s|<%CACHE_DIR%>|${CACHE_DIR}|" "${PACMAN_CONF}"
+  sed -i "s|<%CACHE_DIR%>|'${CACHE_DIR}'|" "${PACMAN_CONF}"
   sed -i "s|<%BUILD_REPO_PATH%>|${TEMP_DIR}|" "${PACMAN_CONF}"
   sed -i "s|<%ARCH_MIRROR_LIST_PATH%>|${MIRRORLIST}|" "${PACMAN_CONF}"
 }
@@ -114,7 +114,9 @@ build_env()
 
     echo -e "${yellow}:: Configuring build environment...${none}"
     mkdir -p "$CACHE_DIR"
-    mkdir -p "$BUILDER_DIR"
+
+    # Needs to be owned by root to avoid warnings
+    sudo mkdir -p "$BUILDER_DIR"
 
     # -C use an alternate config file for pacman
     # -c use the package cache on the host rather than target
