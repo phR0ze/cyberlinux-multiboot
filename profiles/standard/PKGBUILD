@@ -59,68 +59,66 @@ package_cyberlinux-standard-core()
 {
   pkgdesc="Smallest set of packages possible for a functioning container with bash"
   depends=(
+    # GNU Bourne Again shell
+    # Decent as a general scripting solution for linux
+    # Requires: readline glibc linux-api-headers tzdata filesystem iana-etc ncurses gcc-libs
     'bash'                      # GNU Bourne Again shell, depends_on: [readline, glibc, ncurses], size: 7321.00 KiB
     'bash-completion'           # Bash tab completion, size: 799.00 KiB
+
+    # Trusted list of CA Certificates
+    # Foundational for any secure encryption
+    # Requires: ca-certificates-mozilla ca-certificates-utils bash coreutils findutils p11-kit
     'ca-certificates'           # CAcert.org root certificates, size: 7.05 KiB
-    'ca-certificates-mozilla'   # Mozilla's set of CA certificates, size: 923 KiB
-    'ca-certificates-utils'     # Common CA certificates, size: 7 KiB
+
+    # Core utils provides all the basic linux utilities
+    # Requires: glibc linux-api-headers tzdata filesystem iana-etc acl attr gmp gcc-libs bash readline
+    # ncurses libcap pam libtirpc krb5 e2fsprogs util-linux-libs libldap libsasl openssl keyutils pambase audit
+    # libcap-ng libxcrypt
     'coreutils'                 # Utils ls/cp/mv, depends_on: [glibc, acl, attr, gmp, libcap, openssl], size: 13.79 MiB
-    'gcc-libs'                  # GCC runtime libraries, depends_on: [glibc], size: 105.27 MiB
-    'glibc'                     # GNU C Library, depends_on: [linux-api-headers, tzdata, filesystem], size: 41.40 MiB
-    'gzip'                      # GNU compression utility, depof: locale-gen, group: [build-devel]
-    'filesystem'                # Base Arch Linux files, depends_on: [iana-etc], size: 9.00 KiB
-    'iana-etc'                  # /etc/protocols and /etc/services provided by IANA, size: 3941.00 KiB
-    'linux-api-headers'         # Kernel headers sanitized for use in userspace, size: 4168.00 KiB
+
+    # Other minimal tooling
     'lsb-release'               # LSB version query program, size: 17.00 Kib
-    'ncurses'                   # System V curses emulation library, depends_on: [glibc, gcc-libs], size: 3645.00 KiB
-    'readline'                  # GNU readline library, depends_on: [glibc, ncurses], size: 731.00 KiB
     'sed'                       # GNU stream editor, depof: locale-gen, group: [build-devel], size: 1MB
-    'tzdata'                    # Sources for time zone and daylight savings time data, size: 1861.00 KiB
   )
   pkg core
 }
 
 package_cyberlinux-standard-base()
 {
-  pkgdesc="Smallest set of packages possible for a functioning container with bash"
+  pkgdesc="Smallest set of packages possible for bootable bash installation"
   depends=(
-    'bash'                      # GNU Bourne Again shell, depends_on: [readline, glibc, ncurses], size: 7321.00 KiB
-    'bash-completion'           # Bash tab completion, size: 799.00 KiB
-    'ca-certificates'           # CAcert.org root certificates, size: 7.05 KiB
-    'ca-certificates-mozilla'   # Mozilla's set of CA certificates, size: 923 KiB
-    'ca-certificates-utils'     # Common CA certificates, size: 7 KiB
-    'coreutils'                 # Utils ls/cp/mv, depends_on: [glibc, acl, attr, gmp, libcap, openssl], size: 13.79 MiB
-    'gcc-libs'                  # GCC runtime libraries, depends_on: [glibc], size: 105.27 MiB
-    'glibc'                     # GNU C Library, depends_on: [linux-api-headers, tzdata, filesystem], size: 41.40 MiB
-    'gzip'                      # GNU compression utility, depof: locale-gen, group: [build-devel]
-    'filesystem'                # Base Arch Linux files, depends_on: [iana-etc], size: 9.00 KiB
-    'iana-etc'                  # /etc/protocols and /etc/services provided by IANA, size: 3941.00 KiB
-    'linux-api-headers'         # Kernel headers sanitized for use in userspace, size: 4168.00 KiB
-    'lsb-release'               # LSB version query program, size: 17.00 Kib
-    'ncurses'                   # System V curses emulation library, depends_on: [glibc, gcc-libs], size: 3645.00 KiB
-    'readline'                  # GNU readline library, depends_on: [glibc, ncurses], size: 731.00 KiB
-    'sed'                       # GNU stream editor, depof: locale-gen, group: [build-devel], size: 1MB
-    'tzdata'                    # Sources for time zone and daylight savings time data, size: 1861.00 KiB
+    'cyberlinux-standard-core'  # Smallest set of packages possible for a functioning container with bash
+
+    # Systemd provides the essentials for a bootable system
+    # Requires: acl attr glibc linux-api-headers tzdata filesystem iana-etc bash readline ncurses gcc-libs
+    # cryptsetup device-mapper systemd-libs libcap pam libtirpc krb5 e2fsprogs util-linux-libs libldap
+    # libsasl openssl keyutils pambase audit libcap-ng libxcrypt libgcrypt libgpg-error libp11-kit libtasn1
+    # libffi lz4 xz zstd zlib popt json-c argon2 dbus expat iptables libnftnl libmnl libpcap libnl libnfnetlink
+    # libnetfilter_conntrack kbd kmod hwids libidn2 libunistring libelf bzip2 curl ca-certificates
+    # ca-certificates-mozilla ca-certificates-utils coreutils gmp findutils p11-kit libssh2 libpsl
+    # libnghttp2 libseccomp util-linux shadow file pcre2
+    'systemd'                   # System and service manager
+    'systemd-sysvcompat'        # Sysinit compat for systemd
+    'gnutls'                    # required by systemd-resolved to work
+    'sudo'                      # Elevate user commands on demand to root
+
+    # Kernel components
+    'intel-ucode'               # required for Intel Microcode update files to boot
+    'linux'                     # Linux kernel and supporting modules
+    'linux-headers'             # Linux kernel headers
   )
-  pkg core
+  pkg base
 }
 
 package_cyberlinux-standard-shell()
 {
   pkgdesc="Full bootable shell environment"
   depends=(
-    # core-boot                 # Minimal bootable base for any machine
-    'cyberlinux-standard-core'  # Smallest set of packages possible for a functioning container with bash
-    'sudo'                      # Elevate user commands on demand to root
-    'systemd'                   # System and service manager
-    'systemd-sysvcompat'        # Sysinit compat for systemd
-    'gnutls'                    # required by systemd-resolved to work
+    'cyberlinux-standard-base'  # Smallest set of packages possible for a functioning container with bash
     'gettext'                   # required by grub
-    'intel-ucode'               # required for Intel Microcode update files to boot
     'cyberlinux-grub'           # required for Grub Booloader to boot
-    'linux'                     # Linux kernel and supporting modules
-    'linux-headers'             # Linux kernel headers
 
+    'mkinitcpio'                # Tools required for building initramfs for early boot environment
     # core-tools                # Basic linux shell tools e.g. ls, cp, mv, hostname, gzip, tar and vim
     'openssl'                   # Secure sockets layer and TLS, depends_on: [perl], size: 6.36 MiB
     'perl'                      # Perl language, depends_on: [gdbm, db, glibc], size: 52.00 MiB
@@ -131,8 +129,6 @@ package_cyberlinux-standard-shell()
     'tar'                       # File store backup and transport utility, depof: k8s cp
     'vim'                       # Improved version of vi text editor, size: 28MB
 
-    # mkinitcpio
-    'mkinitcpio'                # Tools required for building initramfs for early boot environment
     'cracklib'                  # Cryptography suite, depof: [shadow]
     'e2fsprogs'                 # Ext2/3/4 filesystem utilities, depof: [shadow]
     'gawk'                      # GNU version of awk, depof: [mkinitcpio], group: [base-devel]

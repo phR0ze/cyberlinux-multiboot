@@ -3,55 +3,55 @@
     "name": "live",
     "label": "Start live environment            // Based on standard desktop",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/live"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/live"
   },
   {
     "name": "desktop",
     "label": "Install standard desktop          // Netbook + dev and media apps",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop"
   },
   {
     "name": "laptop",
     "label": "Install standard laptop           // Desktop + laptop config",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/laptop"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/laptop"
   },
   {
     "name": "netbook",
     "label": "Install standard netbook          // Lite + office apps",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite,standard/netbook"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook"
   },
   {
     "name": "theater",
     "label": "Install standard theater          // Lite + media apps",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite,standard/theater"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/theater"
   },
   {
     "name": "server",
     "label": "Install standard server           // Lite + server apps",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite,standard/server"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/server"
   },
   {
     "name": "lite",
     "label": "Install standard lite             // Shell + minimal desktop env",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell,standard/lite"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite"
   },
   {
     "name": "shell",
     "label": "Install standard shell            // Full command line system",
     "kernel": "linux",
-    "layers": "standard/base,standard/shell"
+    "layers": "standard/core,standard/base,standard/shell"
   },
   {
     "name": "base",
     "label": "Install standard base             // Minimal command line system",
     "kernel": "linux",
-    "layers": "standard/base"
+    "layers": "standard/core,standard/base"
   },
   {
     "name": "core",

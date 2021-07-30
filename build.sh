@@ -21,6 +21,7 @@ REPO_DIR="${TEMP_DIR}/x86_64"             # Local repo location to stage package
 CACHE_DIR="${TEMP_DIR}/cache"             # Local location to cache packages used in building deployments
 BUILDER_DIR="${TEMP_DIR}/builder"         # Build location for packages extraction and builds
 LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
+WORK_DIR="${TEMP_DIR}/work"               # Temp directory for package building cruft and mounting empty dir
 PACMAN_CONF="${TEMP_DIR}/pacman.conf"     # Pacman config to use for building deployments
 MIRRORLIST="${TEMP_DIR}/mirrorlist"       # Pacman mirrorlist to use for builder and deployments
 MIRRORLIST_SRC="${CONFIG_DIR}/mirrorlist" # Pacman source mirrorlist to use for builder and deployments
@@ -83,9 +84,10 @@ build_packages()
 {
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
   rm -rf "${REPO_DIR}"
-  mkdir -p "$REPO_DIR"
+  mkdir -p "$REPO_DIR" "$WORK_DIR"
   pushd "${PROFILE_DIR}"
-  BUILDDIR="${TEMP_DIR}" PKGDEST="${REPO_DIR}" makepkg
+  BUILDDIR="${WORK_DIR}" PKGDEST="${REPO_DIR}" makepkg
+  rm -rf "${WORK_DIR}"
   popd
 
   # Ensure the builder repo exists locally
@@ -122,7 +124,7 @@ build_env()
     # -c use the package cache on the host rather than target
     # -G avoid copying the host's pacman keyring to the target
     # -M avoid copying the host's mirrorlist to the target
-    sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "${BUILDER_DIR}" coreutils pacman grub sed linux \
+    sudo pacstrap -C "${PACMAN_CONF}" -G -M "${BUILDER_DIR}" coreutils pacman grub sed linux \
       intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
     check
   fi
@@ -148,11 +150,13 @@ build_multiboot()
   cp "${BUILDER_DIR}/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
   check
 
-  # Create the target profile's boot entries, skipping those that don't have a kernel.
-  # Entries without a kernel are container only filesystems and not meant as full systems.
+  # Create the target profile's boot entries
   rm -f "$BOOT_CFG_PATH"
   for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
     read_deployment $layer
+
+    # Don't include entries that don't have a kernel called out as they are intended
+    # as a non-installable option for building on only
     if [ ${KERNEL} != "null" ]; then
       echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
       echo -e "menuentry --class=deployment '${LABEL}' {" >> "${BOOT_CFG_PATH}"
@@ -277,7 +281,8 @@ build_deployments()
     read_deployment $target
     echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
 
-    for layer in ${LAYERS[@]}; do
+    for i in "${!LAYERS[@]}"; do
+      local layer="${LAYERS[$i]}"
       echo -e ":: Building layer ${cyan}${layer}${none}..."
 
       # Ensure the layer destination path exists
@@ -285,8 +290,12 @@ build_deployments()
       mkdir -p "$layer_path"
 
       # Mount the layer destination path 
-      if [ ${#LAYERS[@]} -gt 1 ]; then
+      if [ ${i} -gt 0 ]; then
+        # `upperdir` is a writable layer at the top
+        # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
+        # `workdir` is an empty dir used to prepare files as they are switched between layers
         echo -e ":: Mounting layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
+        sudo mount -t overlay -o lowerdir="${ROOT_DIR}",upperdir="${layer_path}",workdir="${WORK_DIR} none "${WORK_DIR}"" 
         check
       else
         echo -en ":: Bind mount layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
@@ -294,11 +303,21 @@ build_deployments()
         check
       fi
 
-      # Install the target layer packages onto the layer
-      local pkg="cyberlinux-${PROFILE}-${layer}"
+      # Derive the package name from 'profile/layer' string given
+      local pkg="cyberlinux-${layer//\//-}"
+
       echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT_DIR}${none}"
-      sudo pacstrap -c -G -M "$ROOT_DIR" "$pkg"
+      # -C use an alternate config file for pacman
+      # -c use the package cache on the host rather than target
+      # -G avoid copying the host's pacman keyring to the target
+      # -M avoid copying the host's mirrorlist to the target
+      sudo pacstrap -C "${PACMAN_CONF}" -G -M "$ROOT_DIR" "$pkg"
     done
+
+    # Release the root mount point now that we have fully built the required layers
+    echo -en ":: Releasing mount point ${cyan}${ROOT_DIR}${none}..."
+    sudo umount -fR "$ROOT_DIR"
+    check
   done
 }
 
@@ -362,13 +381,15 @@ usage()
   echo -e "-I               Build the acutal ISO image"
   echo -e "-P               Build packages for deployment/s and/or profile"
   echo -e "-p               Set the profile to use, default: personal"
-  echo -e "-c               Clean build artifacts, commad delimited (all|builder|iso|layers/shell|layers/lite)"
+  echo -e "-c               Clean build artifacts, commad delimited (all|builder|iso|layers/standard/core)"
   echo -e "-h               Display usage help\n"
   echo -e "Examples:"
   echo -e "${green}Build everything:${none} ./${SCRIPT} -a"
   echo -e "${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
   echo -e "${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
   echo -e "${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
+  echo -e "${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
+  echo -e "${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
   echo
   exit 1
 }
