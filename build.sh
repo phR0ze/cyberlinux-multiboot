@@ -109,8 +109,8 @@ build_packages()
 build_env()
 {
   if [ ! -d "$BUILDER_DIR" ]; then
-    stage_pacman_config
-    build_packages
+    [ ! -f "$PACMAN_CONF" ] && stage_pacman_config
+    [ ! -d "$REPO_DIR" ] && build_packages
 
     echo -e "${yellow}:: Configuring build environment...${none}"
     mkdir -p "$CACHE_DIR"
@@ -347,7 +347,7 @@ header()
 usage()
 {
   header
-  echo -e "Usage: ${cyan}./$(basename $0)${none} [options]"
+  echo -e "Usage: ${cyan}./$(basename $0)${none} [options]\n"
   echo -e "Options:"
   echo -e "-a               Build all components"
   echo -e "-b               Build the builder filesystem"
