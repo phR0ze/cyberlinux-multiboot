@@ -52,5 +52,10 @@
     "label": "Install standard base             // Minimal command line system",
     "kernel": "linux",
     "layers": "standard/base"
+  },
+  {
+    "name": "core",
+    "label": "Smallest set of packages possible for a container with bash",
+    "layers": "standard/core"
   }
 ]

@@ -148,17 +148,20 @@ build_multiboot()
   cp "${BUILDER_DIR}/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
   check
 
-  # Create the target profile's boot entries
+  # Create the target profile's boot entries, skipping those that don't have a kernel.
+  # Entries without a kernel are container only filesystems and not meant as full systems.
   rm -f "$BOOT_CFG_PATH"
   for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
     read_deployment $layer
-    echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
-    echo -e "menuentry --class=deployment '${LABEL}' {" >> "${BOOT_CFG_PATH}"
-    echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
-    echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
-    echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
-    echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> "${BOOT_CFG_PATH}"
-    echo -e "}" >> "${BOOT_CFG_PATH}"
+    if [ ${KERNEL} != "null" ]; then
+      echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
+      echo -e "menuentry --class=deployment '${LABEL}' {" >> "${BOOT_CFG_PATH}"
+      echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
+      echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
+      echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
+      echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> "${BOOT_CFG_PATH}"
+      echo -e "}" >> "${BOOT_CFG_PATH}"
+    fi
   done
 
   echo -en ":: Creating core BIOS $BUILDER_DIR/bios.img..."
@@ -365,6 +368,7 @@ usage()
   echo -e "${green}Build everything:${none} ./${SCRIPT} -a"
   echo -e "${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
   echo -e "${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
+  echo -e "${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
   echo
   exit 1
 }
