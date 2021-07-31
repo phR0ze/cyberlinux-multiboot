@@ -7,13 +7,17 @@ COPY profiles/standard/core/etc/skel /root
 COPY config/pacman.builder /etc/pacman.conf
 COPY config/mkinitcpio.conf /etc/mkinitcpio.conf
 
+# New user is created with:
+# -r            to not create a mail directory
+# -m            to create a home directory from /etc/skel
+# -u            to use a specific user id
+# -g            calls out the user's primary group created with a specific group id
+# --no-log-init to avoid an unresolved Go archive/tar bug with docker
 RUN echo ">> Install builder packages" && \
   mkdir -p /root/repo /root/profiles && \
   pacman -Sy --noconfirm vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk \
-    linux intel-ucode expect && \
+    linux intel-ucode && \
   echo ">> Add the build user" && \
-  groupadd build && \
-  useradd -m -g build -G lp,wheel,network,storage,users -s /bin/bash build && \
-#usermod -p $(mkpasswd -m sha build) build && \
+  groupadd -g 1000 build && \
+  useradd --no-log-init -r -m -u 1000 -g build build && \
   echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-

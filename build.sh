@@ -100,7 +100,7 @@ build_env()
     sudo mkdir -p "${CACHE_DIR}"
     docker_run archlinux:base-devel
     docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
-    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode expect"
+    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode"
     docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
 
     docker build -t ${BUILDER} "${PROJECT_DIR}"
@@ -142,7 +142,7 @@ build_packages()
 {
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
   mkdir -p "$REPO_DIR" "$WORK_DIR"
-  return
+  exit
 
   docker_run ${BUILDER}
 
@@ -454,7 +454,8 @@ docker_run() {
   # -v is used to mount a directory into the container to cache all the packages.
   #    also using it to mount the custom repo into the container
   docker run --name ${BUILDER} -d --rm ${params} \
-    -v "${REPO_DIR}":/var/cache/builder -v "${CACHE_DIR}":/var/cache/pacman/pkg \
+    -v "${REPO_DIR}":/var/cache/builder \
+    -v "${CACHE_DIR}":/var/cache/pacman/pkg \
     $1 bash -c "while :; do sleep 5; done" &>/dev/null
   check
 

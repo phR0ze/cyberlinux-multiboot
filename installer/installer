@@ -572,7 +572,7 @@ installer()
     proxy='None'
     no_proxy='localhost,127.0.0.1'
     user='vagrant'
-    pass=$(mkpasswd -m sha 'vagrant')
+    pass=$(echo "vagrant" | openssl passwd -5 -stdin)
 
     # Ask for user input if not live deployment
     #---------------------------------------------------------------------------
