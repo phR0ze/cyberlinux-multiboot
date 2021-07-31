@@ -20,9 +20,13 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 * [Installer](#installer)
   * [initramfs installer](#initramfs-installer)
     * [create initramfs installer](#create-initramfs-installer)
+* [Host isolation](#host-isolation)
+  * [arch-chroot](#arch-chroot)
 * [GRUB2 bootloader](#grub2-bootloader)
   * [GRUB2 configuration](#grub2-configuration)
   * [GFXMenu module](#gfxmenu-module)
+* [Bash pro tips](#bash-pro-tips)
+  * [heredoc](#heredoc)
 * [Contribute](#contribute)
   * [Git-Hook](#git-hook)
 * [License](#license)
@@ -38,7 +42,7 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 1. Install dependencies for building boot images:
    ```bash
    $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio sudo \
-     util-linux pacutils jq sed
+     util-linux pacutils jq sed docker tar
    ```
 2. Install dependencies for testing boot images:
    ```bash
@@ -94,6 +98,44 @@ The installer is composed of three files:
 An initramfs is made by creating a `cpio` archive, which is an old simple archive format comparable
 to tar. This archive is then compressed using `gzip`.
 
+# Host isolation <a name="host-isolation"/></a>
+While building the various components required for the multiboot ISO and constructing the various
+deployment flavors a number of system specific commands are run. The only way I've found to safely
+reproduce the desired results regardless to the host systems state is to build components in
+containers.
+
+## Docker <a name="docker"/></a>
+
+References:
+* [Go Formatting](https://docs.docker.com/config/formatting)
+
+### Create image from directory <a name="create-image-from-directory"/></a>
+```bash
+$ sudo tar -c . | docker import - builder
+```
+
+### Check if image exists <a name="check-if-image-exists"/></a>
+List out all info available in json then use jq to work with it
+```bash
+$ docker container ls --format='{{json .}}' | jq
+```
+
+## arch-chroot <a name="arch-chroot"/></a>
+Originally I tried to use `arch-chroot` only for isolation but ran into odd issues when the kernel
+didn't match the host kernel. Obviously the jail was leaking.
+
+Example:
+```
+[root@main4 /]# ls -la /lib/modules
+total 36
+drwxr-xr-x  3 root root  4096 Jul 30 03:29 .
+drwxr-xr-x 47 root root 24576 Jul 30 03:29 ..
+drwxr-xr-x  3 root root  4096 Jul 30 03:29 5.13.6-arch1-1
+[root@main4 /]# mkinitcpio -g /root/installer
+==> ERROR: '/lib/modules/5.12.15-arch1-1' is not a valid kernel module directory
+[root@main4 /]# exit
+exit
+```
 
 # GRUB2 bootloader <a name="grub2-bootloader"/></a>
 [GRUB2](https://www.gnu.org/software/grub) offers the ability to easily create a bootable USB drive
@@ -137,6 +179,21 @@ child components.
 The GUI component instances are created by the theme loader in `gfxmenu/theme_loader.c` when a them
 is loaded.
 
+# Bash pro tips <a name="bash-pro-tips"/></a>
+
+## heredoc <a name="heredoc"/></a>
+
+### Save heredoc into variable <a name="save-here-doc-into-variable"/></a>
+Changing `EOF` to `'EOF'` ignores variable expansion
+
+```bash
+local DOC=$(cat << 'EOF'
+[cyberlinux]
+SigLevel = Optional TrustAll
+Server = https://phr0ze.github.io/cyberlinux-repo/$repo/$arch
+EOF
+```
+
 ---
 
 # Contribute <a name="Contribute"/></a>
@@ -163,6 +220,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Containerize the builder
 * Build bootable USB with custom menus
 
 # Changelog <a name="changelog"/></a>

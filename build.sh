@@ -26,7 +26,7 @@ PACMAN_CONF="${TEMP_DIR}/pacman.conf"     # Pacman config to use for building de
 MIRRORLIST="${TEMP_DIR}/mirrorlist"       # Pacman mirrorlist to use for builder and deployments
 MIRRORLIST_SRC="${CONFIG_DIR}/mirrorlist" # Pacman source mirrorlist to use for builder and deployments
 MOUNTPOINTS=("$BUILDER_DIR" "$ROOT_DIR")  # Array of mount points to ensure get unmounted when done
-PACMAN_CONF_SRC="${CONFIG_DIR}/pacman.tpl" # Pacman config template to turn into the actual config
+PACMAN_CONF_SRC="${CONFIG_DIR}/pacman.conf" # Pacman config template to turn into the actual config
 BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
 
 # Ensure the current user has passwordless sudo access
@@ -64,19 +64,60 @@ release()
 trap release EXIT
 trap release SIGINT
 
-# Stage the pacman config files for use
-stage_pacman_config()
+# Configure build environment using Docker
+# -------------------------------------------------------------------------------------------------
+# We need to use a docker container in order to get the isolation needed. arch-chroot alone seems
+# to allow leakage. Building off the `archlinux:base-devel` image provides a quick start.
+# docker run --name builder --rm -it archlinux:base-devel bash
+#
+# archlinux:base-devel contains needed 
+# `coreutils`             provides basic linux tooling
+# `pacman`                provides the ability to add additional packages via a chroot to our build env
+# `sed`                   is used by the installer to update configuration files as needed
+#
+# Need to install in container
+# `grub`                  is needed by the installer for creating the EFI and BIOS boot partitions
+# `dosfstools`            provides `mkfs.fat` needed by the installer for creating the EFI boot partition
+# `mkinitcpio`            provides the tooling to build the initramfs early userspace installer
+# `mkinitcpio-vt-colors`  provides terminal coloring at boot time for output messages
+# `rsync`                 used by the installer to copy install data to the install target
+# `gptfdisk`              used by the installer to prepare target media for install
+# `linux`                 need to load the kernel to satisfy GRUB
+# `intel-ucode`           standard practice to load the intel-ucode
+build_env()
 {
-  echo -e "${yellow}:: Staging pacman configuration${none}"
+  echo -e "${yellow}:: Configuring build environment...${none}"
 
-  # Stage the mirrorlist and pacman.conf
-  cp "${MIRRORLIST_SRC}" "${MIRRORLIST}"
+  echo -e ":: Extract latest pacman.conf from the archlinux:base-devel..."
+  docker_run archlinux:base-devel
+  docker_cp "builder:/etc/pacman.conf" "${PACMAN_CONF}"
+  docker_kill
   cp "${PACMAN_CONF_SRC}" "${PACMAN_CONF}"
 
-  # Ensure template variables are replaced properly
-  sed -i "s|<%CACHE_DIR%>|'${CACHE_DIR}'|" "${PACMAN_CONF}"
-  sed -i "s|<%BUILD_REPO_PATH%>|${TEMP_DIR}|" "${PACMAN_CONF}"
-  sed -i "s|<%ARCH_MIRROR_LIST_PATH%>|${MIRRORLIST}|" "${PACMAN_CONF}"
+  exit
+#  # Build the builder image if it doesn't exist yet
+#  if [ ! -d "$BUILDER_DIR" ]; then
+#    docker image ls --format="{{json .}}" | jq -r 'select(.Repository == "archlinux" and .Tag == "base-devel") | .ID'
+#  fi
+#
+#  # Build the builder
+#  if [ ! -d "$BUILDER_DIR" ]; then
+#    [ ! -f "$PACMAN_CONF" ] && update_pacman_conf
+#    [ ! -d "$REPO_DIR" ] && build_packages
+#
+#    echo -e "${yellow}:: Configuring build environment...${none}"
+#
+#    # Needs to be owned by root to avoid warnings
+#    sudo mkdir -p "$BUILDER_DIR"
+#
+#    # -C use an alternate config file for pacman
+#    # -c use the package cache on the host rather than target
+#    # -G avoid copying the host's pacman keyring to the target
+#    # -M avoid copying the host's mirrorlist to the target
+#    sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "${BUILDER_DIR}" coreutils pacman grub sed linux \
+#      intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
+#    check
+#  fi
 }
 
 # Build packages
@@ -94,40 +135,6 @@ build_packages()
   pushd "${REPO_DIR}"
   repo-add builder.db.tar.gz *.pkg.tar.*
   popd
-}
-
-# Configure build environment
-# `coreutils`             provides basic linux tooling
-# `pacman`                provides the ability to add additional packages via a chroot to our build env
-# `grub`                  is needed by the installer for creating the EFI and BIOS boot partitions
-# `sed`                   is used by the installer to update configuration files as needed
-# `dosfstoosl`            provides `mkfs.fat` needed by the installer for creating the EFI boot partition
-# `mkinitcpio`            provides the tooling to build the initramfs early userspace installer
-# `mkinitcpio-vt-colors`  provides terminal coloring at boot time for output messages
-# `rsync`                 used by the installer to copy install data to the install target
-# `gptfdisk`              used by the installer to prepare target media for install
-# `linux`                 need to load the kernel to satisfy GRUB
-# `intel-ucode`           standard practice to load the intel-ucode
-build_env()
-{
-  if [ ! -d "$BUILDER_DIR" ]; then
-    [ ! -f "$PACMAN_CONF" ] && stage_pacman_config
-    [ ! -d "$REPO_DIR" ] && build_packages
-
-    echo -e "${yellow}:: Configuring build environment...${none}"
-    mkdir -p "$CACHE_DIR"
-
-    # Needs to be owned by root to avoid warnings
-    sudo mkdir -p "$BUILDER_DIR"
-
-    # -C use an alternate config file for pacman
-    # -c use the package cache on the host rather than target
-    # -G avoid copying the host's pacman keyring to the target
-    # -M avoid copying the host's mirrorlist to the target
-    sudo pacstrap -C "${PACMAN_CONF}" -G -M "${BUILDER_DIR}" coreutils pacman grub sed linux \
-      intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
-    check
-  fi
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
@@ -274,8 +281,9 @@ build_iso()
 build_deployments() 
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
-  mkdir -p "$ROOT_DIR"
-  mkdir -p "$LAYERS_DIR"
+  sudo rm -rf "$WORK_DIR"
+  mkdir -p "$LAYERS_DIR" "$WORK_DIR"
+  sudo mkdir -p "$ROOT_DIR" # needs to be owned by root for layering to be happy
 
   for target in ${1//,/ }; do
     read_deployment $target
@@ -285,17 +293,18 @@ build_deployments()
       local layer="${LAYERS[$i]}"
       echo -e ":: Building layer ${cyan}${layer}${none}..."
 
-      # Ensure the layer destination path exists
+      # Ensure the layer destination path exists and is owned by root to avoid warnings
       local layer_path="${LAYERS_DIR}/${layer}"
-      mkdir -p "$layer_path"
+      sudo mkdir -p "$layer_path"
 
       # Mount the layer destination path 
       if [ ${i} -gt 0 ]; then
         # `upperdir` is a writable layer at the top
         # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
         # `workdir` is an empty dir used to prepare files as they are switched between layers
-        echo -e ":: Mounting layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
-        sudo mount -t overlay -o lowerdir="${ROOT_DIR}",upperdir="${layer_path}",workdir="${WORK_DIR} none "${WORK_DIR}"" 
+        # the last param is the merged or resulting filesystem after layering to work with
+        echo -e ":: Mounting layer ${cyan}${layer}${none} over ${cyan}${ROOT_DIR}${none}..."
+        sudo mount -t overlay overlay -o lowerdir="${ROOT_DIR}",upperdir="${layer_path}",workdir="${WORK_DIR}" "${ROOT_DIR}"
         check
       else
         echo -en ":: Bind mount layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
@@ -311,15 +320,33 @@ build_deployments()
       # -c use the package cache on the host rather than target
       # -G avoid copying the host's pacman keyring to the target
       # -M avoid copying the host's mirrorlist to the target
-      sudo pacstrap -C "${PACMAN_CONF}" -G -M "$ROOT_DIR" "$pkg"
+      sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "$ROOT_DIR" "$pkg"
     done
 
     # Release the root mount point now that we have fully built the required layers
-    echo -en ":: Releasing mount point ${cyan}${ROOT_DIR}${none}..."
+    echo -en ":: Releasing overlay ${cyan}${ROOT_DIR}${none}..."
     sudo umount -fR "$ROOT_DIR"
     check
   done
 }
+
+# Clean the various build artifacts as called out
+clean()
+{
+  for x in ${1//,/ }; do
+    local target="${TEMP_DIR}/${x}"
+    echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
+    if [ "${x}" == "all" ]; then
+      sudo rm -rf "${TEMP_DIR}"
+      return
+    else
+      sudo rm -rf "${target}"
+    fi
+  done
+}
+
+# Profile utility functions
+# -------------------------------------------------------------------------------------------------
 
 # Retrieve the deployment's properties
 read_deployment()
@@ -346,19 +373,45 @@ read_profile()
   check
 }
 
-# Clean the various build artifacts as called out
-clean()
-{
-  for x in ${1//,/ }; do
-    local target="${TEMP_DIR}/${x}"
-    echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
-    if [ "${x}" == "all" ]; then
-      sudo rm -rf "${TEMP_DIR}"
-      return
-    else
-      sudo rm -rf "${target}"
-    fi
-  done
+# Docker utility functions
+# -------------------------------------------------------------------------------------------------
+
+# Copy the given source file to the given destination file
+# example to container: docker_cp "/etc/pacman.conf" "builder:/etc/pacman.conf"
+# example from container: docker_cp "builder:/etc/pacman.conf" "/tmp"
+# $1 source file
+# $2 destination file
+docker_cp() {
+  echo -en ":: Copying ${cyan}builder:${1}${none} to ${cyan}$2${none}..."
+  docker cp "$1" "$2"
+  check
+}
+
+# Pull the builder container if it doesn't exist then run it in a sleep loop so we can work with
+# it in parallel. We'll need to wait until it is ready and manage its lifecycle
+# $1 container repository:tag combo to run
+docker_run() {
+  echo -en ":: Running docker container in loop: ${cyan}${1}${none}..."
+  
+  # Docker will need additional privileges to allow mount to work inside a container
+  local params="-e TERM=xterm -v /var/run/docker.sock:/var/run/docker.sock --privileged=true"
+
+  # Run a sleep loop for as long as we need to
+  # -d means run in detached mode so we don't block
+  docker run --name builder -d --rm ${params} $1 bash -c "while :; do sleep 5; done" &>/dev/null
+  check
+
+  # Now wait until it responds to commands
+  while [ "$(docker inspect -f {{.State.Running}} builder)" != "true" ]; do sleep 2; done
+}
+
+# Kill the running container using its wellknown name
+docker_kill() {
+  if [ "$(docker inspect -f {{.State.Running}} builder 2>/dev/null)" == "true" ]; then
+    echo -en ":: Killing docker ${cyan}builder${none} container..."
+    docker kill builder &>/dev/null
+    check
+  fi
 }
 
 # Main entry point
