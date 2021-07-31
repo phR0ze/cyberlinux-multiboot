@@ -10,6 +10,7 @@ yellow="\e[1;33m"
 SCRIPT=$(basename $0)
 PROJECT_DIR=$(readlink -f $(dirname $BASH_SOURCE[0]))
 
+BUILDER="builder"                         # Name of the builder directory, image and container
 TEMP_DIR="${PROJECT_DIR}/temp"            # Temp directory for build artifacts
 GRUB_DIR="${PROJECT_DIR}/grub"            # Location to pull persisted Grub configuration files from
 CONFIG_DIR="${PROJECT_DIR}/config"        # Location for config files and templates files
@@ -85,24 +86,24 @@ trap release SIGINT
 # `gptfdisk`              used by the installer to prepare target media for install
 # `linux`                 need to load the kernel to satisfy GRUB
 # `intel-ucode`           standard practice to load the intel-ucode
+# `expect`                provides the mkpasswd command
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
   mkdir -p "${REPO_DIR}"
 
   # Build the builder image
-  if ! docker_exists builder; then
-    docker_kill
+  if ! docker_exists ${BUILDER}; then
+    docker_kill ${BUILDER}
 
     # Cache packages ahead of time as mounts are not allowed in builds
     sudo mkdir -p "${CACHE_DIR}"
     docker_run archlinux:base-devel
-    docker_cp "${PACMAN_BUILDER_CONF}" "builder:/etc/pacman.conf"
-    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode"
-    docker_exec "pacman -Syw --noconfirm ${packages}"
-    docker_kill
+    docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
+    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode expect"
+    docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
 
-    docker build -t builder "${PROJECT_DIR}"
+    docker build -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
   # Build custom packages
@@ -133,6 +134,7 @@ build_env()
 #      intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
 #    check
 #  fi
+    docker_kill ${BUILDER}
 }
 
 # Build packages if needed
@@ -140,7 +142,9 @@ build_packages()
 {
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
   mkdir -p "$REPO_DIR" "$WORK_DIR"
-  docker_run builder
+  return
+
+  docker_run ${BUILDER}
 
   pushd "${PROFILE_DIR}"
   BUILDDIR="${WORK_DIR}" PKGDEST="${REPO_DIR}" makepkg
@@ -355,9 +359,9 @@ clean()
     if [ "${x}" == "all" ]; then
       sudo rm -rf "${TEMP_DIR}"
       return
-    elif [ "${x}" == "builder" ]; then
+    elif [ "${x}" == "${BUILDER}" ]; then
       sudo rm -rf "${target}"
-      docker_rmi builder
+      docker_rmi ${BUILDER}
     else
       sudo rm -rf "${target}"
     fi
@@ -396,16 +400,22 @@ read_profile()
 # -------------------------------------------------------------------------------------------------
 
 # Execute the given bash script against the wellknown builder container
-# $1 bash to execute
+# $1 container to execute on
+# $2 bash to execute
 docker_exec() {
-  docker exec --privileged builder bash -c "${1}"
+  docker exec --privileged ${1} bash -c "${2}"
 }
-
 
 # Check if the given image exists
 # $1 docker repository
 docker_exists() {
   docker image inspect -f {{.Metadata.LastTagTime}} $1 &>/dev/null
+}
+
+# Check if the given docker container is running
+# $1 container to check
+docker_running() {
+  [ "$(docker container inspect -f {{.State.Running}} $1 2>/dev/null)" == "true" ]
 }
 
 # Copy the given source file to the given destination file
@@ -414,7 +424,7 @@ docker_exists() {
 # $1 source file
 # $2 destination file
 docker_cp() {
-  echo -en ":: Copying ${cyan}builder:${1}${none} to ${cyan}$2${none}..."
+  echo -en ":: Copying ${cyan}${1}${none} to ${cyan}$2${none}..."
   docker cp "$1" "$2"
   check
 }
@@ -422,7 +432,7 @@ docker_cp() {
 # Docker remove image
 # $1 repository name
 docker_rmi() {
-  if docker_exists builder; then
+  if docker_exists ${1}; then
     echo -en ":: Removing the given image ${cyan}${1}${none}..."
     docker image rm $1
     check
@@ -433,6 +443,7 @@ docker_rmi() {
 # it in parallel. We'll need to wait until it is ready and manage its lifecycle
 # $1 container repository:tag combo to run
 docker_run() {
+  docker_running ${BUILDER} && return
   echo -en ":: Running docker container in loop: ${cyan}${1}${none}..."
   
   # Docker will need additional privileges to allow mount to work inside a container
@@ -442,21 +453,21 @@ docker_run() {
   # -d means run in detached mode so we don't block
   # -v is used to mount a directory into the container to cache all the packages.
   #    also using it to mount the custom repo into the container
-  docker run --name builder -d --rm ${params} \
-    -v "${REPO_DIR}":/var/cache/builder $1 \
-    -v "${CACHE_DIR}":/var/cache/pacman/pkg $1 \
-    bash -c "while :; do sleep 5; done" &>/dev/null
+  docker run --name ${BUILDER} -d --rm ${params} \
+    -v "${REPO_DIR}":/var/cache/builder -v "${CACHE_DIR}":/var/cache/pacman/pkg \
+    $1 bash -c "while :; do sleep 5; done" &>/dev/null
   check
 
   # Now wait until it responds to commands
-  while [ "$(docker container inspect -f {{.State.Running}} builder)" != "true" ]; do sleep 2; done
+  while ! docker_running ${BUILDER}; do sleep 2; done
 }
 
 # Kill the running container using its wellknown name
+# $1 container name to kill
 docker_kill() {
-  if [ "$(docker container inspect -f {{.State.Running}} builder 2>/dev/null)" == "true" ]; then
-    echo -en ":: Killing docker ${cyan}builder${none} container..."
-    docker kill builder &>/dev/null
+  if docker_running ${1}; then
+    echo -en ":: Killing docker ${cyan}${1}${none} container..."
+    docker kill ${1} &>/dev/null
     check
   fi
 }
@@ -490,11 +501,11 @@ usage()
   echo -e "${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
   echo -e "${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
   echo -e "${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
-  echo -e "${green}Clean builder image:${none} ./${SCRIPT} -c builder"
+  echo -e "${green}Rebuild builder image:${none} ./${SCRIPT} -c builder -b"
   echo
   exit 1
 }
-while getopts ":abd:imIPp:c:h" opt; do
+while getopts ":abd:imIPp:c:th" opt; do
   case $opt in
     c) CLEAN=$OPTARG;;
     a) BUILD_ALL=1;;
@@ -505,6 +516,7 @@ while getopts ":abd:imIPp:c:h" opt; do
     I) BUILD_ISO=1;;
     P) BUILD_PACKAGES=1;;
     p) PROFILE=$OPTARG;;
+    t) TEST=1;;
     h) usage;;
     \?) echo -e "Invalid option: ${red}-${OPTARG}${none}\n"; usage;;
     :) echo -e "Option ${red}-${OPTARG}${none} requires an argument\n"; usage;;
@@ -512,6 +524,9 @@ while getopts ":abd:imIPp:c:h" opt; do
 done
 [ $(($OPTIND -1)) -eq 0 ] && usage
 header
+
+# Invoke the testing function if given
+[ ! -z ${TEST+x} ] && testing
 
 # Read profile
 [ -z ${PROFILE+x} ] && PROFILE="personal"

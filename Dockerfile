@@ -10,10 +10,10 @@ COPY config/mkinitcpio.conf /etc/mkinitcpio.conf
 RUN echo ">> Install builder packages" && \
   mkdir -p /root/repo /root/profiles && \
   pacman -Sy --noconfirm vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk \
-    linux intel-ucode \
+    linux intel-ucode expect && \
   echo ">> Add the build user" && \
   groupadd build && \
-  useradd -m -g build -G build -s /bin/bash build && \
-  usermod -p build build && \
+  useradd -m -g build -G lp,wheel,network,storage,users -s /bin/bash build && \
+#usermod -p $(mkpasswd -m sha build) build && \
   echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
