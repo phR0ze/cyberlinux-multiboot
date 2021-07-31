@@ -20,8 +20,12 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 * [Installer](#installer)
   * [initramfs installer](#initramfs-installer)
     * [create initramfs installer](#create-initramfs-installer)
-* [Host isolation](#host-isolation)
-  * [arch-chroot](#arch-chroot)
+* [Docker](#docker)
+  * [Basics](#basics)
+  * [Caching packages](#caching-packages)
+  * [mkinitcpio](#mkinitcpio)
+    * [autodetect](#autodetect)
+    * [arch-chroot](#arch-chroot)
 * [GRUB2 bootloader](#grub2-bootloader)
   * [GRUB2 configuration](#grub2-configuration)
   * [GFXMenu module](#gfxmenu-module)
@@ -98,16 +102,18 @@ The installer is composed of three files:
 An initramfs is made by creating a `cpio` archive, which is an old simple archive format comparable
 to tar. This archive is then compressed using `gzip`.
 
-# Host isolation <a name="host-isolation"/></a>
+# Docker <a name="docker"/></a>
 While building the various components required for the multiboot ISO and constructing the various
 deployment flavors a number of system specific commands are run. The only way I've found to safely
 reproduce the desired results regardless to the host systems state is to build components in
 containers.
 
-## Docker <a name="docker"/></a>
-
 References:
 * [Go Formatting](https://docs.docker.com/config/formatting)
+
+## Basics <a name="basics"/></a>
+
+### <a name="create-image-from-directory"/></a>
 
 ### Create image from directory <a name="create-image-from-directory"/></a>
 ```bash
@@ -120,7 +126,35 @@ List out all info available in json then use jq to work with it
 $ docker container ls --format='{{json .}}' | jq
 ```
 
-## arch-chroot <a name="arch-chroot"/></a>
+## Caching packages <a name="caching-packages"/></a>
+Docker has a limitation that it can't mount a volume during build and we'd really like to cache
+package downloading so we're not constantly downloading the same packages over and over again. Its
+slow and annoying. To avoid this we can use the off the shelf image `archlinux:base-devel` with a
+mounted volume to download them and store them for us using the same lates image version that we'll
+be using to build with thus avoiding host dependencies.
+
+Arch Linux uses the `/var/cache/pacman/pkg` location as its package cache and provides a nifty
+download only option `-w` that will allow us to download the target packages to the cache.
+
+```bash
+$ docker run --name builder --rm -it -v "${pwd}/temp/cache":/var/cache/pacman/pkg archlinux:base-devel bash
+$ pacman -Syw --noconfirm grub
+```
+
+## mkinitcpio <a name="mkinitcpio"/></a>
+The intent is to be able to build a full multiboot ISO with only the minimal dependencies so its easy
+to reproduce the ISO on any arch linux based system or virtual machine. After some initial research
+it became obvious the easiest route was going to be using containers.
+
+`arch-chroot` and `mount` etc.. require teh `--privileged=true` option to work correctly with docker.
+
+### autodetect <a name="autodetect"/></a>
+`mkinitcpio` when running in a docker container will `autodetect` that the docker overlay system
+being used and try to add it as a module. To solve this you need to:
+
+Edit the `/etc/mkinitcpio.conf` and remove the `autodetect` option
+
+### arch-chroot <a name="arch-chroot"/></a>
 Originally I tried to use `arch-chroot` only for isolation but ran into odd issues when the kernel
 didn't match the host kernel. Obviously the jail was leaking.
 

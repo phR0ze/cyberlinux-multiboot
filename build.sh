@@ -27,6 +27,7 @@ MIRRORLIST="${TEMP_DIR}/mirrorlist"       # Pacman mirrorlist to use for builder
 MIRRORLIST_SRC="${CONFIG_DIR}/mirrorlist" # Pacman source mirrorlist to use for builder and deployments
 MOUNTPOINTS=("$BUILDER_DIR" "$ROOT_DIR")  # Array of mount points to ensure get unmounted when done
 PACMAN_CONF_SRC="${CONFIG_DIR}/pacman.conf" # Pacman config template to turn into the actual config
+PACMAN_BUILDER_CONF="${CONFIG_DIR}/pacman.builder" # Pacman config template to turn into the actual config
 BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
 
 # Ensure the current user has passwordless sudo access
@@ -87,14 +88,28 @@ trap release SIGINT
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
+  mkdir -p "${REPO_DIR}"
 
-  echo -e ":: Extract latest pacman.conf from the archlinux:base-devel..."
-  docker_run archlinux:base-devel
-  docker_cp "builder:/etc/pacman.conf" "${PACMAN_CONF}"
-  docker_kill
-  cp "${PACMAN_CONF_SRC}" "${PACMAN_CONF}"
+  # Build the builder image
+  if ! docker_exists builder; then
+    docker_kill
 
-  exit
+    # Cache packages ahead of time as mounts are not allowed in builds
+    sudo mkdir -p "${CACHE_DIR}"
+    docker_run archlinux:base-devel
+    docker_cp "${PACMAN_BUILDER_CONF}" "builder:/etc/pacman.conf"
+    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode"
+    docker_exec "pacman -Syw --noconfirm ${packages}"
+    docker_kill
+
+    docker build -t builder "${PROJECT_DIR}"
+  fi
+
+  # Build custom packages
+  if [ ! -f "$REPO_DIR/builder.db" ]; then
+    build_packages
+  fi
+
 #  # Build the builder image if it doesn't exist yet
 #  if [ ! -d "$BUILDER_DIR" ]; then
 #    docker image ls --format="{{json .}}" | jq -r 'select(.Repository == "archlinux" and .Tag == "base-devel") | .ID'
@@ -120,12 +135,13 @@ build_env()
 #  fi
 }
 
-# Build packages
+# Build packages if needed
 build_packages() 
 {
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
-  rm -rf "${REPO_DIR}"
   mkdir -p "$REPO_DIR" "$WORK_DIR"
+  docker_run builder
+
   pushd "${PROFILE_DIR}"
   BUILDDIR="${WORK_DIR}" PKGDEST="${REPO_DIR}" makepkg
   rm -rf "${WORK_DIR}"
@@ -339,6 +355,9 @@ clean()
     if [ "${x}" == "all" ]; then
       sudo rm -rf "${TEMP_DIR}"
       return
+    elif [ "${x}" == "builder" ]; then
+      sudo rm -rf "${target}"
+      docker_rmi builder
     else
       sudo rm -rf "${target}"
     fi
@@ -376,6 +395,19 @@ read_profile()
 # Docker utility functions
 # -------------------------------------------------------------------------------------------------
 
+# Execute the given bash script against the wellknown builder container
+# $1 bash to execute
+docker_exec() {
+  docker exec --privileged builder bash -c "${1}"
+}
+
+
+# Check if the given image exists
+# $1 docker repository
+docker_exists() {
+  docker image inspect -f {{.Metadata.LastTagTime}} $1 &>/dev/null
+}
+
 # Copy the given source file to the given destination file
 # example to container: docker_cp "/etc/pacman.conf" "builder:/etc/pacman.conf"
 # example from container: docker_cp "builder:/etc/pacman.conf" "/tmp"
@@ -385,6 +417,16 @@ docker_cp() {
   echo -en ":: Copying ${cyan}builder:${1}${none} to ${cyan}$2${none}..."
   docker cp "$1" "$2"
   check
+}
+
+# Docker remove image
+# $1 repository name
+docker_rmi() {
+  if docker_exists builder; then
+    echo -en ":: Removing the given image ${cyan}${1}${none}..."
+    docker image rm $1
+    check
+  fi
 }
 
 # Pull the builder container if it doesn't exist then run it in a sleep loop so we can work with
@@ -398,16 +440,21 @@ docker_run() {
 
   # Run a sleep loop for as long as we need to
   # -d means run in detached mode so we don't block
-  docker run --name builder -d --rm ${params} $1 bash -c "while :; do sleep 5; done" &>/dev/null
+  # -v is used to mount a directory into the container to cache all the packages.
+  #    also using it to mount the custom repo into the container
+  docker run --name builder -d --rm ${params} \
+    -v "${REPO_DIR}":/var/cache/builder $1 \
+    -v "${CACHE_DIR}":/var/cache/pacman/pkg $1 \
+    bash -c "while :; do sleep 5; done" &>/dev/null
   check
 
   # Now wait until it responds to commands
-  while [ "$(docker inspect -f {{.State.Running}} builder)" != "true" ]; do sleep 2; done
+  while [ "$(docker container inspect -f {{.State.Running}} builder)" != "true" ]; do sleep 2; done
 }
 
 # Kill the running container using its wellknown name
 docker_kill() {
-  if [ "$(docker inspect -f {{.State.Running}} builder 2>/dev/null)" == "true" ]; then
+  if [ "$(docker container inspect -f {{.State.Running}} builder 2>/dev/null)" == "true" ]; then
     echo -en ":: Killing docker ${cyan}builder${none} container..."
     docker kill builder &>/dev/null
     check
@@ -443,6 +490,7 @@ usage()
   echo -e "${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
   echo -e "${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
   echo -e "${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
+  echo -e "${green}Clean builder image:${none} ./${SCRIPT} -c builder"
   echo
   exit 1
 }
