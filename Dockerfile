@@ -21,3 +21,7 @@ RUN echo ">> Install builder packages" && \
   groupadd -g 1000 build && \
   useradd --no-log-init -r -m -u 1000 -g build build && \
   echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Update the pacman config after we installed the target packages so that future runs
+# will use the custom repo were going to build at /home/build/repo
+COPY config/pacman.conf /etc/pacman.conf

@@ -90,7 +90,7 @@ trap release SIGINT
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
-  mkdir -p "${REPO_DIR}"
+  mkdir -p "$REPO_DIR" "$WORK_DIR"
 
   # Build the builder image
   if ! docker_exists ${BUILDER}; then
@@ -102,7 +102,9 @@ build_env()
     docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
     local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode"
     docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
+    docker_kill ${BUILDER}
 
+    # Build the builder image
     docker build -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
@@ -134,27 +136,29 @@ build_env()
 #      intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
 #    check
 #  fi
-    docker_kill ${BUILDER}
 }
 
 # Build packages if needed
 build_packages() 
 {
+  return
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
   mkdir -p "$REPO_DIR" "$WORK_DIR"
-  exit
 
-  docker_run ${BUILDER}
-
-  pushd "${PROFILE_DIR}"
-  BUILDDIR="${WORK_DIR}" PKGDEST="${REPO_DIR}" makepkg
-  rm -rf "${WORK_DIR}"
-  popd
-
-  # Ensure the builder repo exists locally
-  pushd "${REPO_DIR}"
-  repo-add builder.db.tar.gz *.pkg.tar.*
-  popd
+  docker_run builder
+#  docker_kill builder
+#
+#  docker_run ${BUILDER}
+#
+#  pushd "${PROFILE_DIR}"
+#  BUILDDIR="${WORK_DIR}" PKGDEST="${REPO_DIR}" makepkg
+#  rm -rf "${WORK_DIR}"
+#  popd
+#
+#  # Ensure the builder repo exists locally
+#  pushd "${REPO_DIR}"
+#  repo-add builder.db.tar.gz *.pkg.tar.*
+#  popd
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
@@ -442,6 +446,7 @@ docker_rmi() {
 # Pull the builder container if it doesn't exist then run it in a sleep loop so we can work with
 # it in parallel. We'll need to wait until it is ready and manage its lifecycle
 # $1 container repository:tag combo to run
+# $2 additional params to include e.g. "-v "${REPO_DIR}":/var/cache/builder"
 docker_run() {
   docker_running ${BUILDER} && return
   echo -en ":: Running docker container in loop: ${cyan}${1}${none}..."
@@ -453,8 +458,9 @@ docker_run() {
   # -d means run in detached mode so we don't block
   # -v is used to mount a directory into the container to cache all the packages.
   #    also using it to mount the custom repo into the container
-  docker run --name ${BUILDER} -d --rm ${params} \
-    -v "${REPO_DIR}":/var/cache/builder \
+  docker run --name ${BUILDER} -d --rm ${params} ${2} \
+    -v "${REPO_DIR}":/home/build/repo \
+    -v "${PROFILES_DIR}":/home/build/profiles \
     -v "${CACHE_DIR}":/var/cache/pacman/pkg \
     $1 bash -c "while :; do sleep 5; done" &>/dev/null
   check
