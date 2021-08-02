@@ -93,7 +93,7 @@ build_env()
   mkdir -p "$REPO_DIR" "$WORK_DIR"
 
   # Build the builder image
-  if ! docker_exists ${BUILDER}; then
+  if ! docker_image_exists ${BUILDER}; then
     docker_kill ${BUILDER}
 
     # Cache packages ahead of time as mounts are not allowed in builds
@@ -112,53 +112,22 @@ build_env()
   if [ ! -f "$REPO_DIR/builder.db" ]; then
     build_packages
   fi
-
-#  # Build the builder image if it doesn't exist yet
-#  if [ ! -d "$BUILDER_DIR" ]; then
-#    docker image ls --format="{{json .}}" | jq -r 'select(.Repository == "archlinux" and .Tag == "base-devel") | .ID'
-#  fi
-#
-#  # Build the builder
-#  if [ ! -d "$BUILDER_DIR" ]; then
-#    [ ! -f "$PACMAN_CONF" ] && update_pacman_conf
-#    [ ! -d "$REPO_DIR" ] && build_packages
-#
-#    echo -e "${yellow}:: Configuring build environment...${none}"
-#
-#    # Needs to be owned by root to avoid warnings
-#    sudo mkdir -p "$BUILDER_DIR"
-#
-#    # -C use an alternate config file for pacman
-#    # -c use the package cache on the host rather than target
-#    # -G avoid copying the host's pacman keyring to the target
-#    # -M avoid copying the host's mirrorlist to the target
-#    sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "${BUILDER_DIR}" coreutils pacman grub sed linux \
-#      intel-ucode memtest86+ mkinitcpio mkinitcpio-vt-colors dosfstools rsync gptfdisk
-#    check
-#  fi
 }
 
 # Build packages if needed
 build_packages() 
 {
-  return
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
   mkdir -p "$REPO_DIR" "$WORK_DIR"
 
-  docker_run builder
-#  docker_kill builder
-#
-#  docker_run ${BUILDER}
-#
-#  pushd "${PROFILE_DIR}"
-#  BUILDDIR="${WORK_DIR}" PKGDEST="${REPO_DIR}" makepkg
-#  rm -rf "${WORK_DIR}"
-#  popd
-#
-#  # Ensure the builder repo exists locally
-#  pushd "${REPO_DIR}"
-#  repo-add builder.db.tar.gz *.pkg.tar.*
-#  popd
+  docker_run ${BUILDER}
+  docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/standard; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
+  docker_kill ${BUILDER}
+
+  # Ensure the builder repo exists locally
+  pushd "${REPO_DIR}"
+  repo-add builder.db.tar.gz *.pkg.tar.*
+  popd
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
@@ -359,16 +328,16 @@ clean()
 {
   for x in ${1//,/ }; do
     local target="${TEMP_DIR}/${x}"
-    echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
     if [ "${x}" == "all" ]; then
-      sudo rm -rf "${TEMP_DIR}"
-      return
-    elif [ "${x}" == "${BUILDER}" ]; then
-      sudo rm -rf "${target}"
-      docker_rmi ${BUILDER}
-    else
-      sudo rm -rf "${target}"
+      target="${TEMP_DIR}"
     fi
+    if [ "${x}" == "all" ] || [ "${x}" == "${BUILDER}" ]; then
+      echo -e "${yellow}:: Cleaning docker image${none} ${cyan}${BUILDER}${none}"
+      docker_rmi ${BUILDER}
+    fi
+
+    echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
+    sudo rm -rf "${target}"
   done
 }
 
@@ -412,13 +381,13 @@ docker_exec() {
 
 # Check if the given image exists
 # $1 docker repository
-docker_exists() {
+docker_image_exists() {
   docker image inspect -f {{.Metadata.LastTagTime}} $1 &>/dev/null
 }
 
 # Check if the given docker container is running
 # $1 container to check
-docker_running() {
+docker_container_running() {
   [ "$(docker container inspect -f {{.State.Running}} $1 2>/dev/null)" == "true" ]
 }
 
@@ -436,7 +405,7 @@ docker_cp() {
 # Docker remove image
 # $1 repository name
 docker_rmi() {
-  if docker_exists ${1}; then
+  if docker_image_exists ${1}; then
     echo -en ":: Removing the given image ${cyan}${1}${none}..."
     docker image rm $1
     check
@@ -448,7 +417,7 @@ docker_rmi() {
 # $1 container repository:tag combo to run
 # $2 additional params to include e.g. "-v "${REPO_DIR}":/var/cache/builder"
 docker_run() {
-  docker_running ${BUILDER} && return
+  docker_container_running ${BUILDER} && return
   echo -en ":: Running docker container in loop: ${cyan}${1}${none}..."
   
   # Docker will need additional privileges to allow mount to work inside a container
@@ -466,13 +435,13 @@ docker_run() {
   check
 
   # Now wait until it responds to commands
-  while ! docker_running ${BUILDER}; do sleep 2; done
+  while ! docker_container_running ${BUILDER}; do sleep 2; done
 }
 
 # Kill the running container using its wellknown name
 # $1 container name to kill
 docker_kill() {
-  if docker_running ${1}; then
+  if docker_container_running ${1}; then
     echo -en ":: Killing docker ${cyan}${1}${none} container..."
     docker kill ${1} &>/dev/null
     check
@@ -491,24 +460,24 @@ usage()
   header
   echo -e "Usage: ${cyan}./$(basename $0)${none} [options]\n"
   echo -e "Options:"
-  echo -e "-a               Build all components"
-  echo -e "-b               Build the builder filesystem"
-  echo -e "-d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
-  echo -e "-i               Build the initramfs installer"
-  echo -e "-m               Build the grub multiboot environment"
-  echo -e "-I               Build the acutal ISO image"
-  echo -e "-P               Build packages for deployment/s and/or profile"
-  echo -e "-p               Set the profile to use, default: personal"
-  echo -e "-c               Clean build artifacts, commad delimited (all|builder|iso|layers/standard/core)"
-  echo -e "-h               Display usage help\n"
+  echo -e "  -a               Build all components"
+  echo -e "  -b               Build the builder filesystem"
+  echo -e "  -d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
+  echo -e "  -i               Build the initramfs installer"
+  echo -e "  -m               Build the grub multiboot environment"
+  echo -e "  -I               Build the acutal ISO image"
+  echo -e "  -P               Build packages for deployment/s and/or profile"
+  echo -e "  -p               Set the profile to use, default: personal"
+  echo -e "  -c               Clean build artifacts, commad delimited (all|builder|iso|layers/standard/core)"
+  echo -e "  -h               Display usage help\n"
   echo -e "Examples:"
-  echo -e "${green}Build everything:${none} ./${SCRIPT} -a"
-  echo -e "${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
-  echo -e "${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
-  echo -e "${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
-  echo -e "${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
-  echo -e "${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
-  echo -e "${green}Rebuild builder image:${none} ./${SCRIPT} -c builder -b"
+  echo -e "  ${green}Build everything:${none} ./${SCRIPT} -a"
+  echo -e "  ${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
+  echo -e "  ${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
+  echo -e "  ${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
+  echo -e "  ${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
+  echo -e "  ${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
+  echo -e "  ${green}Rebuild builder image:${none} ./${SCRIPT} -c builder -b"
   echo
   exit 1
 }

@@ -226,6 +226,7 @@ local DOC=$(cat << 'EOF'
 SigLevel = Optional TrustAll
 Server = https://phr0ze.github.io/cyberlinux-repo/$repo/$arch
 EOF
+)
 ```
 
 ---
