@@ -6,30 +6,43 @@ cyan="\e[1;36m"
 green="\e[1;32m"
 yellow="\e[1;33m"
 
+BUILDER="builder"                         # Name of the build image and container
+
 # Determine the script name and absolute root path of the project
 SCRIPT=$(basename $0)
 PROJECT_DIR=$(readlink -f $(dirname $BASH_SOURCE[0]))
 
-BUILDER="builder"                         # Name of the builder directory, image and container
+# Temp build locations
 TEMP_DIR="${PROJECT_DIR}/temp"            # Temp directory for build artifacts
+ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot files
+REPO_DIR="${TEMP_DIR}/repo"               # Local repo location to stage packages being built
+CACHE_DIR="${TEMP_DIR}/cache"             # Local location to cache packages used in building deployments
+LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
+
+# Source material to pull from
 GRUB_DIR="${PROJECT_DIR}/grub"            # Location to pull persisted Grub configuration files from
 CONFIG_DIR="${PROJECT_DIR}/config"        # Location for config files and templates files
 PROFILES_DIR="${PROJECT_DIR}/profiles"    # Location for profile descriptions, packages and configs
 INSTALLER_DIR="${PROJECT_DIR}/installer"  # Location to pull installer hooks from
-ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot files
-ROOT_DIR="${TEMP_DIR}/root"               # Root mount point to build layered filesystems
-REPO_DIR="${TEMP_DIR}/x86_64"             # Local repo location to stage packages being built
-CACHE_DIR="${TEMP_DIR}/cache"             # Local location to cache packages used in building deployments
-BUILDER_DIR="${TEMP_DIR}/builder"         # Build location for packages extraction and builds
-LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
-WORK_DIR="${TEMP_DIR}/work"               # Temp directory for package building cruft and mounting empty dir
-PACMAN_CONF="${TEMP_DIR}/pacman.conf"     # Pacman config to use for building deployments
-MIRRORLIST="${TEMP_DIR}/mirrorlist"       # Pacman mirrorlist to use for builder and deployments
-MIRRORLIST_SRC="${CONFIG_DIR}/mirrorlist" # Pacman source mirrorlist to use for builder and deployments
-MOUNTPOINTS=("$BUILDER_DIR" "$ROOT_DIR")  # Array of mount points to ensure get unmounted when done
-PACMAN_CONF_SRC="${CONFIG_DIR}/pacman.conf" # Pacman config template to turn into the actual config
-PACMAN_BUILDER_CONF="${CONFIG_DIR}/pacman.builder" # Pacman config template to turn into the actual config
 BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
+PACMAN_BUILDER_CONF="${CONFIG_DIR}/pacman.builder" # Pacman config template to turn into the actual config
+
+# Container directories and mount locations
+CONT_BUILD_DIR="/home/build"              # Build location for layer components
+CONT_ISO_DIR="${CONT_BUILD_DIR}/iso"      # Build location for staging iso/boot files
+CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage packages being built
+CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
+CONT_WORK_DIR="${CONT_BUILD_DIR}/work"    # Temp directory for package building cruft and mounting empty dir
+CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
+CONT_LAYERS_DIR="${CONT_BUILD_DIR}/layers" # Layered filesystems to include in the ISO
+CONT_PROFILES_DIR="${CONT_BUILD_DIR}/profiles" # Location to mount profiles inside container
+
+# Create the necessary directories upfront
+make_env_directories() {
+  mkdir -p "${ISO_DIR}"
+  mkdir -p "${REPO_DIR}"
+  mkdir -p "${LAYERS_DIR}"
+}
 
 # Ensure the current user has passwordless sudo access
 if ! sudo -l | grep -q "NOPASSWD: ALL"; then
@@ -48,23 +61,23 @@ check()
 }
 
 # Provide a failsafe for umounting mount points on exit
-RELEASED=0
-release()
-{
-  if [ $RELEASED -ne 1 ]; then
-    RELEASED=1
-    for x in "${MOUNTPOINTS[@]}"; do
-      if mountpoint -q "$x"; then
-        echo -en ":: Releasing mount point ${cyan}${x}${none}..."
-        sudo umount -fR "$x"
-        check
-      fi
-    done
-  fi
-  exit
-}
-trap release EXIT
-trap release SIGINT
+#RELEASED=0
+#release()
+#{
+#  if [ $RELEASED -ne 1 ]; then
+#    RELEASED=1
+#    for x in "${MOUNTPOINTS[@]}"; do
+#      if mountpoint -q "$x"; then
+#        echo -en ":: Releasing mount point ${cyan}${x}${none}..."
+#        sudo umount -fR "$x"
+#        check
+#      fi
+#    done
+#  fi
+#  exit
+#}
+#trap release EXIT
+#trap release SIGINT
 
 # Configure build environment using Docker
 # -------------------------------------------------------------------------------------------------
@@ -86,26 +99,26 @@ trap release SIGINT
 # `gptfdisk`              used by the installer to prepare target media for install
 # `linux`                 need to load the kernel to satisfy GRUB
 # `intel-ucode`           standard practice to load the intel-ucode
-# `expect`                provides the mkpasswd command
+# `memtest86+`            boot memory tester tool
+# `libisoburn`            needed for xorriso support
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
-  mkdir -p "$REPO_DIR" "$WORK_DIR"
 
   # Build the builder image
   if ! docker_image_exists ${BUILDER}; then
     docker_kill ${BUILDER}
 
     # Cache packages ahead of time as mounts are not allowed in builds
-    sudo mkdir -p "${CACHE_DIR}"
     docker_run archlinux:base-devel
     docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
-    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux intel-ucode"
+    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux \
+      intel-ucode memtest86+ libisoburn"
     docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
     docker_kill ${BUILDER}
 
     # Build the builder image
-    docker build -t ${BUILDER} "${PROJECT_DIR}"
+    docker build --force-rm -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
   # Build custom packages
@@ -118,7 +131,6 @@ build_env()
 build_packages() 
 {
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
-  mkdir -p "$REPO_DIR" "$WORK_DIR"
 
   docker_run ${BUILDER}
   docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/standard; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
@@ -135,20 +147,19 @@ build_packages()
 build_multiboot()
 {
   echo -e "${yellow}:: Building multiboot components...${none}"
+  docker_run ${BUILDER}
+  echo -e ":: Copying kernel, intel ucode patch and memtest to ${cyan}${ISO_DIR}/boot${none}"
+
   mkdir -p "${ISO_DIR}/boot/grub/themes"
+  docker_cp "${BUILDER}:/boot/intel-ucode.img" "${ISO_DIR}/boot"
+  docker_cp "${BUILDER}:/boot/vmlinuz-linux" "${ISO_DIR}/boot"
+  docker_cp "${BUILDER}:/boot/memtest86+/memtest.bin" "${ISO_DIR}/boot/memtest"
 
-  echo -en ":: Copying kernel, intel ucode patch and memtest to ${ISO_DIR}/boot..."
-  cp "${BUILDER_DIR}/boot/intel-ucode.img" "${ISO_DIR}/boot"
-  cp "${BUILDER_DIR}/boot/vmlinuz-linux" "${ISO_DIR}/boot"
-  cp "${BUILDER_DIR}/boot/memtest86+/memtest.bin" "${ISO_DIR}/boot/memtest"
-  check
-
-  echo -en ":: Copying GRUB config and theme to ${ISO_DIR}/boot/grub ..."
+  echo -e ":: Copying GRUB config and theme to ${ISO_DIR}/boot/grub"
   cp "${GRUB_DIR}/grub.cfg" "${ISO_DIR}/boot/grub"
   cp "${GRUB_DIR}/loopback.cfg" "${ISO_DIR}/boot/grub"
   cp -r "${GRUB_DIR}/themes" "${ISO_DIR}/boot/grub"
-  cp "${BUILDER_DIR}/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
-  check
+  docker_cp "${BUILDER}:/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
 
   # Create the target profile's boot entries
   rm -f "$BOOT_CFG_PATH"
@@ -159,7 +170,7 @@ build_multiboot()
     # as a non-installable option for building on only
     if [ ${KERNEL} != "null" ]; then
       echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
-      echo -e "menuentry --class=deployment '${LABEL}' {" >> "${BOOT_CFG_PATH}"
+      echo -e "menuentry --class=deployment ${LABEL} {" >> "${BOOT_CFG_PATH}"
       echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
       echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
       echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
@@ -168,46 +179,49 @@ build_multiboot()
     fi
   done
 
-  echo -en ":: Creating core BIOS $BUILDER_DIR/bios.img..."
-  cp -r "${BUILDER_DIR}/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
-  rm -f "${ISO_DIR}/boot/grub/i386-pc/*.img"
+  echo -en ":: Creating core BIOS $TEMP_DIR/bios.img..."
+  docker_cp "${BUILDER}:/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
+  rm -f "${ISO_DIR}/boot/grub/i386-pc"/*.img
   # We need to create our bios.img that contains just enough code to find the grub configuration and
   # grub modules in /boot/grub/i386-pc directory we'll stage in the next step
-  # -O i386-pc                        Format of the image to generate
-  # -p /boot/grub                     Directory to find grub once booted
-  # -d $BUILDER_DIR/usr/lib/grub/i386-pc    Use resources from this location when building the boot image
-  # -o $BUILDER_DIR/bios.img                Output destination
-  grub-mkimage -O i386-pc -p /boot/grub -d "$BUILDER_DIR/usr/lib/grub/i386-pc" -o "$TEMP_DIR/bios.img"  \
+  # -O i386-pc                Format of the image to generate
+  # -p /boot/grub             Directory to find grub once booted
+  # -d /usr/lib/grub/i386-pc  Use resources from this location when building the boot image
+  # -o $TEMP_DIR/bios.img     Output destination
+  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  grub-mkimage -O i386-pc -p /boot/grub -d /usr/lib/grub/i386-pc -o "$CONT_BUILD_DIR/bios.img" \
     biosdisk disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
-  check
-  echo -en ":: Concatenate cdboot.img to bios.img to create the CD-ROM bootable Eltorito $TEMP_DIR/eltorito.img..."
-  cat "$BUILDER_DIR/usr/lib/grub/i386-pc/cdboot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/eltorito.img"
-  check
-  echo -en ":: Concatenate boot.img to bios.img to create isohybrid $TEMP_DIR/isohybrid.img..."
-  cat "$BUILDER_DIR/usr/lib/grub/i386-pc/boot.img" "$TEMP_DIR/bios.img" > "$ISO_DIR/boot/grub/i386-pc/isohybrid.img"
+  echo -e ":: Concatenate cdboot.img to bios.img to create CD-ROM bootable image $CONT_BUILD_DIR/eltorito.img..."
+  cat /usr/lib/grub/i386-pc/cdboot.img "$CONT_BUILD_DIR/bios.img" > "$CONT_ISO_DIR/boot/grub/i386-pc/eltorito.img"
+  echo -e ":: Concatenate boot.img to bios.img to create isohybrid $CONT_BUILD_DIR/isohybrid.img..."
+  cat /usr/lib/grub/i386-pc/boot.img "$CONT_BUILD_DIR/bios.img" > "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img"
+EOF
   check
 
   echo -en ":: Creating UEFI boot files..."
-  mkdir -p "$ISO_DIR/efi/boot"
-  cp -r "$BUILDER_DIR/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
-  rm -f "$ISO_DIR/grub/x86_64-efi/*.img"
+  mkdir -p "${ISO_DIR}/efi/boot"
+  docker_cp "$BUILDER:/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
+  rm -f "$ISO_DIR/grub/x86_64-efi"/*.img
   # -O x86_64-efi                     Format of the image to generate
   # -p /boot/grub                     Directory to find grub once booted
   # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
   # -o "$ISO_DIR/efi/boot/bootx64.efi"      Output destination, using wellknown compatibility location
-  grub-mkimage -O x86_64-efi -p /boot/grub -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi" -o \
-    "$ISO_DIR/efi/boot/bootx64.efi" disk part_msdos part_gpt linux linux16 loopback normal \
+  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  grub-mkimage -O x86_64-efi -p /boot/grub -d /usr/lib/grub/x86_64-efi -o \
+    "$CONT_ISO_DIR/efi/boot/bootx64.efi" disk part_msdos part_gpt linux linux16 loopback normal \
     configfile test search search_fs_uuid search_fs_file true iso9660 search_label efi_uga \
     efi_gop gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
+EOF
   check
+
+  docker_kill ${BUILDER}
 }
 
 # Build the initramfs based installer
 build_installer()
 {
   echo -en "${yellow}:: Build the initramfs based installer...${none}"
-  mkdir -p "$ISO_DIR/boot"
   sudo cp "${INSTALLER_DIR}/installer" "$BUILDER_DIR/usr/lib/initcpio/hooks"
   sudo cp "${INSTALLER_DIR}/installer.conf" "$BUILDER_DIR/usr/lib/initcpio/install/installer"
   sudo cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILDER_DIR/etc"
@@ -252,10 +266,11 @@ build_installer()
 # Note the use of the well known compatibility path /efi/boot/bootx64.efi
 #   --efi-boot /efi/boot/bootx64.efi 
 # Specify the output iso file path and location to turn into an ISO
-#   -o boot.iso "$ISO_DIR"
+#   -o cyberlinux.iso "$ISO_DIR"
 build_iso()
 {
   echo -e "${yellow}:: Building an ISOHYBRID bootable image...${none}"
+  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   xorriso -as mkisofs \
     -r -iso-level 3 \
     -volid CYBERLINUX \
@@ -267,16 +282,16 @@ build_iso()
     -b /boot/grub/i386-pc/eltorito.img \
     --embedded-boot "$ISO_DIR/boot/grub/i386-pc/isohybrid.img" \
     --efi-boot /efi/boot/bootx64.efi \
-    -o boot.iso "$ISO_DIR"
+    -o cyberlinux.iso "$ISO_DIR"
+EOF
+  check
 }
 
 # Build deployments
 build_deployments() 
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
-  sudo rm -rf "$WORK_DIR"
-  mkdir -p "$LAYERS_DIR" "$WORK_DIR"
-  sudo mkdir -p "$ROOT_DIR" # needs to be owned by root for layering to be happy
+  sudo rm -rf "$WORK_DIR/*"
 
   for target in ${1//,/ }; do
     read_deployment $target
@@ -326,13 +341,17 @@ build_deployments()
 # Clean the various build artifacts as called out
 clean()
 {
+  docker_kill ${BUILDER}
+
   for x in ${1//,/ }; do
     local target="${TEMP_DIR}/${x}"
     if [ "${x}" == "all" ]; then
       target="${TEMP_DIR}"
+      echo -e "${yellow}:: Cleaning docker image ${cyan}archlinux:base-devel${none}"
+      docker_rmi archlinux:base-devel
     fi
     if [ "${x}" == "all" ] || [ "${x}" == "${BUILDER}" ]; then
-      echo -e "${yellow}:: Cleaning docker image${none} ${cyan}${BUILDER}${none}"
+      echo -e "${yellow}:: Cleaning docker image ${cyan}${BUILDER}${none}"
       docker_rmi ${BUILDER}
     fi
 
@@ -428,9 +447,11 @@ docker_run() {
   # -v is used to mount a directory into the container to cache all the packages.
   #    also using it to mount the custom repo into the container
   docker run --name ${BUILDER} -d --rm ${params} ${2} \
-    -v "${REPO_DIR}":/home/build/repo \
-    -v "${PROFILES_DIR}":/home/build/profiles \
-    -v "${CACHE_DIR}":/var/cache/pacman/pkg \
+    -v "${ISO_DIR}":"${CONT_ISO_DIR}" \
+    -v "${REPO_DIR}":"${CONT_REPO_DIR}" \
+    -v "${CACHE_DIR}":"${CONT_CACHE_DIR}" \
+    -v "${LAYERS_DIR}":"${CONT_LAYERS_DIR}" \
+    -v "${PROFILES_DIR}":"${CONT_PROFILES_DIR}" \
     $1 bash -c "while :; do sleep 5; done" &>/dev/null
   check
 
@@ -504,15 +525,13 @@ header
 # Invoke the testing function if given
 [ ! -z ${TEST+x} ] && testing
 
-# Read profile
+# Read profile, default to personal
 [ -z ${PROFILE+x} ] && PROFILE="personal"
 read_profile "$PROFILE"
 
 # Optionally clean artifacts
-if [ ! -z ${CLEAN+x} ]; then
-  clean $CLEAN
-fi
-mkdir -p "$TEMP_DIR"
+[ ! -z ${CLEAN+x} ] && clean $CLEAN
+make_env_directories
 
 # 1. Always build the build environment if any build option is chosen
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
