@@ -18,6 +18,7 @@ ISO_DIR="${TEMP_DIR}/iso"                 # Build location for staging iso/boot 
 REPO_DIR="${TEMP_DIR}/repo"               # Local repo location to stage packages being built
 CACHE_DIR="${TEMP_DIR}/cache"             # Local location to cache packages used in building deployments
 LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
+OUTPUT_DIR="${TEMP_DIR}/output"           # Final built artifacts
 
 # Source material to pull from
 GRUB_DIR="${PROJECT_DIR}/grub"            # Location to pull persisted Grub configuration files from
@@ -34,6 +35,7 @@ CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage package
 CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
 CONT_WORK_DIR="${CONT_BUILD_DIR}/work"    # Temp directory for package building cruft and mounting empty dir
 CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
+CONT_OUTPUT_DIR="${CONT_BUILD_DIR}/output" # Final built artifacts
 CONT_LAYERS_DIR="${CONT_BUILD_DIR}/layers" # Layered filesystems to include in the ISO
 CONT_PROFILES_DIR="${CONT_BUILD_DIR}/profiles" # Location to mount profiles inside container
 
@@ -41,6 +43,7 @@ CONT_PROFILES_DIR="${CONT_BUILD_DIR}/profiles" # Location to mount profiles insi
 make_env_directories() {
   mkdir -p "${ISO_DIR}"
   mkdir -p "${REPO_DIR}"
+  mkdir -p "${OUTPUT_DIR}"
   mkdir -p "${LAYERS_DIR}"
 }
 
@@ -270,7 +273,9 @@ build_installer()
 build_iso()
 {
   echo -e "${yellow}:: Building an ISOHYBRID bootable image...${none}"
+  docker_run ${BUILDER}
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  cd ~/
   xorriso -as mkisofs \
     -r -iso-level 3 \
     -volid CYBERLINUX \
@@ -280,11 +285,12 @@ build_iso()
     -boot-info-table \
     --protective-msdos-label \
     -b /boot/grub/i386-pc/eltorito.img \
-    --embedded-boot "$ISO_DIR/boot/grub/i386-pc/isohybrid.img" \
+    --embedded-boot "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img" \
     --efi-boot /efi/boot/bootx64.efi \
-    -o cyberlinux.iso "$ISO_DIR"
+    -o $CONT_OUTPUT_DIR/cyberlinux.iso "$CONT_ISO_DIR"
 EOF
   check
+  docker_kill ${BUILDER}
 }
 
 # Build deployments
@@ -451,6 +457,7 @@ docker_run() {
     -v "${REPO_DIR}":"${CONT_REPO_DIR}" \
     -v "${CACHE_DIR}":"${CONT_CACHE_DIR}" \
     -v "${LAYERS_DIR}":"${CONT_LAYERS_DIR}" \
+    -v "${OUTPUT_DIR}":"${CONT_OUTPUT_DIR}" \
     -v "${PROFILES_DIR}":"${CONT_PROFILES_DIR}" \
     $1 bash -c "while :; do sleep 5; done" &>/dev/null
   check
