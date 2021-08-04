@@ -39,6 +39,12 @@ CONT_OUTPUT_DIR="${CONT_BUILD_DIR}/output" # Final built artifacts
 CONT_LAYERS_DIR="${CONT_BUILD_DIR}/layers" # Layered filesystems to include in the ISO
 CONT_PROFILES_DIR="${CONT_BUILD_DIR}/profiles" # Location to mount profiles inside container
 
+# Ensure the current user has passwordless sudo access
+if ! sudo -l | grep -q "NOPASSWD: ALL"; then
+  echo -e ":: ${red}Failed${none} - Passwordless sudo access is required see README.md..."
+  exit
+fi
+
 # Create the necessary directories upfront
 make_env_directories() {
   mkdir -p "${ISO_DIR}"
@@ -46,41 +52,6 @@ make_env_directories() {
   mkdir -p "${OUTPUT_DIR}"
   mkdir -p "${LAYERS_DIR}"
 }
-
-# Ensure the current user has passwordless sudo access
-if ! sudo -l | grep -q "NOPASSWD: ALL"; then
-  echo -e ":: ${red}Failed${none} - Passwordless sudo access is required see README.md..."
-  exit
-fi
-
-check()
-{
-  if [ $? -ne 0 ]; then
-    echo -e "${red}failed!${none}"
-    exit 1
-  else
-    echo -e "${green}success!${none}"
-  fi
-}
-
-# Provide a failsafe for umounting mount points on exit
-#RELEASED=0
-#release()
-#{
-#  if [ $RELEASED -ne 1 ]; then
-#    RELEASED=1
-#    for x in "${MOUNTPOINTS[@]}"; do
-#      if mountpoint -q "$x"; then
-#        echo -en ":: Releasing mount point ${cyan}${x}${none}..."
-#        sudo umount -fR "$x"
-#        check
-#      fi
-#    done
-#  fi
-#  exit
-#}
-#trap release EXIT
-#trap release SIGINT
 
 # Configure build environment using Docker
 # -------------------------------------------------------------------------------------------------
@@ -104,6 +75,7 @@ check()
 # `intel-ucode`           standard practice to load the intel-ucode
 # `memtest86+`            boot memory tester tool
 # `libisoburn`            needed for xorriso support
+# `linux-firmware`        more support for firmware
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -151,8 +123,8 @@ build_multiboot()
 {
   echo -e "${yellow}:: Building multiboot components...${none}"
   docker_run ${BUILDER}
-  echo -e ":: Copying kernel, intel ucode patch and memtest to ${cyan}${ISO_DIR}/boot${none}"
 
+  echo -e ":: Copying kernel, intel ucode patch and memtest to ${cyan}${ISO_DIR}/boot${none}"
   mkdir -p "${ISO_DIR}/boot/grub/themes"
   docker_cp "${BUILDER}:/boot/intel-ucode.img" "${ISO_DIR}/boot"
   docker_cp "${BUILDER}:/boot/vmlinuz-linux" "${ISO_DIR}/boot"
@@ -225,16 +197,17 @@ EOF
 build_installer()
 {
   echo -en "${yellow}:: Build the initramfs based installer...${none}"
-  sudo cp "${INSTALLER_DIR}/installer" "$BUILDER_DIR/usr/lib/initcpio/hooks"
-  sudo cp "${INSTALLER_DIR}/installer.conf" "$BUILDER_DIR/usr/lib/initcpio/install/installer"
-  sudo cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILDER_DIR/etc"
+  docker_run ${BUILDER}
+  docker_cp "${INSTALLER_DIR}/installer" "$BUILDER:/usr/lib/initcpio/hooks"
+  docker_cp "${INSTALLER_DIR}/installer.conf" "$BUILDER:/usr/lib/initcpio/install/installer"
+  docker_cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILDER:/etc"
 
-  # Mount as bind mount to satisfy arch-chroot requirement
-  # umount is handled by the release function on exit
-  sudo mount --bind "$BUILDER_DIR" "$BUILDER_DIR"
-  sudo arch-chroot "$BUILDER_DIR" mkinitcpio -g /root/installer
-  sudo cp "$BUILDER_DIR/root/installer" "$ISO_DIR/boot"
-  check
+  # Build a sorted array of kernels such that the first is the newest
+  local kernels=($(docker_exec ${BUILDER} "ls /lib/modules | sort -r | tr '\n' ' '"))
+  docker_exec ${BUILDER} "mkinitcpio -k ${kernels[0]} -g /root/installer"
+
+  docker_cp "$BUILDER:/root/installer" "$ISO_DIR/boot"
+  docker_kill ${BUILDER}
 }
 
 # Build the ISO
@@ -366,6 +339,16 @@ clean()
   done
 }
 
+check()
+{
+  if [ $? -ne 0 ]; then
+    echo -e "${red}failed!${none}"
+    exit 1
+  else
+    echo -e "${green}success!${none}"
+  fi
+}
+
 # Profile utility functions
 # -------------------------------------------------------------------------------------------------
 
@@ -452,7 +435,7 @@ docker_run() {
   # -d means run in detached mode so we don't block
   # -v is used to mount a directory into the container to cache all the packages.
   #    also using it to mount the custom repo into the container
-  docker run --name ${BUILDER} -d --rm ${params} ${2} \
+  docker run -d --name ${BUILDER} --rm ${params} ${2} \
     -v "${ISO_DIR}":"${CONT_ISO_DIR}" \
     -v "${REPO_DIR}":"${CONT_REPO_DIR}" \
     -v "${CACHE_DIR}":"${CONT_CACHE_DIR}" \

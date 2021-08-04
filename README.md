@@ -22,6 +22,9 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
     * [create initramfs installer](#create-initramfs-installer)
 * [Docker](#docker)
   * [Basics](#basics)
+    * [Shell into a running container](#shell-into-a-running-container)
+    * [Create image from directory](#create-images-from-directory)
+    * [Check if image exists](#check-if-image-exists)
   * [Caching packages](#caching-packages)
   * [mkinitcpio](#mkinitcpio)
     * [autodetect](#autodetect)
@@ -113,7 +116,10 @@ References:
 
 ## Basics <a name="basics"/></a>
 
-### <a name="create-image-from-directory"/></a>
+### Shell into a running container <a name="shell-into-a-running-container"/></a>
+```bash
+$ docker exec -it builder bash
+```
 
 ### Create image from directory <a name="create-image-from-directory"/></a>
 ```bash
