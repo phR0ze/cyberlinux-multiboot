@@ -30,13 +30,13 @@ PACMAN_BUILDER_CONF="${CONFIG_DIR}/pacman.builder" # Pacman config template to t
 
 # Container directories and mount locations
 CONT_BUILD_DIR="/home/build"              # Build location for layer components
+CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
 CONT_ISO_DIR="${CONT_BUILD_DIR}/iso"      # Build location for staging iso/boot files
 CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage packages being built
-CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
-CONT_WORK_DIR="${CONT_BUILD_DIR}/work"    # Temp directory for package building cruft and mounting empty dir
 CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
 CONT_OUTPUT_DIR="${CONT_BUILD_DIR}/output" # Final built artifacts
 CONT_LAYERS_DIR="${CONT_BUILD_DIR}/layers" # Layered filesystems to include in the ISO
+CONT_WORK_DIR="${CONT_LAYERS_DIR}/work"    # Needs to be on the same file system as the upper dir i.e. layers
 CONT_PROFILES_DIR="${CONT_BUILD_DIR}/profiles" # Location to mount profiles inside container
 
 # Ensure the current user has passwordless sudo access
@@ -224,9 +224,7 @@ build_deployments()
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
-
-  # Create the temp work directories
-  docker_exec ${BUILDER} "rm -rf ${CONT_WORK_DIR}; mkdir -p ${CONT_ROOT_DIR} ${CONT_WORK_DIR}"
+  docker_exec ${BUILDER} "mkdir ${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
 
   # Iterate over the deployments building the dependent layers
   for target in ${1//,/ }; do
@@ -244,12 +242,12 @@ build_deployments()
       # Mount the layer destination path 
       if [ ${i} -eq 0 ]; then
         echo -en ":: Bind mount layer ${cyan}${layer_path}${none} to ${cyan}${CONT_ROOT_DIR}${none}..."
-        #docker_exec ${BUILDER} "mount --bind $layer_path $CONT_ROOT_DIR"
-        #check
+        docker_exec ${BUILDER} "mount --bind $layer_path $CONT_ROOT_DIR"
+        check
       else
         # `upperdir` is a writable layer at the top
         # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
-        # `workdir` is an empty dir used to prepare files as they are switched between layers
+        # `workdir`  is an empty dir used to prepare files and has to be on the same file system as upperdir
         # the last param is the merged or resulting filesystem after layering to work with
         echo -en ":: Mounting layer ${cyan}${layer_path}${none} over ${cyan}${CONT_ROOT_DIR}${none}..."
         docker_exec ${BUILDER} "mount -t overlay overlay -o lowerdir=${CONT_ROOT_DIR},upperdir=${layer_path},workdir=${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
@@ -273,7 +271,6 @@ build_deployments()
     check
   done
 }
-
 
 # Build the ISO
 # ISOHYBRID is the format used to create an ISO that is going to be bootable as both a burned CD-ROM
@@ -442,7 +439,7 @@ docker_run() {
   echo -en ":: Running docker container in loop: ${cyan}${1}${none}..."
   
   # Docker will need additional privileges to allow mount to work inside a container
-  local params="-e TERM=xterm -v /var/run/docker.sock:/var/run/docker.sock --privileged=true"
+  local params="-e TERM=xterm -v /var/run/docker.sock:/var/run/docker.sock --privileged"
 
   # Run a sleep loop for as long as we need to
   # -d means run in detached mode so we don't block
@@ -504,6 +501,7 @@ usage()
   echo -e "  ${green}Rebuild builder image:${none} ./${SCRIPT} -c builder -b"
   echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -p standad -d base"
   echo
+  RELEASED=1
   exit 1
 }
 while getopts ":abd:imIPp:c:th" opt; do
