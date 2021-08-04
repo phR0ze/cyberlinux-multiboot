@@ -87,6 +87,7 @@ trap release SIGINT
 # `memtest86+`            boot memory tester tool
 # `libisoburn`            needed for xorriso support
 # `linux-firmware`        needed to reduce issing firmware during mkinitcpio builds
+# `arch-install-scripts`  needed for `pacstrap`
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -256,13 +257,13 @@ build_deployments()
 
       # Derive the package name from 'profile/layer' string given
       local pkg="cyberlinux-${layer//\//-}"
-#
-#      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT_DIR}${none}"
-#      # -C use an alternate config file for pacman
-#      # -c use the package cache on the host rather than target
-#      # -G avoid copying the host's pacman keyring to the target
-#      # -M avoid copying the host's mirrorlist to the target
-#      sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "$ROOT_DIR" "$pkg"
+
+      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${CONT_ROOT_DIR}${none}"
+      # -c use the package cache on the host rather than target
+      # -G avoid copying the host's pacman keyring to the target
+      # -M avoid copying the host's mirrorlist to the target
+      docker_exec ${BUILDER} "pacstrap -c -G -M ${CONT_ROOT_DIR} $pkg"
+      check
     done
 
     # Release the root mount point now that we have fully built the required layers
