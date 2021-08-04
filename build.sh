@@ -53,6 +53,17 @@ make_env_directories() {
   mkdir -p "${LAYERS_DIR}"
 }
 
+# Failsafe resource release code
+[ -z ${RELEASED+x} ] && RELEASED=0
+release() {
+  if [ $RELEASED -ne 1 ]; then
+    RELEASED=1
+    docker_kill ${BUILDER}
+  fi
+}
+trap release EXIT
+trap release SIGINT
+
 # Configure build environment using Docker
 # -------------------------------------------------------------------------------------------------
 # We need to use a docker container in order to get the isolation needed. arch-chroot alone seems
@@ -75,7 +86,7 @@ make_env_directories() {
 # `intel-ucode`           standard practice to load the intel-ucode
 # `memtest86+`            boot memory tester tool
 # `libisoburn`            needed for xorriso support
-# `linux-firmware`        more support for firmware
+# `linux-firmware`        needed to reduce issing firmware during mkinitcpio builds
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -109,7 +120,6 @@ build_packages()
 
   docker_run ${BUILDER}
   docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/standard; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
-  docker_kill ${BUILDER}
 
   # Ensure the builder repo exists locally
   pushd "${REPO_DIR}"
@@ -189,26 +199,81 @@ EOF
     efi_gop gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
 EOF
   check
-
-  docker_kill ${BUILDER}
 }
 
 # Build the initramfs based installer
 build_installer()
 {
-  echo -en "${yellow}:: Build the initramfs based installer...${none}"
+  echo -en "${yellow}:: Stage files for building initramfs based installer...${none}"
   docker_run ${BUILDER}
   docker_cp "${INSTALLER_DIR}/installer" "$BUILDER:/usr/lib/initcpio/hooks"
   docker_cp "${INSTALLER_DIR}/installer.conf" "$BUILDER:/usr/lib/initcpio/install/installer"
   docker_cp "${INSTALLER_DIR}/mkinitcpio.conf" "$BUILDER:/etc"
 
   # Build a sorted array of kernels such that the first is the newest
+  echo -en "${yellow}:: Build the initramfs based installer...${none}"
   local kernels=($(docker_exec ${BUILDER} "ls /lib/modules | sort -r | tr '\n' ' '"))
   docker_exec ${BUILDER} "mkinitcpio -k ${kernels[0]} -g /root/installer"
+  check
 
   docker_cp "$BUILDER:/root/installer" "$ISO_DIR/boot"
-  docker_kill ${BUILDER}
 }
+
+# Build deployments
+build_deployments() 
+{
+  echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
+  docker_run ${BUILDER}
+
+  # Create the temp work directories
+  docker_exec ${BUILDER} "rm -rf ${CONT_WORK_DIR}; mkdir -p ${CONT_ROOT_DIR} ${CONT_WORK_DIR}"
+
+  # Iterate over the deployments building the dependent layers
+  for target in ${1//,/ }; do
+    read_deployment $target
+    echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
+
+    for i in "${!LAYERS[@]}"; do
+      local layer="${LAYERS[$i]}"
+      echo -e ":: Building layer ${cyan}${layer}${none}..."
+
+      # Ensure the layer destination path exists and is owned by root to avoid warnings
+      local layer_path="${CONT_LAYERS_DIR}/${layer}"
+      docker_exec ${BUILDER} "mkdir -p ${layer_path}"
+
+      # Mount the layer destination path 
+      if [ ${i} -eq 0 ]; then
+        echo -en ":: Bind mount layer ${cyan}${layer_path}${none} to ${cyan}${CONT_ROOT_DIR}${none}..."
+        #docker_exec ${BUILDER} "mount --bind $layer_path $CONT_ROOT_DIR"
+        #check
+      else
+        # `upperdir` is a writable layer at the top
+        # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
+        # `workdir` is an empty dir used to prepare files as they are switched between layers
+        # the last param is the merged or resulting filesystem after layering to work with
+        echo -en ":: Mounting layer ${cyan}${layer_path}${none} over ${cyan}${CONT_ROOT_DIR}${none}..."
+        docker_exec ${BUILDER} "mount -t overlay overlay -o lowerdir=${CONT_ROOT_DIR},upperdir=${layer_path},workdir=${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
+        check
+      fi
+
+      # Derive the package name from 'profile/layer' string given
+      local pkg="cyberlinux-${layer//\//-}"
+#
+#      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT_DIR}${none}"
+#      # -C use an alternate config file for pacman
+#      # -c use the package cache on the host rather than target
+#      # -G avoid copying the host's pacman keyring to the target
+#      # -M avoid copying the host's mirrorlist to the target
+#      sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "$ROOT_DIR" "$pkg"
+    done
+
+    # Release the root mount point now that we have fully built the required layers
+    echo -en ":: Releasing overlay ${cyan}${CONT_ROOT_DIR}${none}..."
+    docker_exec ${BUILDER} "umount -fR $CONT_ROOT_DIR"
+    check
+  done
+}
+
 
 # Build the ISO
 # ISOHYBRID is the format used to create an ISO that is going to be bootable as both a burned CD-ROM
@@ -263,58 +328,6 @@ build_iso()
     -o $CONT_OUTPUT_DIR/cyberlinux.iso "$CONT_ISO_DIR"
 EOF
   check
-  docker_kill ${BUILDER}
-}
-
-# Build deployments
-build_deployments() 
-{
-  echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
-  sudo rm -rf "$WORK_DIR/*"
-
-  for target in ${1//,/ }; do
-    read_deployment $target
-    echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
-
-    for i in "${!LAYERS[@]}"; do
-      local layer="${LAYERS[$i]}"
-      echo -e ":: Building layer ${cyan}${layer}${none}..."
-
-      # Ensure the layer destination path exists and is owned by root to avoid warnings
-      local layer_path="${LAYERS_DIR}/${layer}"
-      sudo mkdir -p "$layer_path"
-
-      # Mount the layer destination path 
-      if [ ${i} -gt 0 ]; then
-        # `upperdir` is a writable layer at the top
-        # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
-        # `workdir` is an empty dir used to prepare files as they are switched between layers
-        # the last param is the merged or resulting filesystem after layering to work with
-        echo -e ":: Mounting layer ${cyan}${layer}${none} over ${cyan}${ROOT_DIR}${none}..."
-        sudo mount -t overlay overlay -o lowerdir="${ROOT_DIR}",upperdir="${layer_path}",workdir="${WORK_DIR}" "${ROOT_DIR}"
-        check
-      else
-        echo -en ":: Bind mount layer ${cyan}${layer}${none} to root ${cyan}${ROOT_DIR}${none}..."
-        sudo mount --bind "$layer_path" "$ROOT_DIR"
-        check
-      fi
-
-      # Derive the package name from 'profile/layer' string given
-      local pkg="cyberlinux-${layer//\//-}"
-
-      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${ROOT_DIR}${none}"
-      # -C use an alternate config file for pacman
-      # -c use the package cache on the host rather than target
-      # -G avoid copying the host's pacman keyring to the target
-      # -M avoid copying the host's mirrorlist to the target
-      sudo pacstrap -C "${PACMAN_CONF}" -c -G -M "$ROOT_DIR" "$pkg"
-    done
-
-    # Release the root mount point now that we have fully built the required layers
-    echo -en ":: Releasing overlay ${cyan}${ROOT_DIR}${none}..."
-    sudo umount -fR "$ROOT_DIR"
-    check
-  done
 }
 
 # Clean the various build artifacts as called out
@@ -489,6 +502,7 @@ usage()
   echo -e "  ${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
   echo -e "  ${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
   echo -e "  ${green}Rebuild builder image:${none} ./${SCRIPT} -c builder -b"
+  echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -p standad -d base"
   echo
   exit 1
 }
