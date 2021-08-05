@@ -21,6 +21,7 @@ LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in th
 OUTPUT_DIR="${TEMP_DIR}/output"           # Final built artifacts
 
 # Source material to pull from
+WORK_DIR="${LAYERS_DIR}/work"             # Temp work directory for layer mounts
 GRUB_DIR="${PROJECT_DIR}/grub"            # Location to pull persisted Grub configuration files from
 CONFIG_DIR="${PROJECT_DIR}/config"        # Location for config files and templates files
 PROFILES_DIR="${PROJECT_DIR}/profiles"    # Location for profile descriptions, packages and configs
@@ -59,6 +60,7 @@ release() {
   if [ $RELEASED -ne 1 ]; then
     RELEASED=1
     docker_kill ${BUILDER}
+    sudo rm -rf "${WORK_DIR}"
   fi
 }
 trap release EXIT
@@ -88,6 +90,7 @@ trap release SIGINT
 # `libisoburn`            needed for xorriso support
 # `linux-firmware`        needed to reduce issing firmware during mkinitcpio builds
 # `arch-install-scripts`  needed for `pacstrap`
+# `squashfs-tools`        needed to be able to create squashfs images
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -100,7 +103,7 @@ build_env()
     docker_run archlinux:base-devel
     docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
     local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux \
-      intel-ucode memtest86+ libisoburn"
+      intel-ucode memtest86+ libisoburn squashfs-tools"
     docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
     docker_kill ${BUILDER}
 
@@ -225,51 +228,74 @@ build_deployments()
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
-  docker_exec ${BUILDER} "mkdir ${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
+  docker_exec ${BUILDER} "mkdir -p ${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
 
-  # Iterate over the deployments building the dependent layers
+  # Iterate over the deployments
   for target in ${1//,/ }; do
     read_deployment $target
     echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
 
+    # Build each of the deployment's layers
     for i in "${!LAYERS[@]}"; do
       local layer="${LAYERS[$i]}"
       echo -e ":: Building layer ${cyan}${layer}${none}..."
 
       # Ensure the layer destination path exists and is owned by root to avoid warnings
-      local layer_path="${CONT_LAYERS_DIR}/${layer}"
-      docker_exec ${BUILDER} "mkdir -p ${layer_path}"
+      local layer_dir="${LAYERS_DIR}/${layer}"
+      local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"
+      docker_exec ${BUILDER} "mkdir -p ${cont_layer_dir}"
 
       # Mount the layer destination path 
       if [ ${i} -eq 0 ]; then
-        echo -en ":: Bind mount layer ${cyan}${layer_path}${none} to ${cyan}${CONT_ROOT_DIR}${none}..."
-        docker_exec ${BUILDER} "mount --bind $layer_path $CONT_ROOT_DIR"
+        echo -en ":: Bind mount layer ${cyan}${cont_layer_dir}${none} to ${cyan}${CONT_ROOT_DIR}${none}..."
+        docker_exec ${BUILDER} "mount --bind $cont_layer_dir $CONT_ROOT_DIR"
         check
       else
         # `upperdir` is a writable layer at the top
         # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
         # `workdir`  is an empty dir used to prepare files and has to be on the same file system as upperdir
         # the last param is the merged or resulting filesystem after layering to work with
-        echo -en ":: Mounting layer ${cyan}${layer_path}${none} over ${cyan}${CONT_ROOT_DIR}${none}..."
-        docker_exec ${BUILDER} "mount -t overlay overlay -o lowerdir=${CONT_ROOT_DIR},upperdir=${layer_path},workdir=${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
+        echo -en ":: Mounting layer ${cyan}${cont_layer_dir}${none} over ${cyan}${CONT_ROOT_DIR}${none}..."
+        docker_exec ${BUILDER} "mount -t overlay overlay -o lowerdir=${CONT_ROOT_DIR},upperdir=${cont_layer_dir},workdir=${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
         check
       fi
 
-      # Derive the package name from 'profile/layer' string given
-      local pkg="cyberlinux-${layer//\//-}"
-
-      echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${CONT_ROOT_DIR}${none}"
-      # -c use the package cache on the host rather than target
-      # -G avoid copying the host's pacman keyring to the target
-      # -M avoid copying the host's mirrorlist to the target
-      docker_exec ${BUILDER} "pacstrap -c -G -M ${CONT_ROOT_DIR} $pkg"
-      check
+      # Install target package if necessary
+      if [ "$(ls "${layer_dir}")" != "" ]; then
+        echo -e ":: Skipping install layer ${cyan}${cont_layer_dir}${none} already exists"
+      else
+        local pkg="cyberlinux-${layer//\//-}" # Derive the package name from 'profile/layer' string given
+        echo -e ":: Installing target layer package ${cyan}${pkg}${none} to root ${cyan}${CONT_ROOT_DIR}${none}"
+        # -c use the package cache on the host rather than target
+        # -G avoid copying the host's pacman keyring to the target
+        # -M avoid copying the host's mirrorlist to the target
+        docker_exec ${BUILDER} "pacstrap -c -G -M ${CONT_ROOT_DIR} $pkg"
+        check
+      fi
     done
 
     # Release the root mount point now that we have fully built the required layers
     echo -en ":: Releasing overlay ${cyan}${CONT_ROOT_DIR}${none}..."
     docker_exec ${BUILDER} "umount -fR $CONT_ROOT_DIR"
     check
+
+    # Compress each built layer into a deliverable image
+    for i in "${!LAYERS[@]}"; do
+      local layer="${LAYERS[$i]}"
+      local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"
+      local cont_layer_image="${cont_layer_dir}.sqfs"
+      if [ -f "${LAYERS_DIR}/${layer}.sqfs" ]; then
+        echo -e ":: Squashfs image ${cyan}${cont_layer_image}${none} already exists"
+      else
+        echo -en ":: Compressing layer ${cyan}${cont_layer_dir}${none} into ${cyan}${cont_layer_image}${none}..."
+        # Stock settings pulled from ArchISO
+        # -noappend           // overwrite destination image rather than adding to it
+        # -b 1M               // use a larger block size for higher performance
+        # -comp xz -Xbcj x86  // use xz compression with x86 filter for best compression
+        docker_exec ${BUILDER} "mksquashfs ${cont_layer_dir} ${cont_layer_image} -noappend -b 1M -comp xz -Xbcj x86"
+        check
+      fi
+    done
   done
 }
 
@@ -498,8 +524,8 @@ usage()
   echo -e "  ${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
   echo -e "  ${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
   echo -e "  ${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
-  echo -e "  ${green}Clean standard core layer:${none} ./${SCRIPT} -c layers/standard/core"
-  echo -e "  ${green}Rebuild builder image:${none} ./${SCRIPT} -c builder -b"
+  echo -e "  ${green}Clean standard core,base layers:${none} ./${SCRIPT} -c layers/standard/core,layers/standard/base"
+  echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p standard -b -m -i"
   echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -p standad -d base"
   echo
   RELEASED=1

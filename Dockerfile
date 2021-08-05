@@ -5,6 +5,7 @@ ADD profiles/standard/core /
 ADD temp/cache /var/cache/pacman/pkg
 COPY profiles/standard/core/etc/skel /root
 COPY config/pacman.builder /etc/pacman.conf
+COPY config/mirrorlist /etc/pacman.d/mirrorlist
 COPY config/mkinitcpio.conf /etc/mkinitcpio.conf
 
 # New user is created with:
@@ -16,7 +17,8 @@ COPY config/mkinitcpio.conf /etc/mkinitcpio.conf
 RUN echo ">> Install builder packages" && \
   mkdir -p /root/repo /root/profiles && \
   pacman -Sy --noconfirm vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk \
-    linux intel-ucode memtest86+ libisoburn linux-firmware arch-install-scripts && \
+    linux intel-ucode memtest86+ libisoburn linux-firmware arch-install-scripts \
+    squashfs-tools && \
   echo ">> Add the build user" && \
   groupadd -g 1000 build && \
   useradd --no-log-init -r -m -u 1000 -g build build && \

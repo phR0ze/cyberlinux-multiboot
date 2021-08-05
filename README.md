@@ -261,7 +261,8 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Compress layers into squashfs images 
 * Containerize the builder
-* Build bootable USB with custom menus
 
 # Changelog <a name="changelog"/></a>
+* Build bootable USB with custom menus
