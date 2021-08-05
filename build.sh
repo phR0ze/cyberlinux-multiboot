@@ -364,14 +364,25 @@ clean()
 
   for x in ${1//,/ }; do
     local target="${TEMP_DIR}/${x}"
+
+    # Clean everything not covered in other specific cases
     if [ "${x}" == "all" ]; then
       target="${TEMP_DIR}"
       echo -e "${yellow}:: Cleaning docker image ${cyan}archlinux:base-devel${none}"
       docker_rmi archlinux:base-devel
     fi
+
+    # Clean the builder docker image
     if [ "${x}" == "all" ] || [ "${x}" == "${BUILDER}" ]; then
       echo -e "${yellow}:: Cleaning docker image ${cyan}${BUILDER}${none}"
       docker_rmi ${BUILDER}
+    fi
+
+    # Clean the squashfs staged images from temp/iso/images if layer called out
+    if [ "${x}" == "all" ] || [ "${x%%/*}" == "layers" ]; then
+      local layer_image="${IMAGES_DIR}/${x#*/}.sqfs" # e.g. .../images/standard/core.sqfs
+      echo -e "${yellow}:: Cleaning sqfs layer image${none} ${cyan}${layer_image}${none}"
+      sudo rm -f "${layer_image}"
     fi
 
     echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
