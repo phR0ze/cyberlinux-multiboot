@@ -19,6 +19,7 @@ REPO_DIR="${TEMP_DIR}/repo"               # Local repo location to stage package
 CACHE_DIR="${TEMP_DIR}/cache"             # Local location to cache packages used in building deployments
 LAYERS_DIR="${TEMP_DIR}/layers"           # Layered filesystems to include in the ISO
 OUTPUT_DIR="${TEMP_DIR}/output"           # Final built artifacts
+IMAGES_DIR="${ISO_DIR}/images"            # Final iso sqfs image locations
 
 # Source material to pull from
 WORK_DIR="${LAYERS_DIR}/work"             # Temp work directory for layer mounts
@@ -33,6 +34,7 @@ PACMAN_BUILDER_CONF="${CONFIG_DIR}/pacman.builder" # Pacman config template to t
 CONT_BUILD_DIR="/home/build"              # Build location for layer components
 CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
 CONT_ISO_DIR="${CONT_BUILD_DIR}/iso"      # Build location for staging iso/boot files
+CONT_IMAGES_DIR="${CONT_ISO_DIR}/images"  # Final iso sqfs image locations
 CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage packages being built
 CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
 CONT_OUTPUT_DIR="${CONT_BUILD_DIR}/output" # Final built artifacts
@@ -228,7 +230,7 @@ build_deployments()
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
-  docker_exec ${BUILDER} "mkdir -p ${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
+  docker_exec ${BUILDER} "mkdir -p ${CONT_WORK_DIR} ${CONT_ROOT_DIR} ${CONT_IMAGES_DIR}"
 
   # Iterate over the deployments
   for target in ${1//,/ }; do
@@ -242,8 +244,9 @@ build_deployments()
 
       # Ensure the layer destination path exists and is owned by root to avoid warnings
       local layer_dir="${LAYERS_DIR}/${layer}"
-      local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"
-      docker_exec ${BUILDER} "mkdir -p ${cont_layer_dir}"
+      local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"                  # e.g. /home/build/layers/stanard/core
+      local cont_layer_image_dir="${CONT_IMAGES_DIR}/$(dirname ${layer})" # e.g. /home/build/iso/images/standard
+      docker_exec ${BUILDER} "mkdir -p ${cont_layer_dir} ${cont_layer_image_dir}"
 
       # Mount the layer destination path 
       if [ ${i} -eq 0 ]; then
@@ -283,8 +286,8 @@ build_deployments()
     for i in "${!LAYERS[@]}"; do
       local layer="${LAYERS[$i]}"
       local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"
-      local cont_layer_image="${cont_layer_dir}.sqfs"
-      if [ -f "${LAYERS_DIR}/${layer}.sqfs" ]; then
+      local cont_layer_image="${CONT_IMAGES_DIR}/${layer}.sqfs" # e.g.  iso/images/standard/core.sqfs
+      if [ -f "${IMAGES_DIR}/${layer}.sqfs" ]; then
         echo -e ":: Squashfs image ${cyan}${cont_layer_image}${none} already exists"
       else
         echo -en ":: Compressing layer ${cyan}${cont_layer_dir}${none} into ${cyan}${cont_layer_image}${none}..."
