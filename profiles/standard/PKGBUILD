@@ -108,6 +108,7 @@ package_cyberlinux-standard-base()
     'systemd-sysvcompat'        # Sysinit compat for systemd
     'gnutls'                    # required by systemd-resolved to work
     'sudo'                      # Elevate user commands on demand to root
+    'mkinitcpio-vt-colors'      # cyberlinux blue vt console colors
 
     # Kernel components
     'intel-ucode'               # required for Intel Microcode update files to boot
