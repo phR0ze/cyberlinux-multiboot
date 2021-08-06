@@ -114,25 +114,25 @@ build_env()
     docker build --force-rm -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
-  # Build custom packages
-  if [ ! -f "$REPO_DIR/builder.db" ]; then
-    build_repo_packages
-  fi
+  # Build repo packages
+  build_repo_packages
 }
 
 # Build repo packages if needed
 build_repo_packages() 
 {
-  echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
+  if [ ! -f "$REPO_DIR/builder.db" ]; then
+    echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
 
-  docker_run ${BUILDER}
-  docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/${PROFILE}; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
-  check
+    docker_run ${BUILDER}
+    docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/${PROFILE}; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
+    check
 
-  # Ensure the builder repo exists locally
-  pushd "${REPO_DIR}"
-  repo-add builder.db.tar.gz *.pkg.tar.*
-  popd
+    # Ensure the builder repo exists locally
+    pushd "${REPO_DIR}"
+    repo-add builder.db.tar.gz *.pkg.tar.*
+    popd
+  fi
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
@@ -382,9 +382,14 @@ clean()
 
     # Clean the squashfs staged images from temp/iso/images if layer called out
     if [ "${x}" == "all" ] || [ "${x%%/*}" == "layers" ]; then
-      local layer_image="${IMAGES_DIR}/${x#*/}.sqfs" # e.g. .../images/standard/core.sqfs
-      echo -e "${yellow}:: Cleaning sqfs layer image${none} ${cyan}${layer_image}${none}"
-      sudo rm -f "${layer_image}"
+      if [ "${x}" == "all" ] || [ "${x}" == "layers" ]; then
+        echo -e "${yellow}:: Cleaning all layer images${none}"
+        sudo rm -rf "${LAYERS_DIR}"
+      else
+        local layer_image="${IMAGES_DIR}/${x#*/}.sqfs" # e.g. .../images/standard/core.sqfs
+        echo -e "${yellow}:: Cleaning sqfs layer image${none} ${cyan}${layer_image}${none}"
+        sudo rm -f "${layer_image}"
+      fi
     fi
 
     echo -e "${yellow}:: Cleaning build artifacts${none} ${cyan}${target}${none}"
