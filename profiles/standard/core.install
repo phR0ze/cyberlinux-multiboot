@@ -22,7 +22,7 @@
 post_install()
 {
   for x in $(find /etc/skel -type f -name '*_sideload'); do
-    msg "Sideloading: ${x} => ${x//_sideload/}"
+    echo ":: Sideloading ${x} => ${x//_sideload/}"
     mv "${x}" "${x//_sideload/}"
   done
 }

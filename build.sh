@@ -384,7 +384,7 @@ clean()
     if [ "${x}" == "all" ] || [ "${x%%/*}" == "layers" ]; then
       if [ "${x}" == "all" ] || [ "${x}" == "layers" ]; then
         echo -e "${yellow}:: Cleaning all layer images${none}"
-        sudo rm -rf "${LAYERS_DIR}"
+        sudo rm -rf "${IMAGES_DIR}"
       else
         local layer_image="${IMAGES_DIR}/${x#*/}.sqfs" # e.g. .../images/standard/core.sqfs
         echo -e "${yellow}:: Cleaning sqfs layer image${none} ${cyan}${layer_image}${none}"
