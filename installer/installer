@@ -174,7 +174,7 @@ mount_layers()
 
         # Concatenate the layers together separated by colon. The right most is the lowest
         # layer and left most is the top i.e. layer2:layer1
-        layer_dirs="${img_mnt}:${layer_dirs}"
+        layer_dirs="${layer_dirs}${img_mnt}:"
 
         echo -en ":: Detecting presence of layer ${cyan}${img_path}${none}..."
         if [ ! -f ${img_path} ]; then
