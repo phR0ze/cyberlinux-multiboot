@@ -97,6 +97,7 @@ package_cyberlinux-standard-base()
     # libnetfilter_conntrack kbd kmod hwids libidn2 libunistring libelf bzip2 curl ca-certificates
     # ca-certificates-mozilla ca-certificates-utils coreutils gmp findutils p11-kit libssh2 libpsl
     # libnghttp2 libseccomp util-linux shadow file pcre2
+    'grub'                      # Required to boot legacy BIOS systems
     'systemd'                   # System and service manager
     'systemd-sysvcompat'        # Sysinit compat for systemd
     'gnutls'                    # required by systemd-resolved to work

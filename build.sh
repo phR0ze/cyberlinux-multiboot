@@ -92,8 +92,8 @@ trap release SIGINT
 # `libisoburn`            needed for xorriso support
 # `linux-firmware`        needed to reduce issing firmware during mkinitcpio builds
 # `arch-install-scripts`  needed for `pacstrap`
-# `squashfs-tools`        needed to be able to create squashfs images
-# `jq`                    json manipulation
+# `squashfs-tools`        provides `mksquashfs` for creating squashfs images
+# `jq`                    provides `jq` json manipulation
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -528,7 +528,7 @@ usage()
   echo -e "  -m               Build the grub multiboot environment"
   echo -e "  -I               Build the acutal ISO image"
   echo -e "  -P               Build packages for deployment/s and/or profile"
-  echo -e "  -p               Set the profile to use, default: personal"
+  echo -e "  -p               Set the profile to use (default: standard)"
   echo -e "  -c               Clean build artifacts, commad delimited (all|builder|iso|layers/standard/core)"
   echo -e "  -h               Display usage help\n"
   echo -e "Examples:"
@@ -567,8 +567,8 @@ header
 # Invoke the testing function if given
 [ ! -z ${TEST+x} ] && testing
 
-# Read profile, default to personal
-[ -z ${PROFILE+x} ] && PROFILE="personal"
+# Default profile if not set
+[ -z ${PROFILE+x} ] && PROFILE=standard
 read_profile "$PROFILE"
 
 # Optionally clean artifacts
