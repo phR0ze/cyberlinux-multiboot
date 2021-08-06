@@ -72,9 +72,9 @@ getinput()
     local result=$3                                 # Default value to use if not set
     local silent=$4                                 # Don't echo when set
 
-    echo -en "   Enter ${input} (default=${cyan}${result}${none}): "
-    [ "x$vagrant" != "x0" ] && echo ''
-    if [ "x$vagrant" == "x0" ]; then
+    echo -en "   ${input} (default=${cyan}${result}${none}): "
+    [ "x$DEFAULT" == "xy" ] && echo ''
+    if [ "x$DEFAULT" == "xn" ]; then
         if [ $silent ]; then
             read -s value
             echo ''
@@ -100,7 +100,7 @@ getsel()
     done
     while true; do
         echo -en "   Enter a number (default=${cyan}1${none}): "
-        [ "x$vagrant" != "x0" ] && echo '' || read choice
+        [ "x$DEFAULT" == "xy" ] && echo '' || read choice
         [ "$choice" == "exit" ] && exit_to_shell
         [ "x$choice" == "x" ] && choice=1
         if [ $choice -gt 0 ] && [ $choice -le $out_of_bounds ]; then
@@ -116,16 +116,16 @@ getsel()
 
 mount_layers()
 {
-    local images_path=$1                            # e.g. ${iso_mnt}/images
-    local layered_mnt=$2                            # e.g. ${write_mnt}/root
-    local layered_tmp=$3                            # e.g. ${write_mnt}/temp
+    local images_path=$1                            # e.g. ${ISO_MNT}/images
+    local layered_mnt=$2                            # e.g. ${WRITE_MNT}/root
+    local layered_tmp=$3                            # e.g. ${WRITE_MNT}/temp
 
     # Mount all implicated sqfs images
     local layer_dirs=""
     echo -e ":: Mounting implicated layers"
     for x in ${layers//,/ }; do
-        local img_mnt="${read_mnt}/${x}"             # i.e. ${read_mnt}/{base,devel,lite, etc...}
-        local img_path="${images_path}/${x}.sqfs"   # e.g. ${iso_mnt}/images/base.sqfs
+        local img_mnt="${READ_MNT}/${x}"             # i.e. ${READ_MNT}/{base,devel,lite, etc...}
+        local img_path="${images_path}/${x}.sqfs"   # e.g. ${ISO_MNT}/images/base.sqfs
         layer_dirs="${layer_dirs}${img_mnt}:"
 
         echo -en ":: Detecting presence of layer ${img_path}..."
@@ -141,7 +141,7 @@ mount_layers()
         mkdir -p "${img_mnt}"
         mount -r -t squashfs ${img_path} ${img_mnt} &>/dev/null
         check_status
-        mounts="${mounts}${img_mnt} "
+        MOUNTS="${MOUNTS}${img_mnt} "
     done
     layer_dirs=${layer_dirs%?}
 
@@ -152,14 +152,14 @@ mount_layers()
     mkdir -p ${layered_tmp}
     mount -t overlay -o lowerdir=${layer_dirs},upperdir=${layered_mnt},workdir=${layered_tmp} none ${layered_mnt}
     check_status
-    mounts="${mounts}${layered_mnt} "
+    MOUNTS="${MOUNTS}${layered_mnt} "
 }
 
 # Wait for install device to register with system then mount it.
 # Use wellknown install device label to detect its existance
-mount_iso()
+mount_install_device()
 {
-    echo -en ":: Locating install device labeled ${label}..."
+    echo -en ":: Locating install device labeled ${LABEL}..."
 
     local i=0
     local success=0
@@ -167,26 +167,28 @@ mount_iso()
         sleep 0.25 # Sleep for a bit
 
         # Find device by label
-        isodev=$(blkid -L ${label}) &>/dev/null
-        if [ "x${isodev}" != "x" ]; then
+        ISODEV=$(blkid -L ${LABEL}) &>/dev/null
+        if [ "x${ISODEV}" != "x" ]; then
             check_status
 
-            # Get fstype trimming device partition off if type not correct
+            # Get install device file system type for mount
+            local fstype=$(blkid -s TYPE -o value ${ISODEV}) &>/dev/null
+
+            # Trim partition off if not iso to get media type
             # /dev/sda3 to /dev/sda in USB case
             # /dev/sr0 in CD/ISO case
-            local fstype=$(blkid -s TYPE -o value ${isodev}) &>/dev/null
+            local isodev=$ISODEV
             if [ "x${fstype}" != "xiso9660" ]; then
-                isodev=${isodev%?}
-                fstype=$(blkid -s TYPE -o value ${isodev}) &>/dev/null
+                isodev=${ISODEV%?}
             fi
 
-            # Get device type and trim to first word
+            # Using base iso device get device type and trim to first word
             local install_type=$(echo $(lsblk -nl -o TYPE ${isodev})) &>/dev/null
             install_type=${install_type%% *}
 
             # Mount iso device found by label with correct fstype
-            echo -en "   Mounting install ${cyan}${install_type}${none} [${cyan}${isodev}${none}] to ${iso_mnt}..."
-            mount -r -t ${fstype} -o noatime ${isodev} ${iso_mnt} &>/dev/null
+            echo -en "   Mounting install ${cyan}${install_type}${none} [${cyan}${ISODEV}${none}] to ${ISO_MNT}..."
+            mount -r -t ${fstype} -o noatime ${ISODEV} ${ISO_MNT} &>/dev/null
             check_status && success=1
         fi
 
@@ -196,85 +198,41 @@ mount_iso()
     done
 }
 
-get_disks()
-{
-    disks=""
-    disk_details=""
-
-    ifs=$IFS
-    IFS=$'\n'
-    local i=0
-    local alldisks=$(lsblk -dn -o NAME,SIZE,VENDOR,MODEL,TYPE -x NAME | grep disk)
-    for x in $alldisks; do
-        local details=""
-        local disk=$(echo $x | awk '{print $1}')
-        local size=$(echo $x | awk '{print $2}')
-        local vendor=$(echo $x | awk '{print $3}')
-        local model=$(echo $x | awk '{print $4}')
-        [ "x${size}" != "x" ] && details="${size}"
-        [ "x${vendor}" != "x" ] && details="${details} ${vendor}"
-        [ "x${model}" != "x" ] && details="${details} ${model}"
-
-        # Limit to disks over 4GB in size
-        local factor=1
-        [ "${size#*G}" != "${size}" ] && factor=1024
-        size=${size//M}         # Drop M suffix
-        size=${size//G}         # Drop G suffix
-        size=${size%.*}         # Drop decimal suffix
-        size=$((size*factor))
-        if [ ${size} -gt 4096 ]; then
-
-            # Exclude the device the iso was mounted from
-            local dev=/dev/${disk}
-            if [ "${isodev#*$dev}" == "${isodev}" ]; then
-                local i=$((i+1))
-                disks="${disks} /dev/${disk}"
-                if [ "$disk_details" == "" ]; then
-                    disk_details="$details"
-                else
-                    disk_details="${disk_details},${detail}"
-                fi
-            fi
-        fi
-    done
-    IFS=$ifs
-}
-
 # Partition disk and mount for install at ${rootmnt}
 partition_and_mount_disk()
 {
     # Wipe, partition and format disk
     #---------------------------------------------------------------------------
-    echo -en ":: Disk ${cyan}${install_dev}${none} identified as install disk..."
-    [ "x${install_dev}" != "x" ]
+    echo -en ":: Disk ${cyan}${INSTALL_DEV}${none} identified as install disk..."
+    [ "x${INSTALL_DEV}" != "x" ]
     check_status
 
-    echo -en ":: Destroy any magic strings and/or signatures on ${install_dev}..."
-    wipefs --all --force ${install_dev} &>/dev/null
+    echo -en ":: Destroy any magic strings and/or signatures on ${INSTALL_DEV}..."
+    wipefs --all --force ${INSTALL_DEV} &>/dev/null
     check_status
 
-    echo -en ":: Wiping partition table on ${install_dev}..."
-    sgdisk --zap ${install_dev} &>/dev/null
+    echo -en ":: Wiping partition table on ${INSTALL_DEV}..."
+    sgdisk --zap ${INSTALL_DEV} &>/dev/null
     check_status
 
     # Set partition identifiers
-    if [ "x${ssd}" == "x1" ]; then
-        part_boot="${install_dev}p1"
-        part_swap="${install_dev}p2"
-        part_root="${install_dev}p3"
+    if [ "x${SSD}" == "x1" ]; then
+        part_boot="${INSTALL_DEV}p1"
+        part_swap="${INSTALL_DEV}p2"
+        part_root="${INSTALL_DEV}p3"
     else
-        part_boot="${install_dev}1"
-        part_swap="${install_dev}2"
-        part_root="${install_dev}3"
+        part_boot="${INSTALL_DEV}1"
+        part_swap="${INSTALL_DEV}2"
+        part_root="${INSTALL_DEV}3"
     fi
 
     # EFI: Create a GPT boot disk
     # https://wiki.archlinux.org/index.php/EFI_System_Partition#Create_the_partition
-    if [ "x${efi}" == "x1" ]; then
+    if [ "x${EFI}" == "x1" ]; then
 
         # Create ESP boot partition
         echo -en ":: Creating ${part_boot} as ESP boot partition..."
-        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI System" ${install_dev} &>/dev/null
+        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI System" ${INSTALL_DEV} &>/dev/null
         check_status
         echo -en ":: Formatting ${part_boot} (ESP) as FAT..."
         mkfs.fat -n "ESP" ${part_boot} &>/dev/null
@@ -282,24 +240,24 @@ partition_and_mount_disk()
 
         # Create SWAP partition
         echo -en ":: Creating ${part_swap} as Linux swap partition..."
-        sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${install_dev} &>/dev/null
+        sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${INSTALL_DEV} &>/dev/null
         check_status
 
         # Create root partition and set boot flag
         echo -en ":: Creating ${part_root} as Linux filesystem partition..."
-        sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${install_dev} &>/dev/null
+        sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${INSTALL_DEV} &>/dev/null
         check_status
-        echo -en ":: Setting boot flag on ${install_dev}..."
-        sgdisk ${install_dev} --attributes=3:set:2 &>/dev/null
+        echo -en ":: Setting boot flag on ${INSTALL_DEV}..."
+        sgdisk ${INSTALL_DEV} --attributes=3:set:2 &>/dev/null
         check_status
 
     # BIOS: Create a MBR boot disk
     else
-        echo -en ":: Partitioning ${install_dev} with MBR..."
+        echo -en ":: Partitioning ${INSTALL_DEV} with MBR..."
         echo ',2M,0' > layout
         echo ',4G,82' >> layout
         echo ',+,83,*' >> layout
-        cat layout | sfdisk ${install_dev} &>/dev/null
+        cat layout | sfdisk ${INSTALL_DEV} &>/dev/null
         check_status
         rm -f layout
     fi
@@ -317,7 +275,7 @@ partition_and_mount_disk()
     # -L            set volume name to 'cyberlinux' used by bootloaders
     # -m 0          don't reserve blocks for super user daemons
     # -q            run in quiet mode for scripts
-    mkfs.ext4 -F -m 0 -q -L ${label} ${part_root} &>/dev/null
+    mkfs.ext4 -F -m 0 -q -L ${LABEL} ${part_root} &>/dev/null
     check_status
 
     # Mount root as rootmnt and disable access time writes (speeds things up)
@@ -326,7 +284,7 @@ partition_and_mount_disk()
     check_status
 
     # Mount the ESP on top of the root at /boot
-    if [ "x${efi}" == "x1" ]; then
+    if [ "x${EFI}" == "x1" ]; then
         mkdir -p $rootmnt/boot
         mount ${part_boot} $rootmnt/boot
     fi
@@ -343,7 +301,7 @@ install_bootloader()
 
     # Prepare GRUB (/new_root/boot/grub), EFI (/new_root/mnt/boot/grub)
     #---------------------------------------------------------------------------
-    if [ "x${efi}" == "x1" ]; then
+    if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Mount ${part_boot} (ESP) as ${esp_mnt}..."
         mount ${part_boot} ${esp_mnt} &>/dev/null
         check_status
@@ -358,7 +316,7 @@ install_bootloader()
     # the system, all we need is to customize the 'grub.cfg'
     #---------------------------------------------------------------------------
     shared_modules="ext2 all_video font gfxterm"
-    if [ "x${efi}" == "x1" ]; then
+    if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Create GRUB bootloader path ${esp_mnt}/EFI/BOOT..."
         mkdir -p ${esp_mnt}/EFI/BOOT &>/dev/null
         check_status
@@ -371,9 +329,9 @@ install_bootloader()
             -O ${platform} -p /grub part_gpt fat efi_gop efi_uga ${shared_modules} &>/dev/null
         check_status
     else
-        echo -en ":: Install GRUB BIOS bootloader to ${install_dev}..."
+        echo -en ":: Install GRUB BIOS bootloader to ${INSTALL_DEV}..."
         chroot ${rootmnt} grub-install --target=${platform} \
-            --modules="part_msdos ${shared_modules}" ${install_dev} &>/dev/null
+            --modules="part_msdos ${shared_modules}" ${INSTALL_DEV} &>/dev/null
         check_status
     fi
 
@@ -385,23 +343,23 @@ install_bootloader()
     echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
     echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
     echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
-    echo -e "menuentry \"${label}\" {" >> ${grub_path}/grub.cfg
+    echo -e "menuentry \"${LABEL}\" {" >> ${grub_path}/grub.cfg
     echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
-    echo -e "    search --no-floppy --set=root --label ${label}" >> ${grub_path}/grub.cfg
-    echo -e "    linux /boot/vmlinuz-${kernel} root=LABEL=${label} rw <%=kernel_params%>" >> ${grub_path}/grub.cfg
-    echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${kernel}.img" >> ${grub_path}/grub.cfg
+    echo -e "    search --no-floppy --set=root --label ${LABEL}" >> ${grub_path}/grub.cfg
+    echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${LABEL} rw <%=kernel_params%>" >> ${grub_path}/grub.cfg
+    echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_path}/grub.cfg
     echo -e "}" >> ${grub_path}/grub.cfg
     check_status
 
     # Unmount ESP if EFI mode
-    if [ "x${efi}" == "x1" ]; then
+    if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Umount ${part_boot} (ESP) at ${esp_mnt}..."
         umount -f ${esp_mnt} &>/dev/null
         check_status
     fi
 
     echo -en ":: Generate new initramfs specific to this machine..."
-    chroot ${rootmnt} mkinitcpio -p $kernel &>/dev/null
+    chroot ${rootmnt} mkinitcpio -p $KERNEL &>/dev/null
     check_status
 }
 
@@ -428,8 +386,8 @@ umount_chroot_dirs()
 
 umount_all()
 {
-    mounts="${mounts}${iso_mnt}"
-    for x in ${mounts}; do
+    MOUNTS="${MOUNTS}${ISO_MNT}"
+    for x in ${MOUNTS}; do
         echo -en ":: Unmounting ${x}..."
         umount -f ${x} &>/dev/null
         check_status
@@ -439,60 +397,60 @@ umount_all()
 config_system()
 {
     echo -en ":: Set root user password..."
-    chroot ${rootmnt} usermod -p ${pass} root
+    chroot ${rootmnt} usermod -p ${PASS} root
     check_status
 
     # Filter groups down to just those that exist
     local groups=""
-    for x in ${all_groups//,/ }; do
+    for x in ${ALL_GROUPS//,/ }; do
         if [ $(grep -E "^$x:" ${rootmnt}/etc/group) ]; then
             [ $groups ] && groups="${groups},${x}" || groups="${x}"
         fi
     done
 
     # Configure wifi before user is created to pick up autostart
-    if [ "x$enable_wifi" == "x1" ]; then
+    if [ "x$ENABLE_WIFI" == "x1" ]; then
         echo -en ":: Enable Wifi..."
         chroot ${rootmnt} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
         chroot ${rootmnt} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
         check_status
     fi
 
-    echo -en ":: Create user group '${user}'..."
-    chroot ${rootmnt} groupadd ${user}
+    echo -en ":: Create user group '${USER}'..."
+    chroot ${rootmnt} groupadd ${USER}
     check_status
 
-    echo -en ":: Create user '${user}' with groups '${groups}'..."
-    chroot ${rootmnt} useradd -m -g ${user} -G ${groups} -s /bin/bash ${user}
+    echo -en ":: Create user '${USER}' with groups '${groups}'..."
+    chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
     check_status
 
     echo -en ":: Set user password..."
-    chroot ${rootmnt} usermod -p ${pass} ${user}
+    chroot ${rootmnt} usermod -p ${PASS} ${USER}
     check_status
 
     echo -en ":: Add new user to sudoers list..."
-    chroot ${rootmnt} /bin/bash -c "echo '${user} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
+    chroot ${rootmnt} /bin/bash -c "echo '${USER} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
     check_status
 
     # Set hostname to chosen layer
-    echo -en ":: Set hostname to ${hostname}..."
-    echo $hostname > "${rootmnt}/etc/hostname"
+    echo -en ":: Set hostname to ${HOSTNAME}..."
+    echo $HOSTNAME > "${rootmnt}/etc/hostname"
     check_status
 
     # Configure timezone
-    echo -en ":: Set timezone to ${timezone}..."
-    chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$timezone /etc/localtime &>/dev/null
+    echo -en ":: Set timezone to ${TIMEZONE}..."
+    chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
     check_status
 
     # Configure networking
     # https://www.freedesktop.org/software/systemd/man/systemd.network.html#
     netmatch='en* eth*'
-    if [ "x${netip}" != "xDHCP" ]; then
+    if [ "x${NETIP}" != "xDHCP" ]; then
         # Static LAN
         local conf="${rootmnt}/etc/systemd/network/10-static.network"
         echo -en ":: Configuring static networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
-        echo -e "[Network]\nAddress=${netip}\nGateway=${gateway}\nDNS=${dns1}\nDNS=${dns2}" >> $conf
+        echo -e "[Network]\nAddress=${NETIP}\nGateway=${gateway}\nDNS=${DNS1}\nDNS=${DNS2}" >> $conf
         echo -e "IPForward=kernel" >> $conf
         check_status
     else
@@ -513,20 +471,20 @@ config_system()
     echo -e "[DHCP]\nRouteMetric=20\nUseDomains=true" >> $conf
     check_status
 
-    if [ $proxy ] && [ "x$proxy" != "xNone" ]; then
-        echo -en ":: Set proxy to ${proxy}..."
-        if [ $no_proxy ] && [ "x$no_proxy" != "xNone" ]; then
-            chroot ${rootmnt} /opt/$distro/bin/setproxy enable $proxy $no_proxy &>/dev/null
+    if [ $PROXY ] && [ "x$PROXY" != "xNone" ]; then
+        echo -en ":: Set PROXY to ${PROXY}..."
+        if [ $NO_PROXY ] && [ "x$NO_PROXY" != "xNone" ]; then
+            chroot ${rootmnt} /opt/$DISTRO/bin/setproxy enable $PROXY $NO_PROXY &>/dev/null
         else
-            chroot ${rootmnt} /opt/$distro/bin/setproxy enable $proxy &>/dev/null
+            chroot ${rootmnt} /opt/$DISTRO/bin/setproxy enable $PROXY &>/dev/null
         fi
         check_status
     fi
 
-    # Configure root access for sshd if vagrant deployment
+    # Configure root access for sshd if default deployment
     if [ -e "${rootmnt}/etc/ssh/sshd_config" ]; then
-        if [ "x$vagrant" != "x0" ]; then
-            echo -en ":: Enable sshd root access for vagrant..."
+        if [ "x$DEFAULT" == "xy" ]; then
+            echo -en ":: Enable sshd root access for default..."
             sed -i -e 's/^PermitRootLogin.*/PermitRootLogin yes/' "${rootmnt}/etc/ssh/sshd_config"
             check_status
         fi
@@ -534,9 +492,9 @@ config_system()
 
     # Autologin if lxdm exists and parameter is set
     if [ -e "${rootmnt}/etc/lxdm/lxdm.conf" ]; then
-        if [ "x$autologin" == "x1" ]; then
+        if [ "x$AUTOLOGIN" == "x1" ]; then
             echo -en ":: Enable autologin for LXDM..."
-            sed -i -e "s/^#\s*autologin=.*/autologin=${user}/" "${rootmnt}/etc/lxdm/lxdm.conf"
+            sed -i -e "s/^#\s*autologin=.*/autologin=${USER}/" "${rootmnt}/etc/lxdm/lxdm.conf"
             check_status
         fi
     fi
@@ -548,7 +506,7 @@ installer()
 {
     # Welcome message, centered
     #---------------------------------------------------------------------------
-    local msg="--===<<<[[ ${label} ]]>>>===--"
+    local msg="--===<<<[[ ${LABEL} ]]>>>===--"
     local len=$((105 - ${#msg}))
     local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
     local padright=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
@@ -556,55 +514,60 @@ installer()
     echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
     echo -e "${cyan}:: *${padleft}${msg}${padright}*${none}"
     echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
-    echo -e "   ${params}"
+    echo -e "   ${PARAMS}"
 
     # Mount install source device
     #---------------------------------------------------------------------------
-    mount_iso
+    mount_install_device
 
-    # Set defaults for live or vagrant deployments
+    # Set defaults for live and default deployments
     #---------------------------------------------------------------------------
-    ssd=0
-    vagrant=0
-    enable_wifi=0
-    hostname="${distro}-${target_layer}"
-    netip='DHCP'
-    proxy='None'
-    no_proxy='localhost,127.0.0.1'
-    user='vagrant'
-    pass=$(echo "vagrant" | openssl passwd -5 -stdin)
+    SSD=0
+    DEFAULT="n"
+    ENABLE_WIFI=0
+    HOSTNAME="${DISTRO}-${LAYER//\//-}"
+    NETIP='DHCP'
+    PROXY='None'
+    NO_PROXY='localhost,127.0.0.1'
+    USER='admin'
+    PASS=$(mkpasswd -m sha "admin")
 
     # Ask for user input if not live deployment
     #---------------------------------------------------------------------------
-    if [ "$target_layer" != 'live' ]; then
-        get_disks
-        install_dev=$(echo $disks | awk '{print $1}')
+    if [ "$LAYER" != 'live' ]; then
 
-        # Determine if this is a vagrant deployment
-        echo -e "\n${cyan}:: Vagrant deployment?${none}"
-        getinput vagrant 'vagrant mode' 0
-        if [ "x$vagrant" != "x0" ]; then
-            autologin=1
-            echo -e "\n${cyan}:: Vagrant deployment mode selected...${none}"
-            echo -e "   vagrant=${vagrant}"
-            echo -e "   hostname=${hostname}"
-            echo -e "   networking=${netip}"
-            echo -e "   proxy=${proxy}"
-            echo -e "   no_proxy=${no_proxy}"
-            echo -e "   user=${user}"
-            echo -e "   pass=vagrant"
-            echo -e "   install_dev=${install_dev}"
+        # Read in the destination disk options to present to the user
+        DISKS_DETAILED=$(lsblk -dn -o NAME,SIZE,MODEL,TYPE -x NAME --json | \
+            jq -rc '[.blockdevices[]|select(.type=="disk")]')
+        DISKS=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)')
+        INSTALL_DEV="/dev/$(echo ${DISKS_DETAILED} | jq -rc '.[0].name')"
+
+        # Determine if this is a default deployment
+        echo -e "\n${cyan}:: Automatically deploy with defaults?${none}"
+        getinput DEFAULT 'Use automatic mode with defaults' 'n'
+        if [ "x$DEFAULT" == "xy" ]; then
+            AUTOLOGIN=1
+            echo -e "\n${cyan}:: Automatic deployment mode selected...${none}"
+            echo -e "   hostname=${HOSTNAME}"
+            echo -e "   networking=${NETIP}"
+            echo -e "   proxy=${PROXY}"
+            echo -e "   no_proxy=${NO_PROXY}"
+            echo -e "   user=${USER}"
+            echo -e "   pass=admin"
+            echo -e "   install_dev=${INSTALL_DEV}"
         else
             # Collect install destination device
             #-----------------------------------------------------------------------
             echo -e "\n${cyan}:: Select a disk as your install destination:${none}"
             local i=0
-            for disk in $disks; do
-                local i=$((i+1))
-                local details=$(echo "$disk_details" | awk -F, "{print \$${i}}")
-                echo -e "   ${i}) [${cyan}${disk}${none}] - ${details}"
+            echo $DISKS_DETAILED | jq -rc '.[]' | while read x; do
+                i=$((i+1))
+                local disk="/dev/$(echo $x | jq -r '.name')"
+                local size="$(echo $x | jq -r '.size')"
+                local model="$(echo $x | jq -r '.model')"
+                echo -e "   ${i}) [${cyan}${disk}${none}](${cyan}${size}${none}) - ${model}"
             done
-            getsel install_dev $disks
+            getsel INSTALL_DEV "$DISKS"
 
             # Determine the type of storage from the three most common types:
             # SSD type storage either NVMe or MMC both use a similar partition naming
@@ -612,43 +575,43 @@ installer()
             # SCSI: /dev/sda        partition1: /dev/sda1
             # NVMe: /dev/nvme0n1    partition1: /dev/nvme0n1p1
             # MMC: /dev/mmcblk0     partition1: /dev/mmcblk0p1
-            [ ${install_dev//sda} != "/dev/" ] && ssd=1
+            [ ${INSTALL_DEV//sda} != "/dev/" ] && SSD=1
 
             # Configure networking
             #----------------------------------------------------------------------
             echo -e "\n${cyan}:: Configure networking:${none}"
-            getinput hostname 'hostname' $hostname
-            getinput netip 'static IP, e.g. 192.168.1.2/24' 'DHCP'
-            if [ "x${netip}" != "xDHCP" ]; then
-                getinput gateway 'gateway' $(echo $netip | awk -F. '{print $1"."$2"."$3".1"}')
+            getinput HOSTNAME 'Enter hostname' $HOSTNAME
+            getinput NETIP 'Enter static IP, e.g. 192.168.1.2/24' 'DHCP'
+            if [ "x${NETIP}" != "xDHCP" ]; then
+                getinput gateway 'Enter gateway' $(echo $NETIP | awk -F. '{print $1"."$2"."$3".1"}')
             fi
-            getinput proxy 'proxy, url:port format' $proxy
-            [ "x${proxy}" != "xNone" ] && getinput no_proxy 'no_proxy, comma delim' $no_proxy
-            getinput enable_wifi 'wifi state' 0
+            getinput PROXY 'Enter proxy, url:port format' $PROXY
+            [ "x${PROXY}" != "xNone" ] && getinput NO_PROXY 'Enter no_proxy, comma delim' $NO_PROXY
+            getinput ENABLE_WIFI 'Enter wifi state' 0
 
             # Configure timezone
             #----------------------------------------------------------------------
             echo -e "\n${cyan}:: Configure timezone:${none}"
-            getinput timezone 'timezone' $timezone
+            getinput TIMEZONE 'Enter timezone' $TIMEZONE
 
             # Create new user account
             #----------------------------------------------------------------------
             echo -e "\n${cyan}:: Create new user account:${none}"
-            getinput user 'new username' $user
+            getinput USER 'Enter new username' $USER
             while true; do
-                getinput pass 'new password' 'vagrant' 1
-                getinput pass2 'password again' 'vagrant' 1
-                if [ "x$pass" != "x$pass2" ]; then
+                getinput PASS 'Enter new password' 'admin' 1
+                getinput PASS2 'Enter password again' 'admin' 1
+                if [ "x$PASS" != "x$PASS2" ]; then
                     echo -e "   ${red}Passwords don't match, please try again${none}"
                 else
                     break
                fi
             done
-            pass=$(mkpasswd -m sha $pass)
+            PASS=$(mkpasswd -m sha $PASS)
 
             # Prompt for autologin
-            if [ "x$autologin" != "x1" ]; then
-                getinput autologin 'autologin' 0
+            if [ "x$AUTOLOGIN" != "x1" ]; then
+                getinput autologin 'Enter autologin' 0
             fi
         fi
     fi
@@ -657,25 +620,25 @@ installer()
     #---------------------------------------------------------------------------
     rootmnt="${1}"                          # /new_root passed in as 1st param
     local rw_ram_size="75%"
-    local mode=$([ "$target_layer" == 'live' ] && echo 'Starting' || echo 'Installing')
-    echo -e "\n${cyan}:: ${mode} '${target_layer}' system with layers '${layers}'${none}"
+    local mode=$([ "$LAYER" == 'live' ] && echo 'Starting' || echo 'Installing')
+    echo -e "\n${cyan}:: ${mode} '${LAYER}' system with layers '${layers}'${none}"
     echo -e "${cyan}:: --------------------------------------------------------------------${none}"
     echo -e ":: New Root path '${rootmnt}'"
-    if [ $target_layer == "live" ]; then
+    if [ $LAYER == "live" ]; then
         echo -en ":: Creating live tmpfs filesystem for writes, size=${rw_ram_size}..."
-        mount -t tmpfs -o "size=${rw_ram_size}",mode=0755 none ${write_mnt} &>/dev/null
+        mount -t tmpfs -o "size=${rw_ram_size}",mode=0755 none ${WRITE_MNT} &>/dev/null
         check_status
-        mount_layers "${iso_mnt}/images" ${write_mnt}/root ${write_mnt}/temp
+        mount_layers "${ISO_MNT}/images" ${WRITE_MNT}/root ${WRITE_MNT}/temp
 
-        echo -en ":: Re-bind ${write_mnt}/root to new root location ${rootmnt}..."
-        mount -o bind ${write_mnt}/root ${rootmnt} &>/dev/null
+        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${rootmnt}..."
+        mount -o bind ${WRITE_MNT}/root ${rootmnt} &>/dev/null
         check_status
     else
         # Copies /mnt/read/root/ to /new_root
-        mount_layers "${iso_mnt}/images" ${read_mnt}/root ${read_mnt}/temp
+        mount_layers "${ISO_MNT}/images" ${READ_MNT}/root ${READ_MNT}/temp
         partition_and_mount_disk
-        echo -e ":: Copying ${read_mnt}/root to ${rootmnt}"
-        rsync -ah --info=progress2 ${read_mnt}/root/* ${rootmnt}
+        echo -e ":: Copying ${READ_MNT}/root to ${rootmnt}"
+        rsync -ah --info=progress2 ${READ_MNT}/root/* ${rootmnt}
     fi
 
     # Configure system
@@ -689,17 +652,17 @@ installer()
 
     # Install bootloader and initramfs
     #---------------------------------------------------------------------------
-    if [ $target_layer != "live" ]; then
+    if [ $LAYER != "live" ]; then
         install_bootloader
     fi
     umount_chroot_dirs
 
     # Unmount everything after install
-    [ $target_layer != "live" ] && umount_all
+    [ $LAYER != "live" ] && umount_all
 
     # Successfully deployed
     #---------------------------------------------------------------------------
-    if [ $target_layer != "live" ]; then
+    if [ $LAYER != "live" ]; then
         local msg="--===<<<[[ SUCCESS ]]>>>===--"
         local len=$((105 - ${#msg}))
         local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
@@ -710,7 +673,7 @@ installer()
         echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
 
         # Eject media and reboot
-        [ "x$vagrant" != "x1" ] && eject &>/dev/null
+        [ "x$DEFAULT" != "xy" ] && eject &>/dev/null
     fi
 }
 
@@ -720,33 +683,36 @@ installer()
 run_hook()
 {
     # Set cmdline params as variables to use during install
-    params=$(cat /proc/cmdline)
-    for x in ${params}; do
+    PARAMS=$(cat /proc/cmdline)
+    for x in ${PARAMS}; do
         case "${x}" in
-            'kernel'=*) kernel=${x//kernel=} ;;
-            'layers'=*) layers=${x//layers=} ;;
-            'autologin'=*) autologin=${x//autologin=} ;;
+            'kernel'=*) KERNEL=${x//kernel=} ;;
+            'layers'=*) LAYERS=${x//layers=} ;;
+            'autologin'=*) AUTOLOGIN=${x//autologin=} ;;
             *) continue ;;
         esac
     done
 
     # Set additional variables
-    mounts=""
-    iso_mnt=/mnt/iso
-    read_mnt=/mnt/read
-    write_mnt=/mnt/write
+    MOUNTS=""
+    ISO_MNT=/mnt/iso
+    READ_MNT=/mnt/read
+    WRITE_MNT=/mnt/write
 
     # Variables
-    label="CYBERLINUX"
-    distro="cyberlinux"
-    timezone="America/Boise"
-    all_groups="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
-    dns1="1.1.1.1"
-    dns2="1.0.0.1"
-    efi=0
+    LABEL="CYBERLINUX_INSTALLER"
+    DISTRO="cyberlinux"
+    TIMEZONE="America/Boise"
+    ALL_GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
+    DNS1="1.1.1.1"
+    DNS2="1.0.0.1"
+    EFI=0
 
-    target_layer=$(echo $layers | awk -F, '{print $1}')
-    [ "$target_layer" == "live" ] && autologin=1
+    # Get the last layer which will be our target
+    LAYER=$(echo $LAYERS | awk -F, '{print $NF}')
+
+    # Default autologin if live is the target layer
+    [ "$LAYER" == "live" ] && AUTOLOGIN=1
 
     # Custom handler defined above.
     mount_handler="installer"

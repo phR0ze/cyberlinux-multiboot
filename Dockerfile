@@ -18,7 +18,7 @@ RUN echo ">> Install builder packages" && \
   mkdir -p /root/repo /root/profiles && \
   pacman -Sy --noconfirm vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk \
     linux intel-ucode memtest86+ libisoburn linux-firmware arch-install-scripts \
-    squashfs-tools && \
+    squashfs-tools jq && \
   echo ">> Add the build user" && \
   groupadd -g 1000 build && \
   useradd --no-log-init -r -m -u 1000 -g build build && \

@@ -93,6 +93,7 @@ trap release SIGINT
 # `linux-firmware`        needed to reduce issing firmware during mkinitcpio builds
 # `arch-install-scripts`  needed for `pacstrap`
 # `squashfs-tools`        needed to be able to create squashfs images
+# `jq`                    json manipulation
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -343,7 +344,7 @@ build_iso()
   cd ~/
   xorriso -as mkisofs \
     -r -iso-level 3 \
-    -volid CYBERLINUX \
+    -volid CYBERLINUX_INSTALLER \
     --modification-date=$(date -u +%Y%m%d%H%M%S00) \
     -graft-points \
     -no-emul-boot \
@@ -412,9 +413,7 @@ read_deployment()
   LAYERS_STR=$(echo "$layer" | jq -r '.layers')
   
   # Create an array out of the layers as well
-  ifs=$IFS; IFS=",";
-  read -ra LAYERS <<< "${LAYERS_STR}"
-  IFS=$ifs
+  LAYERS=($(echo ${LAYERS_STR} | tr ',' ' '))
 }
 
 # Read the given profile from disk
