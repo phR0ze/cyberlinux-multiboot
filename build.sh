@@ -589,6 +589,7 @@ fi
 
 # Needs to happen before the multiboot as deployments will be boot entries
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
+  [ -z ${DEPLOYMENTS+x} ] && echo -e "Error: ${red}missing deployment value${none}" && exit
   build_deployments $DEPLOYMENTS
 fi
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then

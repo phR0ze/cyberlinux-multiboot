@@ -227,16 +227,16 @@ partition_and_mount_disk()
 
     # Wipe, partition and format disk
     #---------------------------------------------------------------------------
-    echo -en ":: Disk ${cyber}${INSTALL_DEV}${none} identified as install disk..."
+    echo -en ":: Disk ${cyber}${INSTALL_DEV}${none} identified as destination disk..."
     [ "x${INSTALL_DEV}" != "x" ]
-    check_status
-
-    echo -en ":: Destroy any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
-    wipefs --all --force ${INSTALL_DEV} &>/dev/null
     check_status
 
     echo -en ":: Wiping partition table on ${cyber}${INSTALL_DEV}${none}..."
     sgdisk --zap ${INSTALL_DEV} &>/dev/null
+    check_status
+
+    echo -en ":: Destroy any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
+    wipefs --all --force ${INSTALL_DEV} &>/dev/null
     check_status
 
     # Set partition identifiers
@@ -305,6 +305,7 @@ partition_and_mount_disk()
     check_status
 
     # Mount the boot partition on top of the root partition
+    # GRUB BIOS boot partition shouldn't be formatted or mounted
     if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Mounting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}${rootmnt}/boot${none}..."
         mkdir -p ${rootmnt}/boot

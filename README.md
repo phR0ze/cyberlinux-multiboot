@@ -261,8 +261,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Compress layers into squashfs images 
-* Containerize the builder
+* Test BIOS install with custom steps
+* Test UEFI automated install
+* Test UEFI install with custom steps
+* Don't require new users to immediately change their passwords
 
 # Changelog <a name="changelog"/></a>
+* Containerize the builder
+* Compress layers into squashfs images 
 * Build bootable USB with custom menus
