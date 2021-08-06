@@ -44,18 +44,19 @@ license=('MIT')
 # Configure environment
 shopt -s dotglob
 shopt -s extglob
-none="\e[m"
-cyan="\e[1;36m"
+_none="\e[m"
+_cyan="\e[1;36m"
 _profile=standard
 
 # Because were running the makepkg in a container at a specific location
 # the staging location is /home/build/PKG
 pkg() {
-  local name=$1                         # e.g. core
+  local name=$1                       # e.g. core
+  install=${name}.install             # install script
   local configs="${startdir}/${name}" # /home/build/profiles/standard/core
 
   if [ -d "${configs}" ]; then
-    msg "${cyan}Installing '${name}' configuration files${none}"
+    msg "${_cyan}Installing '${name}' configuration files${_none}"
     cp -a "$configs"/* "${pkgdir}"
   fi
 }
