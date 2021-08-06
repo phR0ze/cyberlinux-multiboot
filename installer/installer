@@ -256,15 +256,15 @@ partition_and_mount_disk()
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}ESP boot partition${none}..."
         sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI system" ${INSTALL_DEV} &>/dev/null
 
+        echo -en ":: Formatting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}vfat${none}..."
+        mkfs.vfat -n "BOOT" ${PART_BOOT} &>/dev/null
+        check_status
+
     # BIOS: Create a BIOS boot partition
     else
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}BIOS boot partition${none}..."
-        sgdisk -n 0:0:+512M -t 0:EF02 -c 0:"BIOS system" ${INSTALL_DEV} &>/dev/null
+        sgdisk -n 0:0:+2M -t 0:EF02 -c 0:"BIOS system" ${INSTALL_DEV} &>/dev/null
     fi
-    check_status
-
-    echo -en ":: Formatting ${cyber}${PART_BOOT}${none} as ${cyber}vfat${none}..."
-    mkfs.vfat -n "BOOT" ${PART_BOOT} &>/dev/null
     check_status
 
     # Create SWAP partition
@@ -305,10 +305,12 @@ partition_and_mount_disk()
     check_status
 
     # Mount the boot partition on top of the root partition
-    echo -en ":: Mounting ${cyber}${PART_BOOT}${none} as ${cyber}${rootmnt}/boot${none}..."
-    mkdir -p ${rootmnt}/boot
-    mount -t vfat -o rw ${PART_BOOT} ${rootmnt}/boot
-    check_status
+    if [ "x${EFI}" == "x1" ]; then
+        echo -en ":: Mounting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}${rootmnt}/boot${none}..."
+        mkdir -p ${rootmnt}/boot
+        mount ${PART_BOOT} ${rootmnt}/boot
+        check_status
+    fi
 }
 
 # Using systemd-boot as its super fast and minimal
@@ -374,7 +376,7 @@ mount_chroot_dirs()
 umount_chroot_dirs()
 {
     for x in "sys proc dev/pts dev"; do
-        umount -fR ${rootmnt}/${x} &>/dev/null
+        umount -f ${rootmnt}/${x} &>/dev/null
     done
 }
 
@@ -382,7 +384,7 @@ umount_all()
 {
     for x in ${MOUNTS}; do
         echo -en ":: Unmounting ${x}..."
-        umount -fR ${x} &>/dev/null
+        umount -f ${x} &>/dev/null
         check_status
     done
 }
