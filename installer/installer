@@ -40,6 +40,8 @@
 none="\e[m"
 red="\e[1;31m"
 cyan="\e[0;36m"
+green="\e[1;32m"
+yellow="\e[1;33m"
 
 exit_to_shell()
 {
@@ -60,7 +62,7 @@ check_status()
     if [ $? -ne 0 ]; then
         fail_to_shell
     else
-        [ "$1" != "nomsg" ] && echo -e "${cyan}success!${none}"
+        [ "$1" != "nomsg" ] && echo -e "${green}success!${none}"
     fi
 }
 
@@ -114,47 +116,6 @@ getsel()
     eval $_result=$result
 }
 
-mount_layers()
-{
-    local images_path=$1                            # e.g. ${ISO_MNT}/images
-    local layered_mnt=$2                            # e.g. ${WRITE_MNT}/root
-    local layered_tmp=$3                            # e.g. ${WRITE_MNT}/temp
-
-    # Mount all implicated sqfs images
-    local layer_dirs=""
-    echo -e ":: Mounting implicated layers"
-    for x in ${layers//,/ }; do
-        local img_mnt="${READ_MNT}/${x}"             # i.e. ${READ_MNT}/{base,devel,lite, etc...}
-        local img_path="${images_path}/${x}.sqfs"   # e.g. ${ISO_MNT}/images/base.sqfs
-        layer_dirs="${layer_dirs}${img_mnt}:"
-
-        echo -en ":: Detecting presence of layer ${img_path}..."
-        if [ ! -f ${img_path} ]; then
-            echo -e "${red}failed!${none}"
-            echo -e ":: ${red}Please build and include the missing deployment layer!${none}\n"
-            launch_interactive_shell
-        else
-            [ "$1" != "nomsg" ] && echo -e "${cyan}success!${none}"
-        fi
-
-        echo -en ":: Mounting ${img_path} at ${img_mnt}..."
-        mkdir -p "${img_mnt}"
-        mount -r -t squashfs ${img_path} ${img_mnt} &>/dev/null
-        check_status
-        MOUNTS="${MOUNTS}${img_mnt} "
-    done
-    layer_dirs=${layer_dirs%?}
-
-    # Layer squashfs images as implicated by $(layers)
-    # e.g. new writable root = (live,heavy,lite,devel,base)
-    echo -en ":: Overlay squashfs layers ${layer_dirs}..."
-    mkdir -p ${layered_mnt}
-    mkdir -p ${layered_tmp}
-    mount -t overlay -o lowerdir=${layer_dirs},upperdir=${layered_mnt},workdir=${layered_tmp} none ${layered_mnt}
-    check_status
-    MOUNTS="${MOUNTS}${layered_mnt} "
-}
-
 # Wait for install device to register with system then mount it.
 # Use wellknown install device label to detect its existance
 mount_install_device()
@@ -198,6 +159,53 @@ mount_install_device()
     done
 }
 
+mount_layers()
+{
+    local images_path=$1                            # e.g. ${ISO_MNT}/images
+    local layered_mnt=$2                            # e.g. ${WRITE_MNT}/root
+    local layered_tmp=$3                            # e.g. ${WRITE_MNT}/temp
+
+    # Mount all implicated sqfs images
+    local layer_dirs=""
+    echo -e ":: Mounting layers ${cyan}${LAYERS}${none}"
+    for x in ${LAYERS//,/ }; do
+        local img_mnt="${READ_MNT}/${x}"            # i.e. ${READ_MNT}/{base,devel,lite, etc...}
+        local img_path="${images_path}/${x}.sqfs"   # e.g. ${ISO_MNT}/images/base.sqfs
+
+        # Concatenate the layers together separated by colon. The right most is the lowest
+        # layer and left most is the top i.e. layer2:layer1
+        layer_dirs="${img_mnt}:${layer_dirs}"
+
+        echo -en ":: Detecting presence of layer ${cyan}${img_path}${none}..."
+        if [ ! -f ${img_path} ]; then
+            echo -e "${red}failed!${none}"
+            echo -e ":: ${red}Please build and include the missing deployment layer!${none}\n"
+            launch_interactive_shell
+        else
+            [ "$1" != "nomsg" ] && echo -e "${green}success!${none}"
+        fi
+
+        echo -en ":: Mounting ${cyan}${img_path}${none} at ${cyan}${img_mnt}${none}..."
+        mkdir -p "${img_mnt}"
+        mount -r -t squashfs ${img_path} ${img_mnt} &>/dev/null
+        check_status
+
+        # Keep track of the mount points to release them later
+        MOUNTS="${MOUNTS}${img_mnt} "
+    done
+    # Trim off the un-needed last colon
+    layer_dirs=${layer_dirs%?}
+
+    # Layer squashfs images as implicated by $(LAYERS)
+    # e.g. new writable root = (live,heavy,lite,devel,base)
+    echo -en ":: Overlay ${cyan}${layer_dirs}${none}..."
+    mkdir -p ${layered_mnt}
+    mkdir -p ${layered_tmp}
+    mount -t overlay -o lowerdir=${layer_dirs},upperdir=${layered_mnt},workdir=${layered_tmp} none ${layered_mnt}
+    check_status
+    MOUNTS="${MOUNTS}${layered_mnt} "
+}
+
 # Partition disk and mount for install at ${rootmnt}
 partition_and_mount_disk()
 {
@@ -207,154 +215,118 @@ partition_and_mount_disk()
     [ "x${INSTALL_DEV}" != "x" ]
     check_status
 
-    echo -en ":: Destroy any magic strings and/or signatures on ${INSTALL_DEV}..."
+    echo -en ":: Destroy any magic strings and/or signatures on ${cyan}${INSTALL_DEV}${none}..."
     wipefs --all --force ${INSTALL_DEV} &>/dev/null
     check_status
 
-    echo -en ":: Wiping partition table on ${INSTALL_DEV}..."
+    echo -en ":: Wiping partition table on ${cyan}${INSTALL_DEV}${none}..."
     sgdisk --zap ${INSTALL_DEV} &>/dev/null
     check_status
 
     # Set partition identifiers
     if [ "x${SSD}" == "x1" ]; then
-        part_boot="${INSTALL_DEV}p1"
-        part_swap="${INSTALL_DEV}p2"
-        part_root="${INSTALL_DEV}p3"
+        PART_BOOT="${INSTALL_DEV}p1"
+        PART_SWAP="${INSTALL_DEV}p2"
+        PART_ROOT="${INSTALL_DEV}p3"
     else
-        part_boot="${INSTALL_DEV}1"
-        part_swap="${INSTALL_DEV}2"
-        part_root="${INSTALL_DEV}3"
+        PART_BOOT="${INSTALL_DEV}1"
+        PART_SWAP="${INSTALL_DEV}2"
+        PART_ROOT="${INSTALL_DEV}3"
     fi
 
-    # EFI: Create a GPT boot disk
+    # EFI: Create a ESP boot partition
     # https://wiki.archlinux.org/index.php/EFI_System_Partition#Create_the_partition
     if [ "x${EFI}" == "x1" ]; then
-
-        # Create ESP boot partition
-        echo -en ":: Creating ${part_boot} as ESP boot partition..."
+        echo -en ":: Creating ${cyan}${PART_BOOT}${none} as ${cyan}ESP boot partition${none}..."
         sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI System" ${INSTALL_DEV} &>/dev/null
-        check_status
-        echo -en ":: Formatting ${part_boot} (ESP) as FAT..."
-        mkfs.fat -n "ESP" ${part_boot} &>/dev/null
-        check_status
 
-        # Create SWAP partition
-        echo -en ":: Creating ${part_swap} as Linux swap partition..."
-        sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${INSTALL_DEV} &>/dev/null
-        check_status
-
-        # Create root partition and set boot flag
-        echo -en ":: Creating ${part_root} as Linux filesystem partition..."
-        sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${INSTALL_DEV} &>/dev/null
-        check_status
-        echo -en ":: Setting boot flag on ${INSTALL_DEV}..."
-        sgdisk ${INSTALL_DEV} --attributes=3:set:2 &>/dev/null
-        check_status
-
-    # BIOS: Create a MBR boot disk
+    # BIOS: Create a BIOS boot partition
     else
-        echo -en ":: Partitioning ${INSTALL_DEV} with MBR..."
-        echo ',2M,0' > layout
-        echo ',4G,82' >> layout
-        echo ',+,83,*' >> layout
-        cat layout | sfdisk ${INSTALL_DEV} &>/dev/null
-        check_status
-        rm -f layout
+        echo -en ":: Creating ${cyan}${PART_BOOT}${none} as ${cyan}BIOS boot partition${none}..."
+        sgdisk -n 0:0:+512M -t 0:EF02 -c 0:"BIOS System" ${INSTALL_DEV} &>/dev/null
     fi
+    check_status
+
+    echo -en ":: Formatting ${cyan}${PART_BOOT}${none} as ${cyan}FAT${none}..."
+    mkfs.fat -n "BOOT" ${PART_BOOT} &>/dev/null
+    check_status
+
+    # Create SWAP partition
+    echo -en ":: Creating ${cyan}${PART_SWAP}${none} as ${cyan}Linux swap partition${none}..."
+    sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${INSTALL_DEV} &>/dev/null
+    check_status
+
+    # Create root partition
+    echo -en ":: Creating ${cyan}${PART_ROOT}${none} as ${cyan}Linux filesystem partition${none}..."
+    sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${INSTALL_DEV} &>/dev/null
+    check_status
+
+    # Set boot flag for device
+    echo -en ":: Setting boot flag on ${cyan}${INSTALL_DEV}${none}..."
+    sgdisk ${INSTALL_DEV} --attributes=3:set:2 &>/dev/null
+    check_status
 
     # Configure swap partition
-    echo -en ":: Formatting ${part_swap} as (swap)..."
-    mkswap -L SWAP ${part_swap} &>/dev/null
+    echo -en ":: Formatting ${cyan}${PART_SWAP}${none} as ${cyan}swap${none}..."
+    mkswap -L SWAP ${PART_SWAP} &>/dev/null
     check_status
-    echo -en ":: Starting swap on ${part_swap}..."
-    swapon ${part_swap} &>/dev/null
+    echo -en ":: Starting swap on ${cyan}${PART_SWAP}${none}..."
+    swapon ${PART_SWAP} &>/dev/null
     check_status
 
-    echo -en ":: Formatting ${part_root} as (ext4)..."
+    # mkfs.ext4 option descriptions
     # -F            force creation even if some params don't make sense
     # -L            set volume name to 'cyberlinux' used by bootloaders
     # -m 0          don't reserve blocks for super user daemons
     # -q            run in quiet mode for scripts
-    mkfs.ext4 -F -m 0 -q -L ${LABEL} ${part_root} &>/dev/null
+    echo -en ":: Formatting ${cyan}${PART_ROOT}${none} as ${cyan}ext4${none}..."
+    mkfs.ext4 -F -m 0 -q -L ${LABEL} ${PART_ROOT} &>/dev/null
     check_status
 
     # Mount root as rootmnt and disable access time writes (speeds things up)
-    echo -en ":: Mounting ${part_root} as ${rootmnt}..."
-    mount -o noatime ${part_root} ${rootmnt} &>/dev/null
+    echo -en ":: Mounting ${cyan}${PART_ROOT}${none} as ${cyan}${rootmnt}${none}..."
+    mount -o noatime ${PART_ROOT} ${rootmnt} &>/dev/null
     check_status
 
-    # Mount the ESP on top of the root at /boot
-    if [ "x${EFI}" == "x1" ]; then
-        mkdir -p $rootmnt/boot
-        mount ${part_boot} $rootmnt/boot
-    fi
+    # Mount the boot partition on top of the root partition
+    echo -en ":: Mounting ${cyan}${PART_BOOT}${none} as ${cyan}${rootmnt}/boot${none}..."
+    mkdir -p ${rootmnt}/boot
+    mount ${PART_BOOT} ${rootmnt}/boot
+    check_status
 }
 
-# GRUB has the ability to set the gfxmode and have the kernel keep it
-# https://wiki.archlinux.org/index.php/GRUB
-# https://blog.heckel.xyz/2017/05/28/creating-a-bios-gpt-and-uefi-gpt-grub-bootable-linux-system/
+# Using systemd-boot as its super fast and minimal
 install_bootloader()
 {
-    platform=x86_64-efi
-    esp_mnt=${rootmnt}/mnt
-    grub_path=${rootmnt}/mnt/grub
-
-    # Prepare GRUB (/new_root/boot/grub), EFI (/new_root/mnt/boot/grub)
-    #---------------------------------------------------------------------------
     if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Mount ${part_boot} (ESP) as ${esp_mnt}..."
-        mount ${part_boot} ${esp_mnt} &>/dev/null
-        check_status
-        rm -rf ${rootmnt}/boot/grub
+        echo -en ":: Install systemd-boot bootloader to ${cyan}${INSTALL_DEV}${none}..."
     else
-        platform=i386-pc
-        grub_path=${rootmnt}/boot/grub
-    fi
+        # Install GRUB bootloader to the MBR on i386-pc legacy type systems that
+        # don't support modern UEFI system firmware. grub-install populates the
+        # $grub_path with everything needed to boot the system, all we need is to
+        # customize the 'grub.cfg'
+        #---------------------------------------------------------------------------
+        local grub_path="${rootmnt}/boot/grub"  # /new_root/boot/grub
+        mkdir -p ${grub_path}
 
-    # Install GRUB bootloader to the MBR on i386-pc and ESP for EFI system
-    # grub-install populates the $grub_path with everything needed to boot
-    # the system, all we need is to customize the 'grub.cfg'
-    #---------------------------------------------------------------------------
-    shared_modules="ext2 all_video font gfxterm"
-    if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Create GRUB bootloader path ${esp_mnt}/EFI/BOOT..."
-        mkdir -p ${esp_mnt}/EFI/BOOT &>/dev/null
+        echo -en ":: Install GRUB BIOS bootloader to ${cyan}${INSTALL_DEV}${none}..."
+        chroot ${rootmnt} grub-install --target=i386-pc \
+            --modules="part_msdos ext2 all_video font gfxterm" ${INSTALL_DEV} &>/dev/null
         check_status
 
-        # Arch Linux standard ESP mount point is /boot used for kernel upgrades
-        # Tianocore UEFI only supports fallback location EFI/BOOT/BOOTX64.efi
-        # /grub is used as the target as this is in the context of the partition
-        echo -en ":: Install GRUB bootloader to ${bootloader}..."
-        chroot ${rootmnt} grub-mkimage -d /mnt/grub/${platform} -o /mnt/EFI/BOOT/BOOTX64.efi \
-            -O ${platform} -p /grub part_gpt fat efi_gop efi_uga ${shared_modules} &>/dev/null
-        check_status
-    else
-        echo -en ":: Install GRUB BIOS bootloader to ${INSTALL_DEV}..."
-        chroot ${rootmnt} grub-install --target=${platform} \
-            --modules="part_msdos ${shared_modules}" ${INSTALL_DEV} &>/dev/null
-        check_status
-    fi
-
-    # Install custom GRUB configuration file 'grub.cfg' to the ESP for EFI
-    # or /boot/grub for BIOS# which is read by GRUB once it has booted up.
-    echo -en ":: Install GRUB config at ${grub_path}..."
-    echo -e "default=0\ntimeout=0\n" > ${grub_path}/grub.cfg
-    echo -e 'set gfxmode="<%=gfxmode%>"' >> ${grub_path}/grub.cfg
-    echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
-    echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
-    echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
-    echo -e "menuentry \"${LABEL}\" {" >> ${grub_path}/grub.cfg
-    echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
-    echo -e "    search --no-floppy --set=root --label ${LABEL}" >> ${grub_path}/grub.cfg
-    echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${LABEL} rw <%=kernel_params%>" >> ${grub_path}/grub.cfg
-    echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_path}/grub.cfg
-    echo -e "}" >> ${grub_path}/grub.cfg
-    check_status
-
-    # Unmount ESP if EFI mode
-    if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Umount ${part_boot} (ESP) at ${esp_mnt}..."
-        umount -f ${esp_mnt} &>/dev/null
+        # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
+        echo -en ":: Install GRUB config at ${cyan}${grub_path}${none}..."
+        echo -e "default=0\ntimeout=0\n" > ${grub_path}/grub.cfg
+        echo -e 'set gfxmode="1280x1024,1024x768,auto"' >> ${grub_path}/grub.cfg
+        echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
+        echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
+        echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
+        echo -e "menuentry \"${LABEL}\" {" >> ${grub_path}/grub.cfg
+        echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
+        echo -e "    search --no-floppy --set=root --label ${LABEL}" >> ${grub_path}/grub.cfg
+        echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${LABEL} rw ${KERNEL_PARAMS}" >> ${grub_path}/grub.cfg
+        echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_path}/grub.cfg
+        echo -e "}" >> ${grub_path}/grub.cfg
         check_status
     fi
 
@@ -396,7 +368,9 @@ umount_all()
 
 config_system()
 {
-    echo -en ":: Set root user password..."
+    local pass=""
+    [ "x$DEFAULT" == "xy" ] && pass=" (default: ${cyan}${DEFAULT_PASS}${none})"
+    echo -en ":: Set root user password${pass}..."
     chroot ${rootmnt} usermod -p ${PASS} root
     check_status
 
@@ -416,15 +390,15 @@ config_system()
         check_status
     fi
 
-    echo -en ":: Create user group '${USER}'..."
+    echo -en ":: Create user group ${cyan}${USER}${none}..."
     chroot ${rootmnt} groupadd ${USER}
     check_status
 
-    echo -en ":: Create user '${USER}' with groups '${groups}'..."
+    echo -en ":: Create user ${cyan}${USER}${none} with groups ${cyan}${groups}${none}..."
     chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
     check_status
 
-    echo -en ":: Set user password..."
+    echo -en ":: Set user password${pass}..."
     chroot ${rootmnt} usermod -p ${PASS} ${USER}
     check_status
 
@@ -433,12 +407,12 @@ config_system()
     check_status
 
     # Set hostname to chosen layer
-    echo -en ":: Set hostname to ${HOSTNAME}..."
+    echo -en ":: Set hostname to ${cyan}${HOSTNAME}${none}..."
     echo $HOSTNAME > "${rootmnt}/etc/hostname"
     check_status
 
     # Configure timezone
-    echo -en ":: Set timezone to ${TIMEZONE}..."
+    echo -en ":: Set timezone to ${cyan}${TIMEZONE}${none}..."
     chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
     check_status
 
@@ -448,7 +422,7 @@ config_system()
     if [ "x${NETIP}" != "xDHCP" ]; then
         # Static LAN
         local conf="${rootmnt}/etc/systemd/network/10-static.network"
-        echo -en ":: Configuring static networking..."
+        echo -en ":: Configuring ${cyan}static${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nAddress=${NETIP}\nGateway=${gateway}\nDNS=${DNS1}\nDNS=${DNS2}" >> $conf
         echo -e "IPForward=kernel" >> $conf
@@ -456,7 +430,7 @@ config_system()
     else
         # DHCP LAN
         local conf="${rootmnt}/etc/systemd/network/20-dhcp.network"
-        echo -en ":: Configuring dhcp networking..."
+        echo -en ":: Configuring ${cyan}dhcp${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
         echo -e "[DHCP]\nUseDomains=true" >> $conf
@@ -465,14 +439,14 @@ config_system()
 
     # DHCP Wireless
     local conf="${rootmnt}/etc/systemd/network/30-wireless.network"
-    echo -en ":: Configuring dhcp wireless networking..."
+    echo -en ":: Configuring ${cyan}dhcp wireless${none} networking..."
     echo -e "[Match]\nName=wl*\n" > $conf
     echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
     echo -e "[DHCP]\nRouteMetric=20\nUseDomains=true" >> $conf
     check_status
 
     if [ $PROXY ] && [ "x$PROXY" != "xNone" ]; then
-        echo -en ":: Set PROXY to ${PROXY}..."
+        echo -en ":: Set PROXY to ${cyan}${PROXY}${none}..."
         if [ $NO_PROXY ] && [ "x$NO_PROXY" != "xNone" ]; then
             chroot ${rootmnt} /opt/$DISTRO/bin/setproxy enable $PROXY $NO_PROXY &>/dev/null
         else
@@ -484,7 +458,7 @@ config_system()
     # Configure root access for sshd if default deployment
     if [ -e "${rootmnt}/etc/ssh/sshd_config" ]; then
         if [ "x$DEFAULT" == "xy" ]; then
-            echo -en ":: Enable sshd root access for default..."
+            echo -en ":: Enable sshd root access for ${cyan}auto default${none} deployment..."
             sed -i -e 's/^PermitRootLogin.*/PermitRootLogin yes/' "${rootmnt}/etc/ssh/sshd_config"
             check_status
         fi
@@ -530,7 +504,8 @@ installer()
     PROXY='None'
     NO_PROXY='localhost,127.0.0.1'
     USER='admin'
-    PASS=$(mkpasswd -m sha "admin")
+    PASS=$(mkpasswd -m sha 'admin')
+    DEFAULT_PASS='admin'
 
     # Ask for user input if not live deployment
     #---------------------------------------------------------------------------
@@ -548,13 +523,13 @@ installer()
         if [ "x$DEFAULT" == "xy" ]; then
             AUTOLOGIN=1
             echo -e "\n${cyan}:: Automatic deployment mode selected...${none}"
-            echo -e "   hostname=${HOSTNAME}"
-            echo -e "   networking=${NETIP}"
-            echo -e "   proxy=${PROXY}"
-            echo -e "   no_proxy=${NO_PROXY}"
-            echo -e "   user=${USER}"
-            echo -e "   pass=admin"
-            echo -e "   install_dev=${INSTALL_DEV}"
+            echo -e "   hostname=${cyan}${HOSTNAME}${none}"
+            echo -e "   networking=${cyan}${NETIP}${none}"
+            echo -e "   proxy=${cyan}${PROXY}${none}"
+            echo -e "   no_proxy=${cyan}${NO_PROXY}${none}"
+            echo -e "   user=${cyan}${USER}${none}"
+            echo -e "   pass=${cyan}${DEFAULT_PASS}${none}"
+            echo -e "   install_dev=${cyan}${INSTALL_DEV}${none}"
         else
             # Collect install destination device
             #-----------------------------------------------------------------------
@@ -621,23 +596,23 @@ installer()
     rootmnt="${1}"                          # /new_root passed in as 1st param
     local rw_ram_size="75%"
     local mode=$([ "$LAYER" == 'live' ] && echo 'Starting' || echo 'Installing')
-    echo -e "\n${cyan}:: ${mode} '${LAYER}' system with layers '${layers}'${none}"
+    echo -e "\n:: ${mode} ${cyan}${LAYER}${none} multi layer deployment"
     echo -e "${cyan}:: --------------------------------------------------------------------${none}"
-    echo -e ":: New Root path '${rootmnt}'"
+    echo -e ":: New Root path ${cyan}${rootmnt}${none}"
     if [ $LAYER == "live" ]; then
-        echo -en ":: Creating live tmpfs filesystem for writes, size=${rw_ram_size}..."
+        echo -en ":: Creating live tmpfs filesystem for writes, ${cyan}size=${rw_ram_size}${none}..."
         mount -t tmpfs -o "size=${rw_ram_size}",mode=0755 none ${WRITE_MNT} &>/dev/null
         check_status
         mount_layers "${ISO_MNT}/images" ${WRITE_MNT}/root ${WRITE_MNT}/temp
 
-        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${rootmnt}..."
+        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${cyan}${rootmnt}${none}..."
         mount -o bind ${WRITE_MNT}/root ${rootmnt} &>/dev/null
         check_status
     else
         # Copies /mnt/read/root/ to /new_root
         mount_layers "${ISO_MNT}/images" ${READ_MNT}/root ${READ_MNT}/temp
         partition_and_mount_disk
-        echo -e ":: Copying ${READ_MNT}/root to ${rootmnt}"
+        echo -e ":: Copying ${cyan}${READ_MNT}/root${none} to ${cyan}${rootmnt}${none}"
         rsync -ah --info=progress2 ${READ_MNT}/root/* ${rootmnt}
     fi
 
@@ -704,12 +679,20 @@ run_hook()
     DISTRO="cyberlinux"
     TIMEZONE="America/Boise"
     ALL_GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
+    KERNEL_PARAMS="rd.systemd.show_status=auto rd.udev.log_priority=3 ipv6.disable=1"
     DNS1="1.1.1.1"
     DNS2="1.0.0.1"
-    EFI=0
 
-    # Get the last layer which will be our target
-    LAYER=$(echo $LAYERS | awk -F, '{print $NF}')
+    # Detect an EFI supported system
+    [ -d /sys/firmware/efi ] && EFI=1 || EFI=0
+
+    # Reverse the layer order using awk as busybox doesn't support arrays
+    # Essentially were looping over array in reverse but skipping $1 which we then print
+    # at the end to handle the comma delimits properly i.e. layer1,layer2 => layer2,layer1
+    LAYERS=$(echo $LAYERS | awk -F, '{for(i=NF;i>1;i--)printf "%s,",$i;printf "%s",$1}')
+
+    # Get the first layer which will be our target
+    LAYER=$(echo $LAYERS | awk -F, '{print $1}')
 
     # Default autologin if live is the target layer
     [ "$LAYER" == "live" ] && AUTOLOGIN=1
