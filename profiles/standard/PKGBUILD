@@ -40,14 +40,22 @@ arch=('any')
 url="https://github.com/phR0ze/cyberlinux/aur/cyberlinux-profiles"
 license=('MIT')
 
+# Configure environment
+shopt -s dotglob
+shopt -s extglob
+_profile=standard
+
 pkg() {
-  local name=$1
-#  shopt -s dotglob
-#  shopt -s extglob
-#
-#  cd $srcdir/../profiles/$name
-#
-#  # Install profile files
+  local name=$1                         # e.g. core
+  local configdir="${startdir}/${name}" # /home/build/profiles/standard/core
+
+  msg "Installing 'core' configuration files"
+  #cd $srcdir/../profiles/$name
+  msg $pkgdir
+  msg $srcdir
+  set -o posix; set
+  exit 1
+
 #  while IFS='' read -r -d '' x; do
 #    msg2 "Installing $x"
 #    mkdir -p "$pkgdir/$(dirname $x)"

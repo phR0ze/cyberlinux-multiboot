@@ -116,17 +116,18 @@ build_env()
 
   # Build custom packages
   if [ ! -f "$REPO_DIR/builder.db" ]; then
-    build_packages
+    build_repo_packages
   fi
 }
 
-# Build packages if needed
-build_packages() 
+# Build repo packages if needed
+build_repo_packages() 
 {
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
 
   docker_run ${BUILDER}
-  docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/standard; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
+  docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/${PROFILE}; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
+  check
 
   # Ensure the builder repo exists locally
   pushd "${REPO_DIR}"
@@ -527,15 +528,15 @@ usage()
   echo -e "  -i               Build the initramfs installer"
   echo -e "  -m               Build the grub multiboot environment"
   echo -e "  -I               Build the acutal ISO image"
-  echo -e "  -P               Build packages for deployment/s and/or profile"
   echo -e "  -p               Set the profile to use (default: standard)"
+  echo -e "  -r               Build repo packages for deployment/s and/or profile"
   echo -e "  -c               Clean build artifacts, commad delimited (all|builder|iso|layers/standard/core)"
   echo -e "  -h               Display usage help\n"
   echo -e "Examples:"
   echo -e "  ${green}Build everything:${none} ./${SCRIPT} -a"
   echo -e "  ${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
   echo -e "  ${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
-  echo -e "  ${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -P"
+  echo -e "  ${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -r"
   echo -e "  ${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
   echo -e "  ${green}Clean standard core,base layers:${none} ./${SCRIPT} -c layers/standard/core,layers/standard/base"
   echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p standard -b -m -i"
@@ -544,7 +545,7 @@ usage()
   RELEASED=1
   exit 1
 }
-while getopts ":abd:imIPp:c:th" opt; do
+while getopts ":abd:imIp:c:rth" opt; do
   case $opt in
     c) CLEAN=$OPTARG;;
     a) BUILD_ALL=1;;
@@ -553,8 +554,8 @@ while getopts ":abd:imIPp:c:th" opt; do
     d) DEPLOYMENTS=$OPTARG;;
     m) BUILD_MULTIBOOT=1;;
     I) BUILD_ISO=1;;
-    P) BUILD_PACKAGES=1;;
     p) PROFILE=$OPTARG;;
+    r) BUILD_REPO=1;;
     t) TEST=1;;
     h) usage;;
     \?) echo -e "Invalid option: ${red}-${OPTARG}${none}\n"; usage;;
@@ -578,13 +579,13 @@ make_env_directories
 # 1. Always build the build environment if any build option is chosen
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
   [ ! -z ${BUILD_INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ] || \
-  [ ! -z ${BUILD_PACKAGES+x} ] || [ ! -z ${BUILD_BUILDER+x} ]; then
+  [ ! -z ${BUILD_REPO+x} ] || [ ! -z ${BUILD_BUILDER+x} ]; then
   build_env
 fi
 
-# Build packages
-if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_PACKAGES+x} ]; then
-  build_packages
+# Build repo packages
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_REPO+x} ]; then
+  build_repo_packages
 fi
 
 # Needs to happen before the multiboot as deployments will be boot entries
