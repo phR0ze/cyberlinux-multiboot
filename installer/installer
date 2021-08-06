@@ -255,6 +255,7 @@ partition_and_mount_disk()
     if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}ESP boot partition${none}..."
         sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI system" ${INSTALL_DEV} &>/dev/null
+        check_status
 
         echo -en ":: Formatting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}vfat${none}..."
         mkfs.vfat -n "BOOT" ${PART_BOOT} &>/dev/null
@@ -264,8 +265,8 @@ partition_and_mount_disk()
     else
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}BIOS boot partition${none}..."
         sgdisk -n 0:0:+2M -t 0:EF02 -c 0:"BIOS system" ${INSTALL_DEV} &>/dev/null
+        check_status
     fi
-    check_status
 
     # Create SWAP partition
     echo -en ":: Creating ${cyber}${PART_SWAP}${none} as ${cyber}Linux swap partition${none}..."
@@ -309,7 +310,7 @@ partition_and_mount_disk()
     if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Mounting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}${rootmnt}/boot${none}..."
         mkdir -p ${rootmnt}/boot
-        mount ${PART_BOOT} ${rootmnt}/boot
+        mount ${PART_BOOT} ${rootmnt}/boot &>/dev/null
         check_status
     fi
 }
@@ -321,7 +322,23 @@ install_bootloader()
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        #echo -en ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        echo -e ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        chroot ${rootmnt} bootctl install
+        #check_status
+        
+        local boot_conf="${rootmnt}/boot/loader/entries/arch.conf"
+        echo -en ":: Configure systemd-boot at ${cyber}${boot_conf}${none}..."
+        echo "title   cyberlinux" > $boot_conf
+        echo "linux   /vmlinuz-linux" >> $boot_conf
+        echo "initrd  /intel-ucode.img" >> $boot_conf
+        echo "initrd  /initramfs-linux.img" >> $boot_conf
+        echo "options root=LABEL=${LABEL} rw ${KERNEL_PARAMS}" >> $boot_conf
+        check_status
+
+        #echo -en ":: Generate default fstabl file..."
+        #chroot ${rootmnt} genfstab -U . >> /etc/fstab
+        #check_status
     else
         # Install GRUB bootloader to the MBR on i386-pc legacy type systems that
         # don't support modern UEFI system firmware. grub-install populates the
