@@ -163,7 +163,7 @@ build_multiboot()
     # as a non-installable option for building on only
     if [ ${KERNEL} != "null" ]; then
       echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
-      echo -e "menuentry --class=deployment ${LABEL} {" >> "${BOOT_CFG_PATH}"
+      echo -e "menuentry --class=deployment ${ENTRY} {" >> "${BOOT_CFG_PATH}"
       echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
       #echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
       echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
@@ -414,7 +414,7 @@ check()
 read_deployment()
 {
   local layer=$(echo "$PROFILE_JSON" | jq '.[] | select(.name=="'$1'")')
-  LABEL=$(echo "$layer" | jq '.label')
+  ENTRY=$(echo "$layer" | jq '.entry')
   KERNEL=$(echo "$layer" | jq -r '.kernel')
   LAYERS_STR=$(echo "$layer" | jq -r '.layers')
   

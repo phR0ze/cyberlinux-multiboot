@@ -126,7 +126,7 @@ getsel()
 # Use wellknown install device label to detect its existance
 mount_install_device()
 {
-    echo -en ":: Locating install device labeled ${LABEL}..."
+    echo -en ":: Locating install device labeled ${INSTALLER_LABEL}..."
 
     local i=0
     local success=0
@@ -134,7 +134,7 @@ mount_install_device()
         sleep 0.25 # Sleep for a bit
 
         # Find device by label
-        ISODEV=$(blkid -L ${LABEL}) &>/dev/null
+        ISODEV=$(blkid -L ${INSTALLER_LABEL}) &>/dev/null
         if [ "x${ISODEV}" != "x" ]; then
             check_status
 
@@ -297,7 +297,7 @@ partition_and_mount_disk()
     # -m 0          don't reserve blocks for super user daemons
     # -q            run in quiet mode for scripts
     echo -en ":: Formatting ${cyber}${PART_ROOT}${none} as ${cyber}ext4${none}..."
-    mkfs.ext4 -F -m 0 -q -L ${LABEL} ${PART_ROOT} &>/dev/null
+    mkfs.ext4 -F -m 0 -q -L ${ROOT_LABEL} ${PART_ROOT} &>/dev/null
     check_status
 
     # Mount root as rootmnt and disable access time writes (speeds things up)
@@ -333,7 +333,7 @@ install_bootloader()
         echo "linux   /vmlinuz-linux" >> $boot_conf
         echo "initrd  /intel-ucode.img" >> $boot_conf
         echo "initrd  /initramfs-linux.img" >> $boot_conf
-        echo "options root=LABEL=${LABEL} rw ${KERNEL_PARAMS}" >> $boot_conf
+        echo "options root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> $boot_conf
         check_status
 
         #echo -en ":: Generate default fstabl file..."
@@ -360,10 +360,10 @@ install_bootloader()
         echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
         echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
         echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
-        echo -e "menuentry \"${LABEL}\" {" >> ${grub_path}/grub.cfg
+        echo -e "menuentry \"${ROOT_LABEL}\" {" >> ${grub_path}/grub.cfg
         echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
-        echo -e "    search --no-floppy --set=root --label ${LABEL}" >> ${grub_path}/grub.cfg
-        echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${LABEL} rw ${KERNEL_PARAMS}" >> ${grub_path}/grub.cfg
+        echo -e "    search --no-floppy --set=root --label ${ROOT_LABEL}" >> ${grub_path}/grub.cfg
+        echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> ${grub_path}/grub.cfg
         echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_path}/grub.cfg
         echo -e "}" >> ${grub_path}/grub.cfg
         check_status
@@ -523,7 +523,7 @@ installer()
 {
     # Welcome message, centered
     #---------------------------------------------------------------------------
-    local msg="--===<<<[[ ${LABEL} ]]>>>===--"
+    local msg="--===<<<[[ ${INSTALLER_LABEL} ]]>>>===--"
     local len=$((105 - ${#msg}))
     local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
     local padright=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
@@ -728,7 +728,8 @@ run_hook()
 
     # Variables
     MOUNTS=""
-    LABEL="CYBERLINUX_INSTALLER"
+    ROOT_LABEL="CYBERLINUX"
+    INSTALLER_LABEL="CYBERLINUX_INSTALLER"
     DISTRO="cyberlinux"
     TIMEZONE="America/Boise"
     ALL_GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"

@@ -1,55 +1,55 @@
 [
   {
     "name": "live",
-    "label": "Start live deployment             // Based on the desktop deployment",
+    "entry": "Start live deployment             // Based on the desktop deployment",
     "kernel": "linux",
     "layers": "shell,lite,netbook,desktop,live"
   },
   {
     "name": "desktop",
-    "label": "Install desktop deployment        // Netbook deployment + dev and media apps",
+    "entry": "Install desktop deployment        // Netbook deployment + dev and media apps",
     "kernel": "linux",
     "layers": "shell,lite,netbook,desktop"
   },
   {
     "name": "laptop",
-    "label": "Install laptop deployment         // Desktop deployment + laptop config",
+    "entry": "Install laptop deployment         // Desktop deployment + laptop config",
     "kernel": "linux",
     "layers": "shell,lite,netbook,desktop,laptop"
   },
   {
     "name": "netbook",
-    "label": "Install netbook deployment        // Lite deployment + office apps",
+    "entry": "Install netbook deployment        // Lite deployment + office apps",
     "kernel": "linux",
     "layers": "shell,lite,netbook"
   },
   {
     "name": "theater",
-    "label": "Install theater deployment        // Lite deployment + media apps",
+    "entry": "Install theater deployment        // Lite deployment + media apps",
     "kernel": "linux",
     "layers": "shell,lite,theater"
   },
   {
     "name": "server",
-    "label": "Install server deployment         // Lite deployment + server apps",
+    "entry": "Install server deployment         // Lite deployment + server apps",
     "kernel": "linux",
     "layers": "shell,lite,server"
   },
   {
     "name": "lite",
-    "label": "Install lite deployment           // Shell deployment + minimal desktop env",
+    "entry": "Install lite deployment           // Shell deployment + minimal desktop env",
     "kernel": "linux",
     "layers": "personal-shell,lite"
   },
   {
     "name": "shell",
-    "label": "Install shell deployment          // Full command line system",
+    "entry": "Install shell deployment          // Full command line system",
     "kernel": "linux",
     "layers": "shell,base"
   },
   {
     "name": "base",
-    "label": "Install base deployment           // Minimal command line system",
+    "entry": "Install base deployment           // Minimal command line system",
     "kernel": "linux",
     "layers": "base"
   }
