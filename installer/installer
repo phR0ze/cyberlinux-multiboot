@@ -231,12 +231,12 @@ partition_and_mount_disk()
     [ "x${INSTALL_DEV}" != "x" ]
     check_status
 
-    echo -en ":: Wiping partition table on ${cyber}${INSTALL_DEV}${none}..."
-    sgdisk --zap ${INSTALL_DEV} &>/dev/null
-    check_status
-
     echo -en ":: Destroy any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
     wipefs --all --force ${INSTALL_DEV} &>/dev/null
+    check_status
+
+    echo -en ":: Wiping partition table on ${cyber}${INSTALL_DEV}${none}..."
+    sgdisk --zap ${INSTALL_DEV} &>/dev/null
     check_status
 
     # Set partition identifiers
@@ -540,22 +540,14 @@ installer()
         # Read in the destination disk options to present to the user
         DISKS_DETAILED=$(lsblk -dn -o NAME,SIZE,MODEL,TYPE -x NAME --json | \
             jq -rc '[.blockdevices[]|select(.type=="disk")]')
-        DISKS=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)')
-        INSTALL_DEV="/dev/$(echo ${DISKS_DETAILED} | jq -rc '.[0].name')"
+        DISKS=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)|.[]')
+        INSTALL_DEV=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)|.[0]')
 
         # Determine if this is a default deployment
         echo -e "\n${cyber}:: Automatically deploy with defaults?${none}"
         getinput DEFAULT 'Use automatic mode with defaults' 'n'
         if [ "x$DEFAULT" == "xy" ]; then
             AUTOLOGIN=1
-            echo -e "\n${cyber}:: Automatic deployment mode selected...${none}"
-            echo -e "   hostname=${cyber}${HOSTNAME}${none}"
-            echo -e "   networking=${cyber}${NETIP}${none}"
-            echo -e "   proxy=${cyber}${PROXY}${none}"
-            echo -e "   no_proxy=${cyber}${NO_PROXY}${none}"
-            echo -e "   user=${cyber}${USER}${none}"
-            echo -e "   pass=${cyber}${DEFAULT_PASS}${none}"
-            echo -e "   install_dev=${cyber}${INSTALL_DEV}${none}"
         else
             # Collect install destination device
             #-----------------------------------------------------------------------
@@ -625,7 +617,22 @@ installer()
     echo -e "\n${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
     echo -e ":: ${mode} ${cyber}${LAYER}${none} multi layer deployment"
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
-    echo -e ":: New Root path ${cyber}${rootmnt}${none}"
+
+    echo -e ":: Options being used for installation"
+    echo -e "   hostname=${cyber}${HOSTNAME}${none}"
+    echo -e "   networking=${cyber}${NETIP}${none}"
+    echo -e "   proxy=${cyber}${PROXY}${none}"
+    echo -e "   no_proxy=${cyber}${NO_PROXY}${none}"
+    echo -e "   user=${cyber}${USER}${none}"
+    if [ "x$DEFAULT" == "xy" ] || [ $LAYER == "live" ]; then
+        echo -e "   pass=${cyber}${DEFAULT_PASS}${none}"
+    else
+        echo -e "   pass=${cyber}********${none}"
+    fi
+    echo -e "   timezone=${cyber}${TIMEZONE}${none}"
+    echo -e "   autologin=${cyber}${AUTOLOGIN}${none}"
+    echo -e "   install_dev=${cyber}${INSTALL_DEV}${none}"
+
     if [ $LAYER == "live" ]; then
         echo -en ":: Creating live tmpfs filesystem for writes, ${cyber}size=${rw_ram_size}${none}..."
         mount -t tmpfs -o "size=${rw_ram_size}",mode=0755 none ${WRITE_MNT} &>/dev/null
@@ -724,6 +731,7 @@ run_hook()
     LAYER=$(echo $LAYERS | awk -F, '{print $1}')
 
     # Default autologin if live is the target layer
+    [ -z ${AUTOLOGIN+x} ] && AUTOLOGIN=0
     [ "$LAYER" == "live" ] && AUTOLOGIN=1
 
     # Custom handler defined above.
