@@ -164,7 +164,7 @@ build_multiboot()
       echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
       echo -e "menuentry --class=deployment ${LABEL} {" >> "${BOOT_CFG_PATH}"
       echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
-      echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
+      #echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
       echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
       echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> "${BOOT_CFG_PATH}"
       echo -e "}" >> "${BOOT_CFG_PATH}"

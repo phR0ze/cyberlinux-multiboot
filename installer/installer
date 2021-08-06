@@ -37,17 +37,23 @@
 # manager or bootloader. Either way the binary loads the target kernel or target
 # bootloader which loads the target kernel
 # -----------------------------------------------------------------------------
-none="\e[m"
-red="\e[1;31m"
-cyan="\e[0;36m"
-green="\e[1;32m"
-yellow="\e[1;33m"
+
+# Configure color codes using tput which requires terminfo set
+# I've overridden bold using the mkinitcpio-vt-colors pakage to cyberlinux blue
+# which is why simply using blue here will give use cyberlinux blue.
+export TERMINFO=/usr/lib/terminfo
+_bold=$(tput bold)
+none=$(tput sgr0)
+red=${_bold}$(tput setaf 1)
+green=${_bold}$(tput setaf 2)
+yellow=${_bold}$(tput setaf 3)
+cyber=$(tput bold)
 
 exit_to_shell()
 {
     alias ll='ls -lah'
-    export PS1="${cyan}[rootfs:\w]\$ ${none}"
-    echo -e "\n${cyan}:: Interactive Shell${none}"
+    export PS1="${cyber}[rootfs:\w]\$ ${none}"
+    echo -e "\n${cyber}:: Interactive Shell${none}"
     launch_interactive_shell
 }
 
@@ -74,7 +80,7 @@ getinput()
     local result=$3                                 # Default value to use if not set
     local silent=$4                                 # Don't echo when set
 
-    echo -en "   ${input} (default=${cyan}${result}${none}): "
+    echo -en "   ${input} (default=${cyber}${result}${none}): "
     [ "x$DEFAULT" == "xy" ] && echo ''
     if [ "x$DEFAULT" == "xn" ]; then
         if [ $silent ]; then
@@ -101,7 +107,7 @@ getsel()
         local out_of_bounds=$(($out_of_bounds+1))
     done
     while true; do
-        echo -en "   Enter a number (default=${cyan}1${none}): "
+        echo -en "   Enter a number (default=${cyber}1${none}): "
         [ "x$DEFAULT" == "xy" ] && echo '' || read choice
         [ "$choice" == "exit" ] && exit_to_shell
         [ "x$choice" == "x" ] && choice=1
@@ -148,9 +154,12 @@ mount_install_device()
             install_type=${install_type%% *}
 
             # Mount iso device found by label with correct fstype
-            echo -en "   Mounting install ${cyan}${install_type}${none} [${cyan}${ISODEV}${none}] to ${ISO_MNT}..."
+            echo -en "   Mounting install ${cyber}${install_type}${none} [${cyber}${ISODEV}${none}] to ${ISO_MNT}..."
             mount -r -t ${fstype} -o noatime ${ISODEV} ${ISO_MNT} &>/dev/null
             check_status && success=1
+
+            # The ISO is the first mount
+            MOUNTS="${ISO_MNT}"
         fi
 
         # Timeout if takes more than 10 seconds
@@ -161,13 +170,15 @@ mount_install_device()
 
 mount_layers()
 {
+    echo -e "\n:: Mounting layers ${cyber}${LAYERS}${none}"
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
     local images_path=$1                            # e.g. ${ISO_MNT}/images
     local layered_mnt=$2                            # e.g. ${WRITE_MNT}/root
     local layered_tmp=$3                            # e.g. ${WRITE_MNT}/temp
 
     # Mount all implicated sqfs images
     local layer_dirs=""
-    echo -e ":: Mounting layers ${cyan}${LAYERS}${none}"
     for x in ${LAYERS//,/ }; do
         local img_mnt="${READ_MNT}/${x}"            # i.e. ${READ_MNT}/{base,devel,lite, etc...}
         local img_path="${images_path}/${x}.sqfs"   # e.g. ${ISO_MNT}/images/base.sqfs
@@ -176,7 +187,7 @@ mount_layers()
         # layer and left most is the top i.e. layer2:layer1
         layer_dirs="${layer_dirs}${img_mnt}:"
 
-        echo -en ":: Detecting presence of layer ${cyan}${img_path}${none}..."
+        echo -en ":: Detecting presence of layer ${cyber}${img_path}${none}..."
         if [ ! -f ${img_path} ]; then
             echo -e "${red}failed!${none}"
             echo -e ":: ${red}Please build and include the missing deployment layer!${none}\n"
@@ -185,41 +196,46 @@ mount_layers()
             [ "$1" != "nomsg" ] && echo -e "${green}success!${none}"
         fi
 
-        echo -en ":: Mounting ${cyan}${img_path}${none} at ${cyan}${img_mnt}${none}..."
+        echo -en ":: Mounting ${cyber}${img_path}${none} at ${cyber}${img_mnt}${none}..."
         mkdir -p "${img_mnt}"
         mount -r -t squashfs ${img_path} ${img_mnt} &>/dev/null
         check_status
 
-        # Keep track of the mount points to release them later
-        MOUNTS="${MOUNTS}${img_mnt} "
+        # Order these mounts first for unmounting
+        MOUNTS="${img_mnt} ${MOUNTS}"
     done
     # Trim off the un-needed last colon
     layer_dirs=${layer_dirs%?}
 
     # Layer squashfs images as implicated by $(LAYERS)
     # e.g. new writable root = (live,heavy,lite,devel,base)
-    echo -en ":: Overlay ${cyan}${layer_dirs}${none}..."
+    echo -en ":: Overlay ${cyber}${layer_dirs}${none}..."
     mkdir -p ${layered_mnt}
     mkdir -p ${layered_tmp}
     mount -t overlay -o lowerdir=${layer_dirs},upperdir=${layered_mnt},workdir=${layered_tmp} none ${layered_mnt}
     check_status
-    MOUNTS="${MOUNTS}${layered_mnt} "
+
+    # Overlay mount point needs to be first in umounting
+    MOUNTS="${layered_mnt} ${MOUNTS}"
 }
 
 # Partition disk and mount for install at ${rootmnt}
 partition_and_mount_disk()
 {
+    echo -e "\n:: Partition and mount destination disk ${cyber}${INSTALL_DEV}${none}..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
     # Wipe, partition and format disk
     #---------------------------------------------------------------------------
-    echo -en ":: Disk ${cyan}${INSTALL_DEV}${none} identified as install disk..."
+    echo -en ":: Disk ${cyber}${INSTALL_DEV}${none} identified as install disk..."
     [ "x${INSTALL_DEV}" != "x" ]
     check_status
 
-    echo -en ":: Destroy any magic strings and/or signatures on ${cyan}${INSTALL_DEV}${none}..."
+    echo -en ":: Destroy any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
     wipefs --all --force ${INSTALL_DEV} &>/dev/null
     check_status
 
-    echo -en ":: Wiping partition table on ${cyan}${INSTALL_DEV}${none}..."
+    echo -en ":: Wiping partition table on ${cyber}${INSTALL_DEV}${none}..."
     sgdisk --zap ${INSTALL_DEV} &>/dev/null
     check_status
 
@@ -237,40 +253,40 @@ partition_and_mount_disk()
     # EFI: Create a ESP boot partition
     # https://wiki.archlinux.org/index.php/EFI_System_Partition#Create_the_partition
     if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Creating ${cyan}${PART_BOOT}${none} as ${cyan}ESP boot partition${none}..."
-        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI System" ${INSTALL_DEV} &>/dev/null
+        echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}ESP boot partition${none}..."
+        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI system" ${INSTALL_DEV} &>/dev/null
 
     # BIOS: Create a BIOS boot partition
     else
-        echo -en ":: Creating ${cyan}${PART_BOOT}${none} as ${cyan}BIOS boot partition${none}..."
-        sgdisk -n 0:0:+512M -t 0:EF02 -c 0:"BIOS System" ${INSTALL_DEV} &>/dev/null
+        echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}BIOS boot partition${none}..."
+        sgdisk -n 0:0:+512M -t 0:EF02 -c 0:"BIOS system" ${INSTALL_DEV} &>/dev/null
     fi
     check_status
 
-    echo -en ":: Formatting ${cyan}${PART_BOOT}${none} as ${cyan}FAT${none}..."
-    mkfs.fat -n "BOOT" ${PART_BOOT} &>/dev/null
+    echo -en ":: Formatting ${cyber}${PART_BOOT}${none} as ${cyber}vfat${none}..."
+    mkfs.vfat -n "BOOT" ${PART_BOOT} &>/dev/null
     check_status
 
     # Create SWAP partition
-    echo -en ":: Creating ${cyan}${PART_SWAP}${none} as ${cyan}Linux swap partition${none}..."
+    echo -en ":: Creating ${cyber}${PART_SWAP}${none} as ${cyber}Linux swap partition${none}..."
     sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${INSTALL_DEV} &>/dev/null
     check_status
 
     # Create root partition
-    echo -en ":: Creating ${cyan}${PART_ROOT}${none} as ${cyan}Linux filesystem partition${none}..."
+    echo -en ":: Creating ${cyber}${PART_ROOT}${none} as ${cyber}Linux filesystem partition${none}..."
     sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${INSTALL_DEV} &>/dev/null
     check_status
 
     # Set boot flag for device
-    echo -en ":: Setting boot flag on ${cyan}${INSTALL_DEV}${none}..."
+    echo -en ":: Setting boot flag on ${cyber}${INSTALL_DEV}${none}..."
     sgdisk ${INSTALL_DEV} --attributes=3:set:2 &>/dev/null
     check_status
 
     # Configure swap partition
-    echo -en ":: Formatting ${cyan}${PART_SWAP}${none} as ${cyan}swap${none}..."
+    echo -en ":: Formatting ${cyber}${PART_SWAP}${none} as ${cyber}swap${none}..."
     mkswap -L SWAP ${PART_SWAP} &>/dev/null
     check_status
-    echo -en ":: Starting swap on ${cyan}${PART_SWAP}${none}..."
+    echo -en ":: Starting swap on ${cyber}${PART_SWAP}${none}..."
     swapon ${PART_SWAP} &>/dev/null
     check_status
 
@@ -279,27 +295,30 @@ partition_and_mount_disk()
     # -L            set volume name to 'cyberlinux' used by bootloaders
     # -m 0          don't reserve blocks for super user daemons
     # -q            run in quiet mode for scripts
-    echo -en ":: Formatting ${cyan}${PART_ROOT}${none} as ${cyan}ext4${none}..."
+    echo -en ":: Formatting ${cyber}${PART_ROOT}${none} as ${cyber}ext4${none}..."
     mkfs.ext4 -F -m 0 -q -L ${LABEL} ${PART_ROOT} &>/dev/null
     check_status
 
     # Mount root as rootmnt and disable access time writes (speeds things up)
-    echo -en ":: Mounting ${cyan}${PART_ROOT}${none} as ${cyan}${rootmnt}${none}..."
+    echo -en ":: Mounting ${cyber}${PART_ROOT}${none} as ${cyber}${rootmnt}${none}..."
     mount -o noatime ${PART_ROOT} ${rootmnt} &>/dev/null
     check_status
 
     # Mount the boot partition on top of the root partition
-    echo -en ":: Mounting ${cyan}${PART_BOOT}${none} as ${cyan}${rootmnt}/boot${none}..."
+    echo -en ":: Mounting ${cyber}${PART_BOOT}${none} as ${cyber}${rootmnt}/boot${none}..."
     mkdir -p ${rootmnt}/boot
-    mount ${PART_BOOT} ${rootmnt}/boot
+    mount -t vfat -o rw ${PART_BOOT} ${rootmnt}/boot
     check_status
 }
 
 # Using systemd-boot as its super fast and minimal
 install_bootloader()
 {
+    echo -e "\n:: Install bootloader..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
     if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Install systemd-boot bootloader to ${cyan}${INSTALL_DEV}${none}..."
+        echo -en ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
     else
         # Install GRUB bootloader to the MBR on i386-pc legacy type systems that
         # don't support modern UEFI system firmware. grub-install populates the
@@ -309,13 +328,13 @@ install_bootloader()
         local grub_path="${rootmnt}/boot/grub"  # /new_root/boot/grub
         mkdir -p ${grub_path}
 
-        echo -en ":: Install GRUB BIOS bootloader to ${cyan}${INSTALL_DEV}${none}..."
+        echo -en ":: Install GRUB BIOS bootloader to ${cyber}${INSTALL_DEV}${none}..."
         chroot ${rootmnt} grub-install --target=i386-pc \
             --modules="part_msdos ext2 all_video font gfxterm" ${INSTALL_DEV} &>/dev/null
         check_status
 
         # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
-        echo -en ":: Install GRUB config at ${cyan}${grub_path}${none}..."
+        echo -en ":: Install GRUB config at ${cyber}${grub_path}${none}..."
         echo -e "default=0\ntimeout=0\n" > ${grub_path}/grub.cfg
         echo -e 'set gfxmode="1280x1024,1024x768,auto"' >> ${grub_path}/grub.cfg
         echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
@@ -330,7 +349,10 @@ install_bootloader()
         check_status
     fi
 
+    # Hit the "/dev must be mounted" issue reported below and employing the same fix
+    # https://wiki.archlinux.org/title/mkinitcpio#%22/dev_must_be_mounted%22_when_it_already_is
     echo -en ":: Generate new initramfs specific to this machine..."
+    [ ! -e ${rootmnt}/dev/fd ] && ln -s /proc/self/fd /dev/
     chroot ${rootmnt} mkinitcpio -p $KERNEL &>/dev/null
     check_status
 }
@@ -352,24 +374,25 @@ mount_chroot_dirs()
 umount_chroot_dirs()
 {
     for x in "sys proc dev/pts dev"; do
-        umount -f ${rootmnt}/${x} &>/dev/null
+        umount -fR ${rootmnt}/${x} &>/dev/null
     done
 }
 
 umount_all()
 {
-    MOUNTS="${MOUNTS}${ISO_MNT}"
     for x in ${MOUNTS}; do
         echo -en ":: Unmounting ${x}..."
-        umount -f ${x} &>/dev/null
+        umount -fR ${x} &>/dev/null
         check_status
     done
 }
 
 config_system()
 {
+    echo -e "\n:: Configure system..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
     local pass=""
-    [ "x$DEFAULT" == "xy" ] && pass=" (default: ${cyan}${DEFAULT_PASS}${none})"
+    [ "x$DEFAULT" == "xy" ] && pass=" (default: ${cyber}${DEFAULT_PASS}${none})"
     echo -en ":: Set root user password${pass}..."
     chroot ${rootmnt} usermod -p ${PASS} root
     check_status
@@ -390,11 +413,11 @@ config_system()
         check_status
     fi
 
-    echo -en ":: Create user group ${cyan}${USER}${none}..."
+    echo -en ":: Create user group ${cyber}${USER}${none}..."
     chroot ${rootmnt} groupadd ${USER}
     check_status
 
-    echo -en ":: Create user ${cyan}${USER}${none} with groups ${cyan}${groups}${none}..."
+    echo -en ":: Create user ${cyber}${USER}${none} with groups ${cyber}${groups}${none}..."
     chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
     check_status
 
@@ -407,12 +430,12 @@ config_system()
     check_status
 
     # Set hostname to chosen layer
-    echo -en ":: Set hostname to ${cyan}${HOSTNAME}${none}..."
+    echo -en ":: Set hostname to ${cyber}${HOSTNAME}${none}..."
     echo $HOSTNAME > "${rootmnt}/etc/hostname"
     check_status
 
     # Configure timezone
-    echo -en ":: Set timezone to ${cyan}${TIMEZONE}${none}..."
+    echo -en ":: Set timezone to ${cyber}${TIMEZONE}${none}..."
     chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
     check_status
 
@@ -422,7 +445,7 @@ config_system()
     if [ "x${NETIP}" != "xDHCP" ]; then
         # Static LAN
         local conf="${rootmnt}/etc/systemd/network/10-static.network"
-        echo -en ":: Configuring ${cyan}static${none} networking..."
+        echo -en ":: Configuring ${cyber}static${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nAddress=${NETIP}\nGateway=${gateway}\nDNS=${DNS1}\nDNS=${DNS2}" >> $conf
         echo -e "IPForward=kernel" >> $conf
@@ -430,7 +453,7 @@ config_system()
     else
         # DHCP LAN
         local conf="${rootmnt}/etc/systemd/network/20-dhcp.network"
-        echo -en ":: Configuring ${cyan}dhcp${none} networking..."
+        echo -en ":: Configuring ${cyber}dhcp${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
         echo -e "[DHCP]\nUseDomains=true" >> $conf
@@ -439,14 +462,14 @@ config_system()
 
     # DHCP Wireless
     local conf="${rootmnt}/etc/systemd/network/30-wireless.network"
-    echo -en ":: Configuring ${cyan}dhcp wireless${none} networking..."
+    echo -en ":: Configuring ${cyber}dhcp wireless${none} networking..."
     echo -e "[Match]\nName=wl*\n" > $conf
     echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
     echo -e "[DHCP]\nRouteMetric=20\nUseDomains=true" >> $conf
     check_status
 
     if [ $PROXY ] && [ "x$PROXY" != "xNone" ]; then
-        echo -en ":: Set PROXY to ${cyan}${PROXY}${none}..."
+        echo -en ":: Set PROXY to ${cyber}${PROXY}${none}..."
         if [ $NO_PROXY ] && [ "x$NO_PROXY" != "xNone" ]; then
             chroot ${rootmnt} /opt/$DISTRO/bin/setproxy enable $PROXY $NO_PROXY &>/dev/null
         else
@@ -458,7 +481,7 @@ config_system()
     # Configure root access for sshd if default deployment
     if [ -e "${rootmnt}/etc/ssh/sshd_config" ]; then
         if [ "x$DEFAULT" == "xy" ]; then
-            echo -en ":: Enable sshd root access for ${cyan}auto default${none} deployment..."
+            echo -en ":: Enable sshd root access for ${cyber}auto default${none} deployment..."
             sed -i -e 's/^PermitRootLogin.*/PermitRootLogin yes/' "${rootmnt}/etc/ssh/sshd_config"
             check_status
         fi
@@ -485,9 +508,9 @@ installer()
     local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
     local padright=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
     [ $((len%2)) == 1 ] && local padright="$padright "
-    echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
-    echo -e "${cyan}:: *${padleft}${msg}${padright}*${none}"
-    echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+    echo -e "${cyber}:: *${padleft}${msg}${padright}*${none}"
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
     echo -e "   ${PARAMS}"
 
     # Mount install source device
@@ -518,29 +541,29 @@ installer()
         INSTALL_DEV="/dev/$(echo ${DISKS_DETAILED} | jq -rc '.[0].name')"
 
         # Determine if this is a default deployment
-        echo -e "\n${cyan}:: Automatically deploy with defaults?${none}"
+        echo -e "\n${cyber}:: Automatically deploy with defaults?${none}"
         getinput DEFAULT 'Use automatic mode with defaults' 'n'
         if [ "x$DEFAULT" == "xy" ]; then
             AUTOLOGIN=1
-            echo -e "\n${cyan}:: Automatic deployment mode selected...${none}"
-            echo -e "   hostname=${cyan}${HOSTNAME}${none}"
-            echo -e "   networking=${cyan}${NETIP}${none}"
-            echo -e "   proxy=${cyan}${PROXY}${none}"
-            echo -e "   no_proxy=${cyan}${NO_PROXY}${none}"
-            echo -e "   user=${cyan}${USER}${none}"
-            echo -e "   pass=${cyan}${DEFAULT_PASS}${none}"
-            echo -e "   install_dev=${cyan}${INSTALL_DEV}${none}"
+            echo -e "\n${cyber}:: Automatic deployment mode selected...${none}"
+            echo -e "   hostname=${cyber}${HOSTNAME}${none}"
+            echo -e "   networking=${cyber}${NETIP}${none}"
+            echo -e "   proxy=${cyber}${PROXY}${none}"
+            echo -e "   no_proxy=${cyber}${NO_PROXY}${none}"
+            echo -e "   user=${cyber}${USER}${none}"
+            echo -e "   pass=${cyber}${DEFAULT_PASS}${none}"
+            echo -e "   install_dev=${cyber}${INSTALL_DEV}${none}"
         else
             # Collect install destination device
             #-----------------------------------------------------------------------
-            echo -e "\n${cyan}:: Select a disk as your install destination:${none}"
+            echo -e "\n${cyber}:: Select a disk as your install destination:${none}"
             local i=0
             echo $DISKS_DETAILED | jq -rc '.[]' | while read x; do
                 i=$((i+1))
                 local disk="/dev/$(echo $x | jq -r '.name')"
                 local size="$(echo $x | jq -r '.size')"
                 local model="$(echo $x | jq -r '.model')"
-                echo -e "   ${i}) [${cyan}${disk}${none}](${cyan}${size}${none}) - ${model}"
+                echo -e "   ${i}) [${cyber}${disk}${none}](${cyber}${size}${none}) - ${model}"
             done
             getsel INSTALL_DEV "$DISKS"
 
@@ -554,7 +577,7 @@ installer()
 
             # Configure networking
             #----------------------------------------------------------------------
-            echo -e "\n${cyan}:: Configure networking:${none}"
+            echo -e "\n${cyber}:: Configure networking:${none}"
             getinput HOSTNAME 'Enter hostname' $HOSTNAME
             getinput NETIP 'Enter static IP, e.g. 192.168.1.2/24' 'DHCP'
             if [ "x${NETIP}" != "xDHCP" ]; then
@@ -566,12 +589,12 @@ installer()
 
             # Configure timezone
             #----------------------------------------------------------------------
-            echo -e "\n${cyan}:: Configure timezone:${none}"
+            echo -e "\n${cyber}:: Configure timezone:${none}"
             getinput TIMEZONE 'Enter timezone' $TIMEZONE
 
             # Create new user account
             #----------------------------------------------------------------------
-            echo -e "\n${cyan}:: Create new user account:${none}"
+            echo -e "\n${cyber}:: Create new user account:${none}"
             getinput USER 'Enter new username' $USER
             while true; do
                 getinput PASS 'Enter new password' 'admin' 1
@@ -596,23 +619,25 @@ installer()
     rootmnt="${1}"                          # /new_root passed in as 1st param
     local rw_ram_size="75%"
     local mode=$([ "$LAYER" == 'live' ] && echo 'Starting' || echo 'Installing')
-    echo -e "\n:: ${mode} ${cyan}${LAYER}${none} multi layer deployment"
-    echo -e "${cyan}:: --------------------------------------------------------------------${none}"
-    echo -e ":: New Root path ${cyan}${rootmnt}${none}"
+    echo -e "\n${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+    echo -e ":: ${mode} ${cyber}${LAYER}${none} multi layer deployment"
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+    echo -e ":: New Root path ${cyber}${rootmnt}${none}"
     if [ $LAYER == "live" ]; then
-        echo -en ":: Creating live tmpfs filesystem for writes, ${cyan}size=${rw_ram_size}${none}..."
+        echo -en ":: Creating live tmpfs filesystem for writes, ${cyber}size=${rw_ram_size}${none}..."
         mount -t tmpfs -o "size=${rw_ram_size}",mode=0755 none ${WRITE_MNT} &>/dev/null
         check_status
         mount_layers "${ISO_MNT}/images" ${WRITE_MNT}/root ${WRITE_MNT}/temp
 
-        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${cyan}${rootmnt}${none}..."
+        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${cyber}${rootmnt}${none}..."
         mount -o bind ${WRITE_MNT}/root ${rootmnt} &>/dev/null
         check_status
     else
         # Copies /mnt/read/root/ to /new_root
         mount_layers "${ISO_MNT}/images" ${READ_MNT}/root ${READ_MNT}/temp
         partition_and_mount_disk
-        echo -e ":: Copying ${cyan}${READ_MNT}/root${none} to ${cyan}${rootmnt}${none}"
+        echo -e "\n:: Copying deployment overlay ${cyber}${READ_MNT}/root${none} to destination ${cyber}${rootmnt}${none}"
+        echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
         rsync -ah --info=progress2 ${READ_MNT}/root/* ${rootmnt}
     fi
 
@@ -643,9 +668,9 @@ installer()
         local padleft=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
         local padright=$(bash -c "printf '%0.1s' ' '{1..$((len/2))} $pad")
         [ $((len%2)) == 1 ] && local padright="$padright "
-        echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
-        echo -e "${cyan}:: *${padleft}${msg}${padright}*${none}"
-        echo -e "${cyan}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+        echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
+        echo -e "${cyber}:: *${padleft}${msg}${padright}*${none}"
+        echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
 
         # Eject media and reboot
         [ "x$DEFAULT" != "xy" ] && eject &>/dev/null
@@ -675,6 +700,7 @@ run_hook()
     WRITE_MNT=/mnt/write
 
     # Variables
+    MOUNTS=""
     LABEL="CYBERLINUX_INSTALLER"
     DISTRO="cyberlinux"
     TIMEZONE="America/Boise"
