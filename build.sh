@@ -173,7 +173,7 @@ build_multiboot()
     fi
   done
 
-  echo -en ":: Creating core BIOS $TEMP_DIR/bios.img..."
+  echo -e "${yellow}:: Creating BIOS boot files...${none}"
   docker_cp "${BUILDER}:/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
   rm -f "${ISO_DIR}/boot/grub/i386-pc"/*.img
   # We need to create our bios.img that contains just enough code to find the grub configuration and
@@ -193,7 +193,7 @@ build_multiboot()
 EOF
   check
 
-  echo -en ":: Creating UEFI boot files..."
+  echo -e "${yellow}:: Creating UEFI boot files...${none}"
   mkdir -p "${ISO_DIR}/efi/boot"
   docker_cp "$BUILDER:/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
   rm -f "$ISO_DIR/grub/x86_64-efi"/*.img
@@ -213,7 +213,7 @@ EOF
 # Build the initramfs based installer
 build_installer()
 {
-  echo -en "${yellow}:: Stage files for building initramfs based installer...${none}"
+  echo -e "${yellow}:: Stage files for building initramfs based installer...${none}"
   docker_run ${BUILDER}
   docker_cp "${INSTALLER_DIR}/installer" "$BUILDER:/usr/lib/initcpio/hooks"
   docker_cp "${INSTALLER_DIR}/installer.conf" "$BUILDER:/usr/lib/initcpio/install/installer"
