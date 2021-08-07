@@ -581,7 +581,13 @@ installer()
 
         # Determine if this is a default deployment
         echo -e "\n${cyber}:: Automatically deploy with defaults?${none}"
-        getinput DEFAULT 'Use automatic mode with defaults' 'n'
+        getinput DIRECTIVE 'Use automatic mode with defaults' 'n'
+
+        # Build in a way to pass optional params for testing
+        if [ "x$DIRECTIVE" != "xn" ]; then
+            DEFAULT="y"
+        fi
+
         if [ "x$DEFAULT" == "xy" ]; then
             AUTOLOGIN=1
         else
@@ -719,9 +725,13 @@ installer()
         echo -e "${cyber}:: *${padleft}${msg}${padright}*${none}"
         echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
 
-        # Eject media and reboot
-        eject &>/dev/null
-        reboot &>/dev/null
+        if [ "x$DIRECTIVE" == "xexit" ]; then
+            exit_to_shell
+        else
+            # Eject media and reboot
+            eject &>/dev/null
+            reboot &>/dev/null
+        fi
     fi
 }
 
