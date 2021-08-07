@@ -433,10 +433,9 @@ config_system()
     local pass=""
     [ "x$DEFAULT" == "xy" ] && pass=" (default: ${cyber}${DEFAULT_PASS}${none})"
 
-    # I switched from using mkpasswd and usermod -p to to chpasswd because
-    # the user was forced to immedately change their password on first login otherwise
+    # Note the new pam rules require SHA512 encryption else first login will require reset
     echo -en ":: Setting root user password${pass}..."
-    chroot ${rootmnt} /bin/bash -c "echo 'root:${PASS}' | chpasswd  -c SHA256"
+    chroot ${rootmnt} /bin/bash -c "echo 'root:${PASS}' | chpasswd -c SHA512"
     check_status
 
     # Filter groups down to just those that exist
@@ -463,10 +462,9 @@ config_system()
     chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
     check_status
 
-    # I switched from using mkpasswd and usermod -p to to chpasswd because
-    # the user was forced to immedately change their password on first login otherwise
+    # Note the new pam rules require SHA512 encryption else first login will require reset
     echo -en ":: Setting user password${pass}..."
-    chroot ${rootmnt} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd  -c SHA256"
+    chroot ${rootmnt} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd -c SHA512"
     check_status
 
     echo -en ":: Adding new user to sudoers list..."
