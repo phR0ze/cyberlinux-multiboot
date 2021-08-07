@@ -83,6 +83,7 @@ trap release SIGINT
 # `grub`                  is needed by the installer for creating the EFI and BIOS boot partitions
 # `dosfstools`            provides `mkfs.fat` needed by the installer for creating the EFI boot partition
 # `mkinitcpio`            provides the tooling to build the initramfs early userspace installer
+# `mkinitcpio-vt-colors`  required for the initramfs installer to use cyberlinux blue output
 # `rsync`                 used by the installer to copy install data to the install target
 # `gptfdisk`              used by the installer to prepare target media for install
 # `linux`                 need to load the kernel to satisfy GRUB
@@ -105,8 +106,8 @@ build_env()
     # Cache packages ahead of time as mounts are not allowed in builds
     docker_run archlinux:base-devel
     docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
-    local packages="vim grub dosfstools mkinitcpio rsync gptfdisk linux intel-ucode memtest86+ \
-      libisoburn squashfs-tools"
+    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux \
+      intel-ucode memtest86+ libisoburn squashfs-tools"
     docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
     docker_kill ${BUILDER}
 
