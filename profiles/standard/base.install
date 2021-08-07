@@ -21,10 +21,10 @@
 
 post_install()
 {
-  for x in $(find /etc -type f -name '*_sideload'); do
-    echo ":: Sideloading ${x} => ${x//_sideload/}"
-    mv "${x}" "${x//_sideload/}"
-  done
+  # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
+  # color theme for the virtual terminal that scrolls by during boot.
+  # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
+  mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
 }
 
 post_upgrade() {
