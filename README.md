@@ -273,11 +273,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Get basic networking working
+* Add skel configs to root user
 * Add pacman support to base
 * Build out the shell deployment
 
 # Changelog <a name="changelog"/></a>
+* Get basic networking working
 * Don't require new users to immediately change their passwords
 * Test UEFI install with custom steps
 * Test UEFI automated install

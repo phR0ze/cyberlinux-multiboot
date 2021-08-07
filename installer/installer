@@ -438,6 +438,10 @@ config_system()
     chroot ${rootmnt} /bin/bash -c "echo 'root:${PASS}' | chpasswd -c SHA512"
     check_status
 
+    echo -en ":: Copying skel configs to root user..."
+    cp -r ${rootmnt}/etc/skel/* ${rootmnt}/root
+    check_status
+
     # Filter groups down to just those that exist
     local groups=""
     for x in ${ALL_GROUPS//,/ }; do
@@ -537,6 +541,25 @@ config_system()
             check_status
         fi
     fi
+
+    # Enable core services for the system
+    echo -e ":: Enabling core services for the system..."
+
+    echo -en ":: Enabling ${cyber}systemd-networkd${none}..."
+    chroot ${rootmnt} systemctl enable systemd-networkd &>/dev/null
+    check_status
+
+    echo -en ":: Enabling ${cyber}systemd-networkd-wait-online${none}..."
+    chroot ${rootmnt} systemctl enable systemd-networkd-wait-online &>/dev/null
+    check_status
+
+    echo -en ":: Enabling ${cyber}systemd-resolved${none}..."
+    chroot ${rootmnt} systemctl enable systemd-resolved &>/dev/null
+    check_status
+
+    echo -en ":: Enabling ${cyber}systemd-timesyncd${none}..."
+    chroot ${rootmnt} systemctl enable systemd-timesyncd &>/dev/null
+    check_status
 }
 
 # Create a new system mount then overlay layers as specified
