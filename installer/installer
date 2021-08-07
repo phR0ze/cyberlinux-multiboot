@@ -725,7 +725,7 @@ installer()
         echo -e "${cyber}:: *${padleft}${msg}${padright}*${none}"
         echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
 
-        if [ "x$DIRECTIVE" == "xexit" ]; then
+        if [ "x$DIRECTIVE" == "xexit_end" ]; then
             exit_to_shell
         else
             # Eject media and reboot
