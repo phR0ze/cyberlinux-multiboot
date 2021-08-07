@@ -108,7 +108,7 @@ package_cyberlinux-standard-base()
     'systemd-sysvcompat'        # Sysinit compat for systemd
     'gnutls'                    # required by systemd-resolved to work
     'sudo'                      # Elevate user commands on demand to root
-    'mkinitcpio-colors'         # cyberlinux blue vt console colors
+    'mkinitcpio-vt-colors'      # cyberlinux blue vt console colors
     'efibootmgr'                # Provide the ability to modify the EFI boot manager entries
 
     # Kernel components

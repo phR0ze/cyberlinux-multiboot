@@ -27,7 +27,7 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
     * [Check if image exists](#check-if-image-exists)
   * [Caching packages](#caching-packages)
 * [mkinitcpio](#mkinitcpio)
-  * [mkinitcpio-colors](#mkinitcpio-colors)
+  * [mkinitcpio-vt-colors](#mkinitcpio-vt-colors)
   * [docker mkinitcpio issues](#docker-mkinitcpio-issues)
     * [autodetect](#autodetect)
     * [arch-chroot](#arch-chroot)
@@ -151,12 +151,12 @@ $ pacman -Syw --noconfirm grub
 
 # mkinitcpio <a name="mkinitcpio"/></a>
 
-## mkinitcpio-colors <a name="mkinitcpio-colors"/></a>
+## mkinitcpio-vt-colors <a name="mkinitcpio-vt-colors"/></a>
 The color of the kernel messages that are output during boot time can be controlled with a mkinitcpio
 hook for color configuration.
 
-1. Install `mkinitcpio-colors`
-2. Update `/etc/mkinitcpio.conf` to include the `mkinitcpio-colors` hook
+1. Install `mkinitcpio-vt-colors`
+2. Update `/etc/mkinitcpio.conf` to include the `vt-colors` hook
 3. Rebuild the initramfs early boot image
 
 ## docker mkinitcpio issues <a name="docker-mkinitcpio-issues"/></a>
@@ -273,12 +273,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* mkinitcpio-vt-colors is not taking affect on boot
 * Test UEFI automated install
 * Test UEFI install with custom steps
 * Don't require new users to immediately change their passwords
 
 # Changelog <a name="changelog"/></a>
-* mkinitcpio-colors is not taking affect on boot
 * Test BIOS install with custom steps
 * Containerize the builder
 * Compress layers into squashfs images 

@@ -39,7 +39,7 @@
 # -----------------------------------------------------------------------------
 
 # Configure color codes using tput which requires terminfo set
-# I've overridden bold using the mkinitcpio-colors pakage to cyberlinux blue
+# I've overridden bold using the mkinitcpio-vt-colors pakage to cyberlinux blue
 # which is why simply using blue here will give use cyberlinux blue.
 export TERMINFO=/usr/lib/terminfo
 _bold=$(tput bold)
@@ -356,7 +356,7 @@ install_bootloader()
 #            -O ${platform} -p /boot/grub part_gpt fat efi_gop efi_uga ${shared_modules} &>/dev/null
 #        check_status
 
-        # --efi-directory is needed to tell GRUB where your mounted ESP is 
+        # --efi-directory is needed to tell GRUB where your mounted ESP is
         echo -en ":: Install GRUB EFI bootloader to ${cyber}${INSTALL_DEV}${none}..."
         chroot ${rootmnt} grub-install --target=${platform} --efi-directory=/boot \
             --modules="part_gpt fat efi_gop efi_uga ${shared_modules}" ${INSTALL_DEV} &>/dev/null
