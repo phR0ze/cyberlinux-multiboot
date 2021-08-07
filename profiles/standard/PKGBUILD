@@ -52,6 +52,7 @@ _profile=standard
 # the staging location is /home/build/PKG
 pkg() {
   local name=$1                       # e.g. core
+  install=$name.install               # Specific installer script for deployment package
   local configs="${startdir}/${name}" # /home/build/profiles/standard/core
 
   if [ -d "${configs}" ]; then
@@ -62,7 +63,6 @@ pkg() {
 
 package_cyberlinux-standard-core()
 {
-  install=core.install
   pkgdesc="Smallest set of packages possible for a functioning container with bash"
   depends=(
     # GNU Bourne Again shell
