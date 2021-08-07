@@ -428,12 +428,12 @@ umount_all()
 
 config_system()
 {
-    echo -e "\n:: Configure system..."
+    echo -e "\n:: Configuring system..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
     local pass=""
     [ "x$DEFAULT" == "xy" ] && pass=" (default: ${cyber}${DEFAULT_PASS}${none})"
-    echo -en ":: Set root user password${pass}..."
-    chroot ${rootmnt} usermod -p ${PASS} root
+    echo -en ":: Setting root user password${pass}..."
+    chroot ${rootmnt} /bin/bash -c "echo 'root:${PASS}' | chpasswd  -c sha256"
     check_status
 
     # Filter groups down to just those that exist
@@ -446,30 +446,30 @@ config_system()
 
     # Configure wifi before user is created to pick up autostart
     if [ "x$ENABLE_WIFI" == "x1" ]; then
-        echo -en ":: Enable Wifi..."
+        echo -en ":: Enabling Wifi..."
         chroot ${rootmnt} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
         chroot ${rootmnt} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
         check_status
     fi
 
-    echo -en ":: Create user group ${cyber}${USER}${none}..."
+    echo -en ":: Creating user group ${cyber}${USER}${none}..."
     chroot ${rootmnt} groupadd ${USER}
     check_status
 
-    echo -en ":: Create user ${cyber}${USER}${none} with groups ${cyber}${groups}${none}..."
+    echo -en ":: Creating user ${cyber}${USER}${none} with groups ${cyber}${groups}${none}..."
     chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
     check_status
 
-    echo -en ":: Set user password${pass}..."
-    chroot ${rootmnt} usermod -p ${PASS} ${USER}
+    echo -en ":: Setting user password${pass}..."
+    chroot ${rootmnt} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd  -c sha256"
     check_status
 
-    echo -en ":: Add new user to sudoers list..."
+    echo -en ":: Adding new user to sudoers list..."
     chroot ${rootmnt} /bin/bash -c "echo '${USER} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
     check_status
 
     # Set hostname to chosen layer
-    echo -en ":: Set hostname to ${cyber}${HOSTNAME}${none}..."
+    echo -en ":: Setting hostname to ${cyber}${HOSTNAME}${none}..."
     echo $HOSTNAME > "${rootmnt}/etc/hostname"
     check_status
 
@@ -566,7 +566,7 @@ installer()
     PROXY='None'
     NO_PROXY='localhost,127.0.0.1'
     USER='admin'
-    PASS=$(mkpasswd -m sha 'admin')
+    PASS='admin'
     DEFAULT_PASS='admin'
 
     # Ask for user input if not live deployment
@@ -642,7 +642,6 @@ installer()
                     break
                fi
             done
-            PASS=$(mkpasswd -m sha $PASS)
 
             # Prompt for autologin
             if [ "x$AUTOLOGIN" != "x1" ]; then
