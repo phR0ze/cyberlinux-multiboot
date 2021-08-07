@@ -305,8 +305,10 @@ partition_and_mount_disk()
     mount -o noatime ${PART_ROOT} ${rootmnt} &>/dev/null
     check_status
 
-    # Mount the boot partition on top of the root partition
-    # GRUB BIOS boot partition shouldn't be formatted or mounted
+    # UEFI: boot partition needs to be mounted over the root at /boot to capture the Arch Linus
+    # standard boot file install e.g. kernel and initramfs. We keep them on the same partition
+    # as the EFI/BOOT/BOOTX64.efi as EFI can't mount a ext4 filesystem.
+    # BIOS: boot partition shouldn't be formatted or mounted in this case as its just for the MBR
     if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Mounting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}${rootmnt}/boot${none}..."
         mkdir -p ${rootmnt}/boot
@@ -315,59 +317,71 @@ partition_and_mount_disk()
     fi
 }
 
-# Using systemd-boot as its super fast and minimal
+# Using GRUB as its reliable
+# https://wiki.archlinux.org/index.php/GRUB
+# https://blog.heckel.xyz/2017/05/28/creating-a-bios-gpt-and-uefi-gpt-grub-bootable-linux-system/
 install_bootloader()
 {
-    echo -e "\n:: Install bootloader..."
+    local platform=i386-pc
+    local grub_dir="${rootmnt}/boot/grub"
+    local shared_modules="ext2 all_video font gfxterm"
+
+    echo -e "\n:: Install bootloader to ${cyber}${PART_BOOT}${none}..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+    mkdir -p ${grub_dir} &>/dev/null
 
+    # Install GRUB bootloader via the 'grub-install' command which  populates the
+    # ${grub_dir} with everything needed to boot the system, all we need is to
+    # customize the 'grub.cfg'.
+    #---------------------------------------------------------------------------
     if [ "x${EFI}" == "x1" ]; then
-        #echo -en ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
-        echo -e ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
-        chroot ${rootmnt} bootctl install
-        #check_status
-        
-        local boot_conf="${rootmnt}/boot/loader/entries/arch.conf"
-        echo -en ":: Configure systemd-boot at ${cyber}${boot_conf}${none}..."
-        echo "title   cyberlinux" > $boot_conf
-        echo "linux   /vmlinuz-linux" >> $boot_conf
-        echo "initrd  /intel-ucode.img" >> $boot_conf
-        echo "initrd  /initramfs-linux.img" >> $boot_conf
-        echo "options root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> $boot_conf
-        check_status
+        local platform=x86_64-efi
+        local esp_mnt="${rootmnt}/boot"
 
-        #echo -en ":: Generate default fstabl file..."
-        #chroot ${rootmnt} genfstab -U . >> /etc/fstab
-        #check_status
+#        # grub-mkimage will create the wellknown EFI boot file EFI/BOOT/BOOTX64.efi which will
+#        # in turn point to /boot/grub which contains GRUB's standard bootloader configuration
+#        echo -en ":: Create GRUB bootloader path ${cyber}${esp_mnt}/EFI/BOOT${none}..."
+#        mkdir -p ${esp_mnt}/EFI/BOOT &>/dev/null
+#        check_status
+#
+#        echo -en ":: Stage GRUB support files at ${cyber}${grub_dir}/${platform}${none}..."
+#        cp -r "${rootmnt}/usr/lib/grub/${platform}" "${grub_dir}" &>/dev/null
+#        check_status
+#
+#        # -p /boot/grub              is the redirection flag to where GRUB configuration is stored
+#        # -d /boot/grub/x86_64-efi   is the location for GRUB's build support files we staged
+#        echo -en ":: Install GRUB bootloader to ${cyber}${esp_mnt}/EFI/BOOT/BOOTX64.efi${none}..."
+#        chroot ${rootmnt} grub-mkimage -d /boot/grub/${platform} -o /boot/EFI/BOOT/BOOTX64.efi \
+#            -O ${platform} -p /boot/grub part_gpt fat efi_gop efi_uga ${shared_modules} &>/dev/null
+#        check_status
+        echo -en ":: Install GRUB EFI bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        chroot ${rootmnt} grub-install --target=${platform} \
+            --modules="part_gpt fat efi_gop efi_uga ${shared_modules}" ${INSTALL_DEV} &>/dev/null
+        check_status
     else
-        # Install GRUB bootloader to the MBR on i386-pc legacy type systems that
-        # don't support modern UEFI system firmware. grub-install populates the
-        # $grub_path with everything needed to boot the system, all we need is to
-        # customize the 'grub.cfg'
-        #---------------------------------------------------------------------------
-        local grub_path="${rootmnt}/boot/grub"  # /new_root/boot/grub
-        mkdir -p ${grub_path}
-
+        # Install GRUB bootloader to the MBR on i386-pc legacy type systems that don't support
+        # modern UEFI system firmware. BIOS will boot from the MBR which will in turn boot from
+        # GRUB's standard install location ${grub_dir}
         echo -en ":: Install GRUB BIOS bootloader to ${cyber}${INSTALL_DEV}${none}..."
-        chroot ${rootmnt} grub-install --target=i386-pc \
-            --modules="part_msdos ext2 all_video font gfxterm" ${INSTALL_DEV} &>/dev/null
-        check_status
-
-        # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
-        echo -en ":: Install GRUB config at ${cyber}${grub_path}${none}..."
-        echo -e "default=0\ntimeout=0\n" > ${grub_path}/grub.cfg
-        echo -e 'set gfxmode="1280x1024,1024x768,auto"' >> ${grub_path}/grub.cfg
-        echo -e 'loadfont fonts/unicode.pf2' >> ${grub_path}/grub.cfg
-        echo -e 'terminal_input console' >> ${grub_path}/grub.cfg
-        echo -e "terminal_output gfxterm\n" >> ${grub_path}/grub.cfg
-        echo -e "menuentry \"${ROOT_LABEL}\" {" >> ${grub_path}/grub.cfg
-        echo -e "    set gfxpayload=keep" >> ${grub_path}/grub.cfg
-        echo -e "    search --no-floppy --set=root --label ${ROOT_LABEL}" >> ${grub_path}/grub.cfg
-        echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> ${grub_path}/grub.cfg
-        echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_path}/grub.cfg
-        echo -e "}" >> ${grub_path}/grub.cfg
+        chroot ${rootmnt} grub-install --target=${platform} \
+            --modules="part_msdos ${shared_modules}" ${INSTALL_DEV} &>/dev/null
         check_status
     fi
+
+    # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
+    echo -en ":: Install GRUB config at ${cyber}${grub_dir}${none}..."
+    echo -e "default=0\ntimeout=0\n" > ${grub_dir}/grub.cfg
+    echo -e 'set gfxmode="1280x1024,1024x768,auto"' >> ${grub_dir}/grub.cfg
+    echo -e 'loadfont fonts/unicode.pf2' >> ${grub_dir}/grub.cfg
+    echo -e 'terminal_input console' >> ${grub_dir}/grub.cfg
+    echo -e "terminal_output gfxterm\n" >> ${grub_dir}/grub.cfg
+    echo -e "menuentry \"${ROOT_LABEL}\" {" >> ${grub_dir}/grub.cfg
+    echo -e "    set gfxpayload=keep" >> ${grub_dir}/grub.cfg
+    echo -e "    search --no-floppy --set=root --label ${ROOT_LABEL}" >> ${grub_dir}/grub.cfg
+    echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> ${grub_dir}/grub.cfg
+    echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_dir}/grub.cfg
+    echo -e "}" >> ${grub_dir}/grub.cfg
+    check_status
 
     # Hit the "/dev must be mounted" issue reported below and employing the same fix
     # https://wiki.archlinux.org/title/mkinitcpio#%22/dev_must_be_mounted%22_when_it_already_is
@@ -375,6 +389,8 @@ install_bootloader()
     [ ! -e ${rootmnt}/dev/fd ] && ln -s /proc/self/fd /dev/
     chroot ${rootmnt} mkinitcpio -p $KERNEL &>/dev/null
     check_status
+
+    #exit_to_shell
 }
 
 mount_chroot_dirs()
@@ -649,6 +665,7 @@ installer()
     echo -e "   timezone=${cyber}${TIMEZONE}${none}"
     echo -e "   autologin=${cyber}${AUTOLOGIN}${none}"
     echo -e "   install_dev=${cyber}${INSTALL_DEV}${none}"
+    echo -e "   EFI=${cyber}${EFI}${none}"
 
     if [ $LAYER == "live" ]; then
         echo -en ":: Creating live tmpfs filesystem for writes, ${cyber}size=${rw_ram_size}${none}..."
@@ -668,20 +685,20 @@ installer()
         rsync -ah --info=progress2 ${READ_MNT}/root/* ${rootmnt}
     fi
 
-    # Configure system
+    # Install bootloader and initramfs
     #---------------------------------------------------------------------------
     mount_chroot_dirs
+    if [ $LAYER != "live" ]; then
+        install_bootloader
+    fi
+
+    # Configure system
+    #---------------------------------------------------------------------------
     config_system
     echo -en ":: Set unique machine-id..."
     chroot ${rootmnt} dbus-uuidgen --ensure=/etc/machine-id &>/dev/null
     chroot ${rootmnt} ln -sf /etc/machine-id /var/lib/dbus/machine-id &>/dev/null
     check_status
-
-    # Install bootloader and initramfs
-    #---------------------------------------------------------------------------
-    if [ $LAYER != "live" ]; then
-        install_bootloader
-    fi
     umount_chroot_dirs
 
     # Unmount everything after install
@@ -700,7 +717,8 @@ installer()
         echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
 
         # Eject media and reboot
-        [ "x$DEFAULT" != "xy" ] && eject &>/dev/null
+        eject &>/dev/null
+        reboot &>/dev/null
     fi
 }
 
