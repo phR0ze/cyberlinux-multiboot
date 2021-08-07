@@ -331,47 +331,22 @@ install_bootloader()
         local esp_mnt="${rootmnt}/boot"
         local boot_conf="${rootmnt}/boot/loader/entries/arch.conf"
 
-        echo -e ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
-        #chroot ${rootmnt} bootctl install &>/dev/null
-        chroot ${rootmnt} bootctl install
+        echo -en ":: Installing systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        chroot ${rootmnt} bootctl install &>/dev/null
         check_status
 
-        echo -en ":: Set default boot entry to be ${cyber}${boot_conf}/${none}..."
+        echo -en ":: Setting default boot entry to be ${cyber}${boot_conf}/${none}..."
+        mkdir -p ${rootmnta}/boot/loader &>/dev/null
         echo "default arch.conf" > ${rootmnta}/boot/loader/loader.conf
         check_status
 
-        echo -en ":: Configure systemd-boot at ${cyber}${boot_conf}${none}..."
+        echo -en ":: Configuring systemd-boot at ${cyber}${boot_conf}${none}..."
         echo "title   ${ROOT_LABEL}" > $boot_conf
         echo "linux   /vmlinuz-${KERNEL}" >> $boot_conf
         echo "initrd  /intel-ucode.img" >> $boot_conf
         echo "initrd  /initramfs-${KERNEL}.img" >> $boot_conf
         echo "options root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> $boot_conf
         check_status
-
-        #local platform=x86_64-efi
-        # GRUB will create the wellknown EFI boot file EFI/BOOT/BOOTX64.efi which will
-        # in turn point to /boot/grub which contains GRUB's standard bootloader configuration
-
-#        echo -en ":: Create GRUB bootloader path ${cyber}${esp_mnt}/EFI/BOOT${none}..."
-#        mkdir -p ${esp_mnt}/EFI/BOOT &>/dev/null
-#        check_status
-#
-#        echo -en ":: Stage GRUB support files at ${cyber}${grub_dir}/${platform}${none}..."
-#        cp -r "${rootmnt}/usr/lib/grub/${platform}" "${grub_dir}" &>/dev/null
-#        check_status
-#
-#        # -p /boot/grub              is the redirection flag to where GRUB configuration is stored
-#        # -d /boot/grub/x86_64-efi   is the location for GRUB's build support files we staged
-#        echo -en ":: Install GRUB bootloader to ${cyber}${esp_mnt}/EFI/BOOT/BOOTX64.efi${none}..."
-#        chroot ${rootmnt} grub-mkimage -d /boot/grub/${platform} -o /boot/EFI/BOOT/BOOTX64.efi \
-#            -O ${platform} -p /boot/grub part_gpt fat efi_gop efi_uga ${shared_modules} &>/dev/null
-#        check_status
-
-        # --efi-directory is needed to tell GRUB where your mounted ESP is
-#        echo -en ":: Installing GRUB EFI bootloader to ${cyber}${INSTALL_DEV}${none}..."
-#        chroot ${rootmnt} grub-install --target=${platform} --efi-directory=/boot \
-#            --modules="part_gpt fat efi_gop efi_uga ${shared_modules}" ${INSTALL_DEV} &>/dev/null
-#        check_status
 
     # BIOS legacy systems will boot from the MBR which will be created by the GRUB i386-pc
     # bootloader via 'grub-install' which when booted loads the configuration from ${grub_dir}
