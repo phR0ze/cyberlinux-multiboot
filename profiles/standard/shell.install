@@ -21,31 +21,8 @@
 
 post_install()
 {
-  # Custom arch linux mirrorlist location
-  # /etc/pacman.d/archlinux.mirrorlist
-
-  # BlackArch linux mirrorlist location
-  # /etc/pacman.d/blackarch.mirrorlist
-
-  # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
-  # color theme for the virtual terminal that scrolls by during boot.
-  # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
-  mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
-
-  # SSH login banner for cyberlinux
-  mv -f /etc/motd_sideload /etc/motd
-
-  # Added in the following property changes:
-  #   ILoveCandy
-  #   ParallelDownloads = 5
-  # Added the cyberlinux repo  
-  # Uncommented the multilib repo
-  # Switched the repo mirrorlist to /etc/pacman.d/archlinux.mirrorlist
-  # Added the blackarch repo mirrorlist entry
-  mv -f /etc/pacman.conf_sideload /etc/pacman.conf
-
-  # Default custom vim config without any plugins and only using built in colors
-  # /etc/skel/.vimrc
+  # Fully customized .bashrc
+  #mv -f /etc/skel/.bashrc_sideload /etc/skel/.bashrc
 }
 
 post_upgrade() {

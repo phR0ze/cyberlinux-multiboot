@@ -273,9 +273,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Don't require new users to immediately change their passwords
+* Get basic networking working
+* Add pacman support to base
+* Build out the shell deployment
 
 # Changelog <a name="changelog"/></a>
+* Don't require new users to immediately change their passwords
 * Test UEFI install with custom steps
 * Test UEFI automated install
 * mkinitcpio-vt-colors is not taking affect on boot
