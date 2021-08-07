@@ -46,6 +46,9 @@ post_install()
 
   # Default custom vim config without any plugins and only using built in colors
   # /etc/skel/.vimrc
+
+  # Enable services that we've installed with this meta package
+  systemctl enable sshd
 }
 
 post_upgrade() {

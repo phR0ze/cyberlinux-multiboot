@@ -122,18 +122,28 @@ build_env()
 # Build repo packages if needed
 build_repo_packages() 
 {
-  if [ ! -f "$REPO_DIR/builder.db" ]; then
-    echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
+  [ -f "$REPO_DIR/builder.db" ] && return
 
-    docker_run ${BUILDER}
-    docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/${PROFILE}; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
-    check
+  echo -e "${yellow}:: Caching package artifacts..."
+  docker_run ${BUILDER}
 
-    # Ensure the builder repo exists locally
-    pushd "${REPO_DIR}"
-    repo-add builder.db.tar.gz *.pkg.tar.*
-    popd
+  echo -en ":: Downloading ${cyan}blackarch-keyring${none}..."
+  cat <<EOF | docker exec --privileged -i ${BUILDER} bash
+  if [ ! -f ${CONT_REPO_DIR}/blackarch-keyring.pkg.tar.xz ]; then
+    cd ${CONT_REPO_DIR}
+    curl -s -O https://blackarch.org/keyring/blackarch-keyring.pkg.tar.xz
   fi
+EOF
+  check
+
+  echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
+  docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/${PROFILE}; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
+  check
+
+  # Ensure the builder repo exists locally
+  pushd "${REPO_DIR}"
+  repo-add builder.db.tar.gz *.pkg.tar.*
+  popd
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make

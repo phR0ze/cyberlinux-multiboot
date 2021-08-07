@@ -277,6 +277,7 @@ any additional terms or conditions.
 * Build out the shell deployment
 
 # Changelog <a name="changelog"/></a>
+* Enable sshd out of the box
 * Add skel configs to root user
 * Get basic networking working
 * Don't require new users to immediately change their passwords

@@ -38,8 +38,8 @@ pkgver=0.0.16
 pkgrel=1
 pkgdesc='Configuration for various cyberlinux profiles'
 arch=('any')
-url="https://github.com/phR0ze/cyberlinux/aur/cyberlinux-profiles"
 license=('MIT')
+url="https://github.com/phR0ze/cyberlinux/aur/cyberlinux-profiles"
 
 # Configure environment
 shopt -s dotglob
@@ -96,11 +96,14 @@ package_cyberlinux-standard-base()
     'pacman-contrib'            # rankmirrors, pacdiff, pactree, paclist, pacsearch
     'openssh'                   # SSH server/client, openssl
     'wget'                      # Retrieve files from the Web
+    'curl'                      # Adding curl command to pull in packer scripts
+    'blackarch-keyring'         # Adding curl command to pull in packer scripts
 
     # Essential tools
     'sudo'                      # Elevate user commands on demand to root
     'vim'                       # Improved version of vi text editor
   )
+
   pkg base
 }
 
@@ -128,7 +131,6 @@ package_cyberlinux-standard-shell()
     'pkgfile'                   # A pacman files and metadata explorer
     'which'                     # Show the full path of commnds, depof: .bashrc, group: [build-devel]
     'bindip'                    # Bind a service to a specifc IP Address, repo: CYBERLINUX
-    'curl'                      # Adding curl command to pull in packer scripts
     'dnsutils'                  # Network utilities dig/host/nslookup
     'gnu-netcat'                # Network piping application
     'iputils'                   # Network utils e.g. ping/tftpd
