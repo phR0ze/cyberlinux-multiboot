@@ -273,12 +273,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* mkinitcpio-vt-colors is not taking affect on boot
 * Test UEFI automated install
 * Test UEFI install with custom steps
 * Don't require new users to immediately change their passwords
 
 # Changelog <a name="changelog"/></a>
+* mkinitcpio-vt-colors is not taking affect on boot
 * Test BIOS install with custom steps
 * Containerize the builder
 * Compress layers into squashfs images 

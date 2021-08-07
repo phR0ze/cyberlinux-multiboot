@@ -222,7 +222,7 @@ mount_layers()
 # Partition disk and mount for install at ${rootmnt}
 partition_and_mount_disk()
 {
-    echo -e "\n:: Partition and mount destination disk ${cyber}${INSTALL_DEV}${none}..."
+    echo -e "\n:: Partitioning and mounting destination disk ${cyber}${INSTALL_DEV}${none}..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     # Wipe, partition and format disk
@@ -231,7 +231,7 @@ partition_and_mount_disk()
     [ "x${INSTALL_DEV}" != "x" ]
     check_status
 
-    echo -en ":: Destroy any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
+    echo -en ":: Destroying any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
     wipefs --all --force ${INSTALL_DEV} &>/dev/null
     check_status
 
@@ -317,27 +317,38 @@ partition_and_mount_disk()
     fi
 }
 
-# Using GRUB as its reliable
-# https://wiki.archlinux.org/index.php/GRUB
-# https://blog.heckel.xyz/2017/05/28/creating-a-bios-gpt-and-uefi-gpt-grub-bootable-linux-system/
+# Install the appropriate bootloader for BIOS and UEFI systems
 install_bootloader()
 {
-    local platform=i386-pc
-    local grub_dir="${rootmnt}/boot/grub"
-    local shared_modules="ext2 all_video font gfxterm"
-
-    echo -e "\n:: Install bootloader to ${cyber}${PART_BOOT}${none}..."
+    echo -e "\n:: Installing bootloader to ${cyber}${PART_BOOT}${none}..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
-    mkdir -p ${grub_dir} &>/dev/null
 
-    # Install GRUB bootloader via the 'grub-install' command which  populates the
-    # ${grub_dir} with everything needed to boot the system, all we need is to
-    # customize the 'grub.cfg'.
-    #---------------------------------------------------------------------------
+    # bootctl will copy the systemd-boot loader to the wellknown EFI boot file EFI/BOOT/BOOTX64.efi
+    # location and its own EFI/systemd-bootx64.efi and will set systemd-boot as the default EFI
+    # entry. The bootloader will use the configuration stored at $esp/loader/loader.conf to find the
+    # default configuration to load.
     if [ "x${EFI}" == "x1" ]; then
-        local platform=x86_64-efi
         local esp_mnt="${rootmnt}/boot"
+        local boot_conf="${rootmnt}/boot/loader/entries/arch.conf"
 
+        echo -e ":: Install systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        #chroot ${rootmnt} bootctl install &>/dev/null
+        chroot ${rootmnt} bootctl install
+        check_status
+
+        echo -en ":: Set default boot entry to be ${cyber}${boot_conf}/${none}..."
+        echo "default arch.conf" > ${rootmnta}/boot/loader/loader.conf
+        check_status
+
+        echo -en ":: Configure systemd-boot at ${cyber}${boot_conf}${none}..."
+        echo "title   ${ROOT_LABEL}" > $boot_conf
+        echo "linux   /vmlinuz-${KERNEL}" >> $boot_conf
+        echo "initrd  /intel-ucode.img" >> $boot_conf
+        echo "initrd  /initramfs-${KERNEL}.img" >> $boot_conf
+        echo "options root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> $boot_conf
+        check_status
+
+        #local platform=x86_64-efi
         # GRUB will create the wellknown EFI boot file EFI/BOOT/BOOTX64.efi which will
         # in turn point to /boot/grub which contains GRUB's standard bootloader configuration
 
@@ -357,43 +368,47 @@ install_bootloader()
 #        check_status
 
         # --efi-directory is needed to tell GRUB where your mounted ESP is
-        echo -en ":: Install GRUB EFI bootloader to ${cyber}${INSTALL_DEV}${none}..."
-        chroot ${rootmnt} grub-install --target=${platform} --efi-directory=/boot \
-            --modules="part_gpt fat efi_gop efi_uga ${shared_modules}" ${INSTALL_DEV} &>/dev/null
-        check_status
+#        echo -en ":: Installing GRUB EFI bootloader to ${cyber}${INSTALL_DEV}${none}..."
+#        chroot ${rootmnt} grub-install --target=${platform} --efi-directory=/boot \
+#            --modules="part_gpt fat efi_gop efi_uga ${shared_modules}" ${INSTALL_DEV} &>/dev/null
+#        check_status
+
+    # BIOS legacy systems will boot from the MBR which will be created by the GRUB i386-pc
+    # bootloader via 'grub-install' which when booted loads the configuration from ${grub_dir}
+    # with any customizations from ${grub_dir}/grub.cfg
     else
-        # Install GRUB bootloader to the MBR on i386-pc legacy type systems that don't support
-        # modern UEFI system firmware. BIOS will boot from the MBR which will in turn boot from
-        # GRUB's standard install location ${grub_dir}
-        echo -en ":: Install GRUB BIOS bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        local platform=i386-pc
+        local grub_dir="${rootmnt}/boot/grub"
+        local shared_modules="ext2 all_video font gfxterm"
+
+        echo -en ":: Installing GRUB BIOS bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        mkdir -p ${grub_dir} &>/dev/null
         chroot ${rootmnt} grub-install --target=${platform} \
             --modules="part_msdos ${shared_modules}" ${INSTALL_DEV} &>/dev/null
         check_status
-    fi
 
-    # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
-    echo -en ":: Install GRUB config at ${cyber}${grub_dir}${none}..."
-    echo -e "default=0\ntimeout=0\n" > ${grub_dir}/grub.cfg
-    echo -e 'set gfxmode="1280x1024,1024x768,auto"' >> ${grub_dir}/grub.cfg
-    echo -e 'loadfont fonts/unicode.pf2' >> ${grub_dir}/grub.cfg
-    echo -e 'terminal_input console' >> ${grub_dir}/grub.cfg
-    echo -e "terminal_output gfxterm\n" >> ${grub_dir}/grub.cfg
-    echo -e "menuentry \"${ROOT_LABEL}\" {" >> ${grub_dir}/grub.cfg
-    echo -e "    set gfxpayload=keep" >> ${grub_dir}/grub.cfg
-    echo -e "    search --no-floppy --set=root --label ${ROOT_LABEL}" >> ${grub_dir}/grub.cfg
-    echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> ${grub_dir}/grub.cfg
-    echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_dir}/grub.cfg
-    echo -e "}" >> ${grub_dir}/grub.cfg
-    check_status
+        # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
+        echo -en ":: Installing GRUB config at ${cyber}${grub_dir}${none}..."
+        echo -e "default=0\ntimeout=0\n" > ${grub_dir}/grub.cfg
+        echo -e 'set gfxmode="1280x1024,1024x768,auto"' >> ${grub_dir}/grub.cfg
+        echo -e 'loadfont fonts/unicode.pf2' >> ${grub_dir}/grub.cfg
+        echo -e 'terminal_input console' >> ${grub_dir}/grub.cfg
+        echo -e "terminal_output gfxterm\n" >> ${grub_dir}/grub.cfg
+        echo -e "menuentry \"${ROOT_LABEL}\" {" >> ${grub_dir}/grub.cfg
+        echo -e "    set gfxpayload=keep" >> ${grub_dir}/grub.cfg
+        echo -e "    search --no-floppy --set=root --label ${ROOT_LABEL}" >> ${grub_dir}/grub.cfg
+        echo -e "    linux /boot/vmlinuz-${KERNEL} root=LABEL=${ROOT_LABEL} rw ${KERNEL_PARAMS}" >> ${grub_dir}/grub.cfg
+        echo -e "    initrd /boot/intel-ucode.img /boot/initramfs-${KERNEL}.img" >> ${grub_dir}/grub.cfg
+        echo -e "}" >> ${grub_dir}/grub.cfg
+        check_status
+    fi
 
     # Hit the "/dev must be mounted" issue reported below and employing the same fix
     # https://wiki.archlinux.org/title/mkinitcpio#%22/dev_must_be_mounted%22_when_it_already_is
-    echo -en ":: Generate new initramfs specific to this machine..."
+    echo -en ":: Generating new initramfs specific to this machine..."
     [ ! -e ${rootmnt}/dev/fd ] && ln -s /proc/self/fd /dev/
     chroot ${rootmnt} mkinitcpio -p $KERNEL &>/dev/null
     check_status
-
-    #exit_to_shell
 }
 
 mount_chroot_dirs()
@@ -408,10 +423,20 @@ mount_chroot_dirs()
     mount -t proc /proc ${rootmnt}/proc &>/dev/null
     mount -o bind /dev ${rootmnt}/dev &>/dev/null
     mount -t devpts /dev/pts ${rootmnt}/dev/pts &>/dev/null
+
+    # Required for UEFI systems to get access to the efivars during bootloader install
+    if [ "x${EFI}" == "x1" ]; then
+        mount -o bind /sys/firmware/efi/efivars ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
+    fi
 }
 
 umount_chroot_dirs()
 {
+    # First umount the efivars mount point
+    if [ "x${EFI}" == "x1" ]; then
+        umount -f ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
+    fi
+
     for x in "sys proc dev/pts dev"; do
         umount -f ${rootmnt}/${x} &>/dev/null
     done
