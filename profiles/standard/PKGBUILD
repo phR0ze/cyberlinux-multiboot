@@ -108,7 +108,8 @@ package_cyberlinux-standard-base()
     'systemd-sysvcompat'        # Sysinit compat for systemd
     'gnutls'                    # required by systemd-resolved to work
     'sudo'                      # Elevate user commands on demand to root
-    'mkinitcpio-vt-colors'      # cyberlinux blue vt console colors
+    'mkinitcpio-colors'         # cyberlinux blue vt console colors
+    'efibootmgr'                # Provide the ability to modify the EFI boot manager entries
 
     # Kernel components
     'intel-ucode'               # required for Intel Microcode update files to boot
@@ -142,7 +143,6 @@ package_cyberlinux-standard-base()
 #    'gawk'                      # GNU version of awk, depof: [mkinitcpio], group: [base-devel]
 #    'grep'                      # search text util, depof: [mkinitcpio], group: [build-devel]
 #    'findutils'                 # find/xargs, depof: [mkinicpio, curl], group: [base-devel]
-#    'mkinitcpio-vt-colors'      # vt console colors
 #    'shadow'                    # Account mgmt e.g. passwd/useradd/usermod/groupadd, depof: [util-linux]
 #    'util-linux'                # blkid/fdisk/rename/cp etc..., depof: [mkinicpio, php-gd], group: [build-devel]
 #

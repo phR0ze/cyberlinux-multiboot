@@ -138,7 +138,7 @@ package_cyberlinux-personal-shell()
     'gawk'                      # GNU version of awk, depof: [mkinitcpio], group: [base-devel]
     'grep'                      # search text util, depof: [mkinitcpio], group: [build-devel]
     'findutils'                 # find/xargs, depof: [mkinicpio, curl], group: [base-devel]
-    'mkinitcpio-vt-colors'      # vt console colors
+    'mkinitcpio-colors'         # vt console colors
     'shadow'                    # Account mgmt e.g. passwd/useradd/usermod/groupadd, depof: [util-linux]
     'util-linux'                # blkid/fdisk/rename/cp etc..., depof: [mkinicpio, php-gd], group: [build-devel]
 
