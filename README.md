@@ -26,7 +26,9 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
     * [Create image from directory](#create-images-from-directory)
     * [Check if image exists](#check-if-image-exists)
   * [Caching packages](#caching-packages)
-  * [mkinitcpio](#mkinitcpio)
+* [mkinitcpio](#mkinitcpio)
+  * [vt-colors](#vt-colors)
+  * [docker mkinitcpio issues](#docker-mkinitcpio-issues)
     * [autodetect](#autodetect)
     * [arch-chroot](#arch-chroot)
 * [GRUB2 bootloader](#grub2-bootloader)
@@ -147,7 +149,17 @@ $ docker run --name builder --rm -it -v "${pwd}/temp/cache":/var/cache/pacman/pk
 $ pacman -Syw --noconfirm grub
 ```
 
-## mkinitcpio <a name="mkinitcpio"/></a>
+# mkinitcpio <a name="mkinitcpio"/></a>
+
+## vt-colors <a name="vt-colors"/></a>
+The color of the kernel messages that are output during boot time can be controlled with a mkinitcpio
+hook for color configuration.
+
+1. Install `mkinitcpio-vt-colors`
+2. Update `/etc/mkinitcpio.conf` to include the `vt-colors` hook
+3. Rebuild the initramfs early boot image
+
+## docker mkinitcpio issues <a name="docker-mkinitcpio-issues"/></a>
 The intent is to be able to build a full multiboot ISO with only the minimal dependencies so its easy
 to reproduce the ISO on any arch linux based system or virtual machine. After some initial research
 it became obvious the easiest route was going to be using containers.
