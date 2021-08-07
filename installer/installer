@@ -439,7 +439,7 @@ config_system()
     check_status
 
     echo -en ":: Copying skel configs to root user..."
-    cp -r ${rootmnt}/etc/skel/* ${rootmnt}/root
+    chroot ${rootmnt} /bin/bash -c "shopt -s dotglob; cp -r /etc/skel/* /root"
     check_status
 
     # Filter groups down to just those that exist
