@@ -433,6 +433,11 @@ config_system()
     local pass=""
     [ "x$DEFAULT" == "xy" ] && pass=" (default: ${cyber}${DEFAULT_PASS}${none})"
 
+    # Configuring the root user
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Configuring root user..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
     # Note the new pam rules require SHA512 encryption else first login will require reset
     echo -en ":: Setting root user password${pass}..."
     chroot ${rootmnt} /bin/bash -c "echo 'root:${PASS}' | chpasswd -c SHA512"
@@ -442,13 +447,24 @@ config_system()
     chroot ${rootmnt} /bin/bash -c "shopt -s dotglob; cp -r /etc/skel/* /root"
     check_status
 
-    # Filter groups down to just those that exist
-    local groups=""
-    for x in ${ALL_GROUPS//,/ }; do
-        if [ $(grep -E "^$x:" ${rootmnt}/etc/group) ]; then
-            [ $groups ] && groups="${groups},${x}" || groups="${x}"
-        fi
-    done
+    # Configure general system settings
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Configuring general system settings..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
+    # Configure timezone
+    echo -en ":: Set timezone to ${cyber}${TIMEZONE}${none}..."
+    chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
+    check_status
+
+    # Configure networking
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Configuring networking out of box experience..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
+    echo -en ":: Setting hostname to ${cyber}${HOSTNAME}${none}..."
+    echo $HOSTNAME > "${rootmnt}/etc/hostname"
+    check_status
 
     # Configure wifi before user is created to pick up autostart
     if [ "x$ENABLE_WIFI" == "x1" ]; then
@@ -458,46 +474,18 @@ config_system()
         check_status
     fi
 
-    echo -en ":: Creating user group ${cyber}${USER}${none}..."
-    chroot ${rootmnt} groupadd ${USER}
-    check_status
-
-    echo -en ":: Creating user ${cyber}${USER}${none} with groups ${cyber}${groups}${none}..."
-    chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
-    check_status
-
-    # Note the new pam rules require SHA512 encryption else first login will require reset
-    echo -en ":: Setting user password${pass}..."
-    chroot ${rootmnt} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd -c SHA512"
-    check_status
-
-    echo -en ":: Adding new user to sudoers list..."
-    chroot ${rootmnt} /bin/bash -c "echo '${USER} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
-    check_status
-
-    # Set hostname to chosen layer
-    echo -en ":: Setting hostname to ${cyber}${HOSTNAME}${none}..."
-    echo $HOSTNAME > "${rootmnt}/etc/hostname"
-    check_status
-
-    # Configure timezone
-    echo -en ":: Set timezone to ${cyber}${TIMEZONE}${none}..."
-    chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
-    check_status
-
-    # Configure networking
-    # https://www.freedesktop.org/software/systemd/man/systemd.network.html#
+    # Configure static LAN
     netmatch='en* eth*'
     if [ "x${NETIP}" != "xDHCP" ]; then
-        # Static LAN
         local conf="${rootmnt}/etc/systemd/network/10-static.network"
         echo -en ":: Configuring ${cyber}static${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nAddress=${NETIP}\nGateway=${gateway}\nDNS=${DNS1}\nDNS=${DNS2}" >> $conf
         echo -e "IPForward=kernel" >> $conf
         check_status
+
+    # Configure DHCP LAN
     else
-        # DHCP LAN
         local conf="${rootmnt}/etc/systemd/network/20-dhcp.network"
         echo -en ":: Configuring ${cyber}dhcp${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
@@ -506,7 +494,7 @@ config_system()
         check_status
     fi
 
-    # DHCP Wireless
+    # Configure wireless
     local conf="${rootmnt}/etc/systemd/network/30-wireless.network"
     echo -en ":: Configuring ${cyber}dhcp wireless${none} networking..."
     echo -e "[Match]\nName=wl*\n" > $conf
@@ -533,6 +521,36 @@ config_system()
         fi
     fi
 
+    # Configuring the new user
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Configuring new user ${cyber}${USER}${none}..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
+    echo -en ":: Creating user group ${cyber}${USER}${none}..."
+    chroot ${rootmnt} groupadd ${USER}
+    check_status
+
+    # Filter groups down to just those that exist
+    local groups=""
+    for x in ${ALL_GROUPS//,/ }; do
+        if [ $(grep -E "^$x:" ${rootmnt}/etc/group) ]; then
+            [ $groups ] && groups="${groups},${x}" || groups="${x}"
+        fi
+    done
+
+    echo -en ":: Creating user ${cyber}${USER}${none} with groups ${cyber}${groups}${none}..."
+    chroot ${rootmnt} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
+    check_status
+
+    # Note the new pam rules require SHA512 encryption else first login will require reset
+    echo -en ":: Setting user password${pass}..."
+    chroot ${rootmnt} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd -c SHA512"
+    check_status
+
+    echo -en ":: Adding new user to sudoers list..."
+    chroot ${rootmnt} /bin/bash -c "echo '${USER} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
+    check_status
+
     # Autologin if lxdm exists and parameter is set
     if [ -e "${rootmnt}/etc/lxdm/lxdm.conf" ]; then
         if [ "x$AUTOLOGIN" == "x1" ]; then
@@ -542,8 +560,23 @@ config_system()
         fi
     fi
 
+    # Configure pacman
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Configuring pacman first run experience..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
+    echo -e ":: Initializing the pacman keyring..."
+    chroot ${rootmnt} pacman-key --init &>/dev/null
+    check_status
+
+    echo -e ":: Populating the pacman keyring..."
+    chroot ${rootmnt} pacman-key --populate archlinux blackarch &>/dev/null
+    check_status
+
     # Enable core services for the system
-    echo -e ":: Enabling core services for the system..."
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Enabling core services for the system..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     echo -en ":: Enabling ${cyber}systemd-networkd${none}..."
     chroot ${rootmnt} systemctl enable systemd-networkd &>/dev/null

@@ -117,6 +117,12 @@ build_env()
 
   # Build repo packages
   build_repo_packages
+
+  # Attach to builder if set
+  if [ ! -z ${RUN_BUILDER+x} ]; then
+    docker_run ${BUILDER}
+    docker exec --privileged -it ${BUILDER} bash
+  fi
 }
 
 # Build repo packages if needed
@@ -539,7 +545,7 @@ usage()
   echo -e "Usage: ${cyan}./$(basename $0)${none} [options]\n"
   echo -e "Options:"
   echo -e "  -a               Build all components"
-  echo -e "  -b               Build the builder filesystem"
+  echo -e "  -b               Run the builder attaching to standard input and output"
   echo -e "  -d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
   echo -e "  -i               Build the initramfs installer"
   echo -e "  -m               Build the grub multiboot environment"
@@ -555,8 +561,9 @@ usage()
   echo -e "  ${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -r"
   echo -e "  ${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
   echo -e "  ${green}Clean standard core,base layers:${none} ./${SCRIPT} -c layers/standard/core,layers/standard/base"
-  echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p standard -b -m -i"
+  echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p standard -m -i"
   echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -p standad -d base"
+  echo -e "  ${green}Run the build container attaching to input/output:${none} ./${SCRIPT} -b"
   echo
   RELEASED=1
   exit 1
@@ -565,7 +572,7 @@ while getopts ":abd:imIp:c:rth" opt; do
   case $opt in
     c) CLEAN=$OPTARG;;
     a) BUILD_ALL=1;;
-    b) BUILD_BUILDER=1;;
+    b) RUN_BUILDER=1;;
     i) BUILD_INSTALLER=1;;
     d) DEPLOYMENTS=$OPTARG;;
     m) BUILD_MULTIBOOT=1;;
@@ -595,7 +602,7 @@ make_env_directories
 # 1. Always build the build environment if any build option is chosen
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
   [ ! -z ${BUILD_INSTALLER+x} ] || [ ! -z ${DEPLOYMENTS+x} ] || \
-  [ ! -z ${BUILD_REPO+x} ] || [ ! -z ${BUILD_BUILDER+x} ]; then
+  [ ! -z ${BUILD_REPO+x} ] || [ ! -z ${RUN_BUILDER+x} ]; then
   build_env
 fi
 
