@@ -273,10 +273,10 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Sort blackarch mirrors according to speed
 * Build out the shell deployment
 
 # Changelog <a name="changelog"/></a>
+* Sort blackarch mirrors according to speed
 * Add pacman support to base
 * Enable sshd out of the box
 * Add skel configs to root user
