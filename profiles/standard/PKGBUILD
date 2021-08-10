@@ -88,16 +88,17 @@ package_cyberlinux-standard-base()
     'grub'                      # Required to boot legacy BIOS systems
     'intel-ucode'               # required for Intel Microcode update files to boot
     'linux'                     # Linux kernel and supporting modules
+    'linux-firmware'            # Fills in missing drivers for initramfs builds
     'linux-headers'             # Linux kernel headers
 
     # Essential networking
     'archlinux-keyring'         # Arch linux keyring for installing packages
+    'blackarch-keyring'         # Adding curl command to pull in packer scripts
     'pacman'                    # pacman, makepkg, repo-add
     'pacman-contrib'            # rankmirrors, pacdiff, pactree, paclist, pacsearch
     'openssh'                   # SSH server/client, openssl
     'wget'                      # Retrieve files from the Web
     'curl'                      # Adding curl command to pull in packer scripts
-    'blackarch-keyring'         # Adding curl command to pull in packer scripts
 
     # Essential tools
     'sudo'                      # Elevate user commands on demand to root
@@ -113,83 +114,71 @@ package_cyberlinux-standard-shell()
   depends=(
     'cyberlinux-standard-base'  # Minimal bash system - a building block for lite deployments
 
-    # core tools
-    'inetutils'                 # hostname, ftp, telnet
-    'iproute2'                  # ifcfg, ip other networking tools
-    'net-tools'                 # arp, ifconfig, iptunnel, netstat
+    # system tools
+    'cdrtools'                  # isoinfo, mkisofs
+    'cyberlinux-screenfetch'    # CLI bash script to show system theme for screenshots
+    'dos2unix'                  # Text file format converter
+    'dosfstools'                # mkfs.fat, mkfs.vfat, fsck.fat, fsck.vfat
+    'gawk'                      # GNU version of awk, depof: [mkinitcpio], group: [base-devel]
+    'gptfdisk'                  # sgdisk, gdisk, cgdisk
+    'logrotate'                 # Rotates system logs automatically
+    'inxi'                      # System info display tool for CPUs/RAM/Kernel etc...
+    'man-db'                    # A utility for reading man pages
+    'man-pages'                 # Linux man pages
+    'pkgfile'                   # A pacman files and metadata explorer
+    'psmisc'                    # fuser, killall, pstree
     'procps-ng'                 # pidof, pkill, ps, top, uptime
-    'tar'                       # File store backup and transport utility
+    'tmux'                      # Terminal multiplexer built off screen
     'util-linux'                # Ext2/3/4 filesystem utils, passwd, useradd, groupadd, blkid, fdisk
+    'libisoburn'                # xorriso ISO creation tools
+    'lsof'                      # Lists open files for running processes
+    'moreutils'                 # Linux utils e.g. parallel-moreutils
+    'smartmontools'             # Control/monitor S.M.A.R.T. Drives
+    'udisks2'                   # Enumerate and operate on storage devices
+    'usbutils'                  # USB device utilities including lsusb
+    'squashfs-tools'            # mksquashfs, unsquashfs
 
     # recovery tools
     'ddrescue'                  # GNU data recovery tool
     'testdisk'                  # Checks and undeletes partitions + photorec
 
     # networking tools
-    'htop'                      # Interactive process viewer, alt: top
-    'iftop'                     # Display bandwidth usage on an interface
-    'pkgfile'                   # A pacman files and metadata explorer
-    'which'                     # Show the full path of commnds, depof: .bashrc, group: [build-devel]
     'bindip'                    # Bind a service to a specifc IP Address, repo: CYBERLINUX
     'dnsutils'                  # Network utilities dig/host/nslookup
     'gnu-netcat'                # Network piping application
+    'inetutils'                 # hostname, ftp, telnet
+    'iproute2'                  # ifcfg, ip other networking tools
     'iputils'                   # Network utils e.g. ping/tftpd
+    'net-tools'                 # arp, ifconfig, iptunnel, netstat
     'nfs-utils'                 # Support programs for Network File Systems
     'nmap'                      # Network discovery and security auditing
     'rsync'                     # Remote file transfer sync utility
     'tcpdump'                   # Network monitoring and data acquisition
+    'which'                     # Show the full path of commnds, depof: .bashrc, group: [build-devel]
 
-    # system
-    'dmidecode'                 # Desktop Managment Interface table related utilities
-    'efibootmgr'                # Tool to modify UEFI Firmware Boot Manager Variables, depof: installer
-    'gcc'                       # GNU Compiler Collection, multilib: false, group: [base-devel]
-    'gcc-multilib'              # GNU Compiler Collection, multilib: true, group: [base-devel]
-    'gptfdisk'                  # Text-mode paritioning tools e.g. sgdisk
-    'haveged'                   # Entropy harvesting, depof: pacman-key --init
-    'logrotate'                 # Rotates system logs automatically
-    'cyberlinux-screenfetch'    # CLI bash script to show system theme for screenshots, repo: CYBERLINUX
-
-    # compression:
+    # archive tools
     'p7zip'                     # Comman-line file archiver for 7zip format, depof: thunar
+    'tar'                       # File store backup and transport utility
     'unrar'                     # The RAR uncompression program
     'unzip'                     # Extract and view files in .zip archives
     'zip'                       # Zip file compression utilities
 
-    # filesystem:
-    'cdrkit'                    # CD/DVD burnig/extration and ISO creation
-    'dosfstools'                # DOS filesystem utilities e.g. mkfs.fat, depof: installer
-    'inxi'                      # System info display tool for CPUs/RAM/Kernel etc...
-    'libisoburn'                # Libburn/libisofs/xorriso
-    'lsof'                      # Lists open files for running processes
-    'man-db'                    # A utility for reading man pages
-    'man-pages'                 # Linux man pages
-    'moreutils'                 # Linux utils e.g. parallel-moreutils
-    'reptyr'                    # Attach running program to a new terminal
-    'smartmontools'             # Control/monitor S.M.A.R.T. Drives
-    'squashfs-tools'            # Tooling for squashfs like mksquashfs
-    'tmux'                      # Terminal multiplexer built off screen
-    'udisks2'                   # Enumerate and operate on storage devices
-    'usbutils'                  # USB device utilities including lsusb
-
-    # develop:
-    'arch-install-scripts'      # arch-chroot/genfstab/pacstrap
+    # development tools
     'autoconf'                  # Automatically configure source code, group: [base-devel]
     'automake'                  # Automatically create Makefiles, group: [base-devel]
     'binutils'                  # Manipulate binary and object files, group: [base-devel]
     'bison'                     # General purpose parser generator, group: [base-devel]
-    'clang'                     # C language family frontend for LLVM, depof: chromium
-    'delve'                     # A debugger for the Go Programming Language
-    'devtools'                  # Misc development tools including makepkg conf, depof: reduce 
-    'diffutils'                 # Patch file utility programs
-    'dos2unix'                  # Text file format converter
+    'arch-install-scripts'      # arch-chroot, genfstab, pacstrap
+    'clang'                     # C language family frontend for LLVM
+    'diffutils'                 # Patch file utility programs: diff, cmp
     'fakeroot'                  # Tool for simulating supersuer privileges, group: [base-devel]
     'file'                      # File type identification utility, group: [base-devel]
     'flex'                      # Generate text-scanning programs, group: [base-devel]
     'gdb'                       # The GNU debugger
+    'gcc'                       # GNU Compiler Collection, multilib: false, group: [base-devel]
+    'gcc-multilib'              # GNU Compiler Collection
+    'gettext'                   # required by grub, group: [base-devel]
     'git'                       # Fast distributed version control system
-    'go'                        # Compiler and tools for the Go programming lang
-    'go-bindata'                # Embed any file as Go code }
-    'go-tools'                  # Developer tools for the Go programming lang
     'groff'                     # GNU trof text-formatting system, group: [base-devel]
     'jq'                        # Command line JSON processor, depof: kubectl
     'libtool'                   # Generic library support script, group: [base-devel]
@@ -199,13 +188,18 @@ package_cyberlinux-standard-shell()
     'm4'                        # GNU macro processor, group: [base-devel]
     'make'                      # GNU utility to build programs, group: [base-devel]
     'patch'                     # Utility to apply patches to files, group: [base-devel]
-    'pkg-config'                # System for managing library flags, group: [base-devel]
+    'pkgconfig'                 # System for managing library flags, group: [base-devel]
     'psmisc'                    # fuser/killall/pstree 
     'python-pip'                # The PyPA recommended tool for installing Python packages
-    'ruby'                      # Ruby lang quick and easy programming
     'strace'                    # A diagnostic, debugging and instructional userspace tracer
     'texinfo'                   # Documentation for online information, group: [base-devel]
     'yq'                        # Command-line YAML processor - jq wrapper for YAML documents
+
+    # Golang
+    'delve'                     # A debugger for the Go Programming Language
+    'go'                        # Compiler and tools for the Go programming lang
+    'go-bindata'                # Embed any file as Go code
+    'go-tools'                  # Developer tools for the Go programming lang
   )
   pkg shell
 }

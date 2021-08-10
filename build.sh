@@ -249,7 +249,7 @@ build_deployments()
 {
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
-  docker_exec ${BUILDER} "mkdir -p ${CONT_WORK_DIR} ${CONT_ROOT_DIR} ${CONT_IMAGES_DIR}"
+  docker_exec ${BUILDER} "mkdir -p ${CONT_ROOT_DIR}"
 
   # Iterate over the deployments
   for target in ${1//,/ }; do
@@ -265,7 +265,7 @@ build_deployments()
       local layer_dir="${LAYERS_DIR}/${layer}"
       local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"                  # e.g. /home/build/layers/stanard/core
       local cont_layer_image_dir="${CONT_IMAGES_DIR}/$(dirname ${layer})" # e.g. /home/build/iso/images/standard
-      docker_exec ${BUILDER} "mkdir -p ${cont_layer_dir} ${cont_layer_image_dir}"
+      docker_exec ${BUILDER} "mkdir -p ${cont_layer_dir} ${cont_layer_image_dir} ${CONT_WORK_DIR}"
 
       # Mount the layer destination path 
       if [ ${i} -eq 0 ]; then
@@ -273,12 +273,19 @@ build_deployments()
         docker_exec ${BUILDER} "mount --bind $cont_layer_dir $CONT_ROOT_DIR"
         check
       else
+        # Slice off the lower layer directories and build the lowerdir string
+        local cont_lower_dirs=""
+        for x in "${LAYERS[@]:0:$i}"; do
+          cont_lower_dirs="${CONT_LAYERS_DIR}/${x}:${cont_lower_dirs}"
+        done
+        cont_lower_dirs="${cont_lower_dirs%?}" # Trim trailing colon
+
         # `upperdir` is a writable layer at the top
         # `lowerdir` is a colon : separated list of read-only dirs the right most is the lowest
         # `workdir`  is an empty dir used to prepare files and has to be on the same file system as upperdir
         # the last param is the merged or resulting filesystem after layering to work with
-        echo -en ":: Mounting layer ${cyan}${cont_layer_dir}${none} over ${cyan}${CONT_ROOT_DIR}${none}..."
-        docker_exec ${BUILDER} "mount -t overlay overlay -o lowerdir=${CONT_ROOT_DIR},upperdir=${cont_layer_dir},workdir=${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
+        echo -en ":: Mounting layer ${cyan}${cont_layer_dir}${none} over ${cyan}${cont_lower_dirs}${none}..."
+        docker_exec ${BUILDER} "mount -t overlay overlay -o lowerdir=${cont_lower_dirs},upperdir=${cont_layer_dir},workdir=${CONT_WORK_DIR} ${CONT_ROOT_DIR}"
         check
       fi
 
@@ -294,12 +301,13 @@ build_deployments()
         docker_exec ${BUILDER} "pacstrap -c -G -M ${CONT_ROOT_DIR} $pkg"
         check
       fi
-    done
 
-    # Release the root mount point now that we have fully built the required layers
-    echo -en ":: Releasing overlay ${cyan}${CONT_ROOT_DIR}${none}..."
-    docker_exec ${BUILDER} "umount -fR $CONT_ROOT_DIR"
-    check
+      # Release the root mount point now that we have fully built the required layers
+      echo -en ":: Releasing overlay ${cyan}${CONT_ROOT_DIR}${none}..."
+      docker_exec ${BUILDER} "umount -fR $CONT_ROOT_DIR"
+      check
+      docker_exec ${BUILDER} "rm -rf $CONT_WORK_DIR"
+    done
 
     # Compress each built layer into a deliverable image
     for i in "${!LAYERS[@]}"; do

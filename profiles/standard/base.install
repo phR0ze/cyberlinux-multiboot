@@ -21,19 +21,15 @@
 
 post_install()
 {
+  # Pacman configuration
+  # ---------------------------------------------------------------------------
   # Custom arch linux mirrorlist location
+  # rankmirrors -n 10 profiles/standard/base/etc/pacman.d/archlinux.mirrorlist
   # /etc/pacman.d/archlinux.mirrorlist
 
   # BlackArch linux mirrorlist location
+  # rankmirrors -n 10 profiles/standard/base/etc/pacman.d/blackarch.mirrorlist
   # /etc/pacman.d/blackarch.mirrorlist
-
-  # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
-  # color theme for the virtual terminal that scrolls by during boot.
-  # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
-  mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
-
-  # SSH login banner for cyberlinux
-  mv -f /etc/motd_sideload /etc/motd
 
   # Added in the following property changes:
   #   ILoveCandy
@@ -44,8 +40,22 @@ post_install()
   # Added the blackarch repo mirrorlist entry
   mv -f /etc/pacman.conf_sideload /etc/pacman.conf
 
+  # Boot configuration
+  # ---------------------------------------------------------------------------
+  # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
+  # color theme for the virtual terminal that scrolls by during boot.
+  # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
+  mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
+
+  # Tools configuration
+  # ---------------------------------------------------------------------------
   # Default custom vim config without any plugins and only using built in colors
   # /etc/skel/.vimrc
+
+  # SSH configuration
+  # ---------------------------------------------------------------------------
+  # SSH login banner for cyberlinux
+  mv -f /etc/motd_sideload /etc/motd
 
   # Enable services that we've installed with this meta package
   systemctl enable sshd

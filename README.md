@@ -274,6 +274,12 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Build out the shell deployment
+* Set standard language defaults:
+  ```
+  LANGUAGE = (unset),
+	LC_ALL = (unset),
+	LANG = "en_US.UTF-8"
+  ```
 
 # Changelog <a name="changelog"/></a>
 * Sort blackarch mirrors according to speed

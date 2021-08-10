@@ -23,6 +23,7 @@ post_install()
 {
   # Fully customized .bashrc
   #mv -f /etc/skel/.bashrc_sideload /etc/skel/.bashrc
+  echo ""
 }
 
 post_upgrade() {
