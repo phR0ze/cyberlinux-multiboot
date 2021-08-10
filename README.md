@@ -273,15 +273,11 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Build out the shell deployment
-* Set standard language defaults:
-  ```
-  LANGUAGE = (unset),
-	LC_ALL = (unset),
-	LANG = "en_US.UTF-8"
-  ```
+* Clean out cached pacman settings
 
 # Changelog <a name="changelog"/></a>
+* Set standard language defaults: `LANG = "en_US.UTF-8"`
+* Build out the shell deployment
 * Sort blackarch mirrors according to speed
 * Add pacman support to base
 * Enable sshd out of the box

@@ -452,9 +452,18 @@ config_system()
     echo -e "\n:: Configuring general system settings..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
+    # Configure localization to US by default
+    LOCALE="en_US"
+    echo -en ":: Setting localization to ${cyber}${LOCALE}${none}..."
+    echo "${LOCALE}.UTF-8" > ${rootmnt}/etc/locale.conf
+    echo "${LOCALE}.UTF-8 UTF-8" > ${rootmnt}/etc/locale.gen &>/dev/null
+    chroot ${rootmnt} locale-gen &>/dev/null
+    check_status
+
     # Configure timezone
-    echo -en ":: Set timezone to ${cyber}${TIMEZONE}${none}..."
+    echo -en ":: Setting timezone to ${cyber}${TIMEZONE}${none}..."
     chroot ${rootmnt} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
+    chroot ${rootmnt} hwclock --systohc &>/dev/null
     check_status
 
     # Configure networking
