@@ -24,15 +24,15 @@
 #-------------------------------------------------------------------------------
 pkgbase=cyberlinux-standard
 pkgname=(
-    'cyberlinux-standard-core'
-    'cyberlinux-standard-base'
-    'cyberlinux-standard-shell'
-    'cyberlinux-lite-profile'
-#    'cyberlinux-server-profile'
-#    'cyberlinux-netbook-profile'
-#    'cyberlinux-theater-profile'
-#    'cyberlinux-desktop-profile'
-#    'cyberlinux-laptop-profile'
+    "${pkgbase}-core"
+    "${pkgbase}-base"
+    "${pkgbase}-shell"
+    "${pkgbase}-lite"
+#    "${pkgbase}-server"
+#    "${pkgbase}-netbook"
+#    "${pkgbase}-theater"
+#    "${pkgbase}-desktop"
+#    "${pkgbase}-laptop"
 )
 pkgver=0.0.16
 pkgrel=1
@@ -80,8 +80,7 @@ package_cyberlinux-standard-base()
   pkgdesc="Minimal bash system - a building block for lite deployments"
   depends=(
     'cyberlinux-standard-core'  # Smallest set of packages possible for a functioning container with bash
-    'systemd'                   # System and service manager
-    'systemd-sysvcompat'        # Sysinit compat for systemd
+    'base'                      # Requireed for all Arch Packages, provides: pacman, makepkg, repo-add, useradd ...
     'gnutls'                    # required by systemd-resolved to work
     'mkinitcpio-vt-colors'      # vt-colors, mkintcpio, find, xargs, gawk, grep
     'efibootmgr'                # Provide the ability to modify the EFI boot manager entries
@@ -94,7 +93,6 @@ package_cyberlinux-standard-base()
     # Essential networking
     'archlinux-keyring'         # Arch linux keyring for installing packages
     'blackarch-keyring'         # Adding curl command to pull in packer scripts
-    'pacman'                    # pacman, makepkg, repo-add
     'pacman-contrib'            # rankmirrors, pacdiff, pactree, paclist, pacsearch
     'openssh'                   # SSH server/client, openssl
     'wget'                      # Retrieve files from the Web
@@ -119,7 +117,6 @@ package_cyberlinux-standard-shell()
     'cyberlinux-screenfetch'    # CLI bash script to show system theme for screenshots
     'dos2unix'                  # Text file format converter
     'dosfstools'                # mkfs.fat, mkfs.vfat, fsck.fat, fsck.vfat
-    'gawk'                      # GNU version of awk, depof: [mkinitcpio], group: [base-devel]
     'gptfdisk'                  # sgdisk, gdisk, cgdisk
     'logrotate'                 # Rotates system logs automatically
     'inxi'                      # System info display tool for CPUs/RAM/Kernel etc...
@@ -127,9 +124,7 @@ package_cyberlinux-standard-shell()
     'man-pages'                 # Linux man pages
     'pkgfile'                   # A pacman files and metadata explorer
     'psmisc'                    # fuser, killall, pstree
-    'procps-ng'                 # pidof, pkill, ps, top, uptime
     'tmux'                      # Terminal multiplexer built off screen
-    'util-linux'                # Ext2/3/4 filesystem utils, passwd, useradd, groupadd, blkid, fdisk
     'libisoburn'                # xorriso ISO creation tools
     'lsof'                      # Lists open files for running processes
     'moreutils'                 # Linux utils e.g. parallel-moreutils
@@ -143,56 +138,59 @@ package_cyberlinux-standard-shell()
     'testdisk'                  # Checks and undeletes partitions + photorec
 
     # networking tools
-    'bindip'                    # Bind a service to a specifc IP Address, repo: CYBERLINUX
+    'bindip'                    # Bind a service to a specifc IP Address, repo: cyberlinux
     'dnsutils'                  # Network utilities dig/host/nslookup
     'gnu-netcat'                # Network piping application
     'inetutils'                 # hostname, ftp, telnet
-    'iproute2'                  # ifcfg, ip other networking tools
-    'iputils'                   # Network utils e.g. ping/tftpd
     'net-tools'                 # arp, ifconfig, iptunnel, netstat
     'nfs-utils'                 # Support programs for Network File Systems
     'nmap'                      # Network discovery and security auditing
     'rsync'                     # Remote file transfer sync utility
     'tcpdump'                   # Network monitoring and data acquisition
-    'which'                     # Show the full path of commnds, depof: .bashrc, group: [build-devel]
 
     # archive tools
     'p7zip'                     # Comman-line file archiver for 7zip format, depof: thunar
-    'tar'                       # File store backup and transport utility
     'unrar'                     # The RAR uncompression program
     'unzip'                     # Extract and view files in .zip archives
     'zip'                       # Zip file compression utilities
 
-    # development tools
-    'autoconf'                  # Automatically configure source code, group: [base-devel]
-    'automake'                  # Automatically create Makefiles, group: [base-devel]
-    'binutils'                  # Manipulate binary and object files, group: [base-devel]
-    'bison'                     # General purpose parser generator, group: [base-devel]
+    # base-devel
+    # groups can't be made as dependencies, pacman -Sg base-devel
+    'autoconf'                  # Automatically configure source code, group: base-devel
+    'automake'                  # Automatically create Makefiles, group: base-devel
+    'binutils'                  # Manipulate binary and object files, group: base-devel
+    'bison'                     # General purpose parser generator, group: base-devel
+    'fakeroot'                  # Tool for simulating supersuer privileges, group: base-devel
+    'file'                      # File type identification utility, group: base-devel
+    'findutils'                 # File type identification utility, group: base-devel
+    'flex'                      # Generate text-scanning programs, group: base-devel
+    'gawk'                      # GNU version of awk, group: base-devel
+    'gcc'                       # GNU Compiler Collection, multilib: false, group: base-devel
+    'gettext'                   # GNU internationalization library, group: base-devel
+    'grep'                      # String search utility, group: base-devel
+    'groff'                     # GNU trof text-formatting system, group: base-devel
+    'gzip'                      # GNU trof text-formatting system, group: base-devel
+    'libtool'                   # Generic library support script, group: base-devel
+    'm4'                        # GNU macro processor, group: base-devel
+    'make'                      # GNU utility to build programs, group: base-devel
+    'patch'                     # Utility to apply patches to files, group: base-devel
+    'pkgconfig'                 # System for managing library flags, group: base-devel
+    'texinfo'                   # Documentation for online information, group: base-devel
+    'which'                     # Show the full path of commnds, depof: .bashrc, group: build-devel
+
+    # other dev tools
     'arch-install-scripts'      # arch-chroot, genfstab, pacstrap
     'clang'                     # C language family frontend for LLVM
     'diffutils'                 # Patch file utility programs: diff, cmp
-    'fakeroot'                  # Tool for simulating supersuer privileges, group: [base-devel]
-    'file'                      # File type identification utility, group: [base-devel]
-    'flex'                      # Generate text-scanning programs, group: [base-devel]
     'gdb'                       # The GNU debugger
-    'gcc'                       # GNU Compiler Collection, multilib: false, group: [base-devel]
     'gcc-multilib'              # GNU Compiler Collection
-    'gettext'                   # required by grub, group: [base-devel]
     'git'                       # Fast distributed version control system
-    'groff'                     # GNU trof text-formatting system, group: [base-devel]
     'jq'                        # Command line JSON processor, depof: kubectl
-    'libtool'                   # Generic library support script, group: [base-devel]
     'lld'                       # Linker from the LLVM project, depof: chromium
     'llvm'                      # Low Level compiler infrastructure, depof: chromium
     'ltrace'                    # Tracks runtime library calls in dynamically linked programs
-    'm4'                        # GNU macro processor, group: [base-devel]
-    'make'                      # GNU utility to build programs, group: [base-devel]
-    'patch'                     # Utility to apply patches to files, group: [base-devel]
-    'pkgconfig'                 # System for managing library flags, group: [base-devel]
-    'psmisc'                    # fuser/killall/pstree 
     'python-pip'                # The PyPA recommended tool for installing Python packages
     'strace'                    # A diagnostic, debugging and instructional userspace tracer
-    'texinfo'                   # Documentation for online information, group: [base-devel]
     'yq'                        # Command-line YAML processor - jq wrapper for YAML documents
 
     # Golang
@@ -204,113 +202,215 @@ package_cyberlinux-standard-shell()
   pkg shell
 }
 
-package_cyberlinux-lite-profile()
+package_cyberlinux-standard-lite()
 {
   pkgdesc="Lite X11 system - a building block specialized X11 deployments"
   depends=(
+    # cyberlinux packages
     'cyberlinux-standard-shell' # Full bash system - a building block for heavy deployments
 
+    # Xorg
+    'xf86-input-libinput'       # X.org generic input driver, group: xorg-drivers
+    'xf86-video-vesa'           # X.org vesa video driver, group: xorg, xorg-drivers
+    'xorg-bdftopcf'             # Convert X font from Bitmap to PNG, group: xorg, xorg-apps
+    'xorg-docs'                 # X.org documentation, group: xorg
+    'xorg-font-util'            # X.org font utilities, group: xorg
+    'xorg-fonts-100dpi'         # X.org 100dpi fonts, group: xorg
+    'xorg-fonts-75dpi'          # X.org 75dpi fonts, group: xorg
+    'xorg-fonts-encodings'      # X.org font encoding files, group: xorg
+    'xorg-iceauth'              # ICE authority file utility, gruop: xorg
+    'xorg-mkfontscale'          # Create an index of scalable font files for X, group: xorg, xorg-apps
+    'xorg-server'               # Xorg X server, group: xorg
+    'xorg-server-common'        # Xorg X server common files, group: xorg
+    'xorg-server-devel'         # Development files for X.org X server, group: xorg
+    'xorg-server-xephyr'        # A nested X server that runs as an X application, group: xorg
+    'xorg-server-xnest'         # A nested X server that runs as an X application, group: xorg
+    'xorg-server-xvfb'          # Virtual framebuffer X server, group: xorg
+    'xorg-sessreg'              # Register X sessions in system utmp/utmpx database, group: xorg
+    'xorg-setxkbmap'            # Set the keyboard using the X Keyboard Extension, group: xorg, xorg-apps
+    'xorg-smproxy'              # Allows X applications that do not support X11R6 session, group: xorg
+    'xorg-x11perf'              # Simple X server performance benchmarker, group: xorg
+    'xorg-xauth'                # X.Org authorization settings program, group: xorg, xorg-apps
+    'xorg-xbacklight'           # RandR-based backlight control application, group: xorg
+    'xorg-xcmsdb'               # Device Color Characterization utility for X Color Management System, group: xorg
+    'xorg-xcursorgen'           # Create an X cursor file from PNG images, group: xorg, xorg-apps
+    'xorg-xdpyinfo'             # Display information utility for X, group: xorg, xorg-apps
+    'xorg-xdriinfo'             # Query configuration information of DRI drivers
+    'xorg-xev'                  # Print contents of X events, group: xorg, xorg-apps
+    'xorg-xgamma'               # Alter a monitor's gamma correction, group: xorg
+    'xorg-xhost'                # Server access control program for X, group: xorg
+    'xorg-xinput'               # Small commandline tool to configure devices, group: xorg, xorg-apps
+    'xorg-xkbcomp'              # X Keyboard description compiler, group: xorg, xorg-apps
+    'xorg-xkbevd'               # XKB event daemon, group: xorg, xorg-apps
+    'xorg-xkbutils'             # XKB utility demos, group: xorg, xorg-apps
+    'xorg-xkill'                # Kill a client by its X resource, group: xorg, xorg-apps
+    'xorg-xlsatoms'             # List interned atoms defined on server, group: xorg
+    'xorg-xlsclients'           # List client applications running on a display, group: xorg
+    'xorg-xmodmap'              # Utility for modifying keymaps and button mappings, group: xorg, xorg-apps
+    'xorg-xpr'                  # Print an X window dump from xwda, group: xorg
+    'xorg-xprop'                # Property displayer for X, group: xorg, xorg-apps
+    'xorg-xrandr'               # Primitive command line interface to RandR extension, group: xorg, xorg-apps
+    'xorg-xrdb'                 # X server resource database utility, group: xorg
+    'xorg-xrefresh'             # Refresh all or part of an X screen, group: xorg
+    'xorg-xset'                 # User preference utility for X, group: xorg, xorg-apps
+    'xorg-xsetroot'             # X utility to set your root window background to a pattern or color, group: xorg
+    'xorg-xvinfo'               # Prints out the capabilities of any video adaptors, group: xorg
+    'xorg-xwayland'             # Run X clients under wayland, group: xorg
+    'xorg-xwd'                  # X Window System image dumping utility, group: xorg
+    'xorg-xwininfo'             # Command-line util to print info about windows, group: xorg, xorg-apps
+    'xorg-xwud'                 # X Window System image undumping utility, group: xorg
+
     # lxde
+    'lxappearance'              # Feature-rich GTK+ theme switcher of the LXDE Desktop, group: lxde
+    'lxappearance-obconf'       # Plugin for LXAppearance to configure Openbox, group: lxde
+    'lxde-common'               # Common files of the LXDE Desktop, group: lxde
+    'lxde-icon-theme'           # LXDE default icon theme based on nuoveXT2, group: lxde
+    'lxdm'                      # Lightweight display manager, xorg: lxde
+    'lxhotkey'                  # Keyboard shortcuts configurator, xorg: lxde
+    'lxinput'                   # Keyboard and mouse configuration utility, group: lxde
+    'lxrandr'                   # Monitor configuration tool, group: lxde
+    'lxsession'                 # Enable .desktop files in ~/.config/autostart, /etc/xdg/autostart, group: lxde
+    'lxterminal'                # Terminal for LXDE, alt: terminator, group: lxde
+    # Not longer in Arch and its dependencies are not supported either
+    # Todo: build a static rust replacement
+    #'oblogout'                  # Openbox logout script
+    'openbox'                   # Lightweight X11 window manager, group: lxde
+    'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
+    'paper-icon-theme'          # Paper icon theme, repo: cyberlinux
+
+    # file manager utilities
+    'gvfs'                      # Support for Trash and USB, depof: thunar-volman
+    'file-roller'               # System/Compression integrates well in Thunar
+    'ffmpegthumbnailer'         # Lightweight video thumbnailer that can be used by file managers
+    'thunar'                    # Lightweight File Manager from Xfce
+    'thunar-archive-plugin'     # Thunar integration with file-roller
+    'thunar-media-tags-plugin'  # Thunar plugin to view media details
+    'thunar-volman'             # Thunar plugin to automatically manage removeable devices
+    'tumbler'                   # D-Bus thumbnail service for Thunar
+
+    # utilities
+    'dconf'                     # A low-level configuration system
+    'dconf-editor'              # General configuration manager that replaces gconf
+    'desktop-file-utils'        # Command line utilities for working with desktop entries
+    'gtk-engines'               # GTK theme engines for cyberlinux theme
+    'gtk-engine-murrine'        # GTK theme engine for cyberlinux theme
+    'nitrogen'                  # Lightweight wallpaper manager
+    'paprefs'                   # Configuration dialog for pulse audio
+    'pavucontrol'               # PulseAudio Volume Control
+    'pnmixer'                   # Volume controls in system tray, repo: cyberlinux
+    'pulseaudio-alsa'           # ALSA Configuration for PulseAudio
+    'tint2'                     # Lightweight taskmanager and system tray
+    'wmctrl'                    # Control your EWMH compliant window manager from command line
+    'xdg-user-dirs'             # Manage user directories like ~/Desktop
+    'xdg-utils'                 # Desktop integration utilities
+    'xsel'                      # Tool for getting/setting X selection
+    'xterm'                     # X terminal emulator
+    'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
+
     # opengl
+    'lib32-mesa'                # OpenGL opensource implementation, depof: kodi, steam
+    'lib32-mesa-vdpau'          # Mesa vdpau drivers, depof: kodi,steam
+    'mesa'                      # Open-source OpenGL implementation
+    'mesa-demos'                # Mesa demos and tools e.g glxinfo, glxgears
+    'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
+
     # virtualbox-guest
+    'virtualbox-guest-utils'    # VirtualBox guest drivers/utilities
+
     # Utils
-      - {install: dmenu,            desc: Super light weight application runner }
-      - {install: galculator,       desc: Office/Calculator }
-      - {install: gsimplecal,       desc: Simple calendar like windows systray calendar }
-      - {install: powerline,        desc: Status line plugin for bash }
-      - {install: powerline-gitstatus, desc: Powerline plugin for git status, repo: CYBERLINUX }
-      - {install: powerline-fonts,  desc: Powerline font symbols }
-      - {install: xfce4-screenshooter, desc: Plugin that makes screenshots for the Xfce panel }
-      - filelight
+    'dmenu'                     # Super light weight application runner
+    'galculator'                # Office/Calculator
+    'gsimplecal'                # Simple calendar like windows systray calendar
+    'powerline'                 # Status line plugin for bash
+    'powerline-fonts'           # Powerline font symbols
+    'powerline-gitstatus'       # Powerline plugin for git status, repo: cyberlinux
+    'xfce4-screenshooter'       # Plugin that makes screenshots for the Xfce panel
+    'filelight'
 
     # Media
-      - {install: flac,             desc: Free lossless audio codec }
-      - {install: gpicview,         desc: Image viewer, alt: shotwell/viewnior }
-      - {install: lame,             desc: High quality MPEG layer III audio encoder }
-      - {install: parallel,         desc: Shell tool for executing jobs in parallel }
-      - {install: qt4,              desc: A cross-platform application and UI framework, deps: vlc }
-      - {install: qt5-base,         desc: A cross-platform application and UI framework, deps: mkvtoolnix-gui }
-      - {install: smplayer,         desc: UI wrapper around mplayer with click to pause, alt: vlc }
-      - {install: smplayer-skins,   desc: Skins for SMPlayer }
-      - {install: smplayer-themes,  desc: Themes for SMPlayer }
-      - {install: vlc,              desc: Multi-platform MPEG, VCD/DVD, and DivX player }
-      - {install: winff,            desc: GUI for ffmpeg, repo: CYBERLINUX }
-      - {install: xnviewmp,         desc: A digital photo organizer, repo: CYBERLINUX }
-      - audacious
+    'flac'                      # Free lossless audio codec
+    'gpicview'                  # Image viewer, alt: shotwell, viewnior
+    'lame'                      # High quality MPEG layer III audio encoder
+    'parallel'                  # Shell tool for executing jobs in parallel
+    'qt5-base'                  # A cross-platform application and UI framework, depof: mkvtoolnix-gui
+    'smplayer'                  # UI wrapper around mplayer with click to pause, alt: vlc
+    'smplayer-skins'            # Skins for SMPlayer
+    'smplayer-themes'           # Themes for SMPlayer
+    'vlc'                       # Multi-platform MPEG, VCD/DVD, and DivX player
+    'winff'                     # GUI for ffmpeg, repo: cyberlinux
+    'xnviewmp'                  # A digital photo organizer, repo: cyberlinux
+    'audacious'                 # Lightweight advanced audio player
 
-    # Network
-      - {install: chromium,         desc: Opensource project behind Chrome, repo: CYBERLINUX }
-      - {install: chromium-widevine, desc: Chromium support for Netflix, repo: CYBERLINUX }
-      - {install: flashplugin,      desc: Adobe Flash Player NPAPI }
-      - {install: pepper-flash,     desc: Chromium flash support }
-      - {install: filezilla,        desc: Network/Transfer }
+    #  Network
+    #'chromium'                  # Opensource project behind Chrome
+    #'chromium-widevine'         # Chromium support for Netflix
+    'firefox'                   # Standalone web browser from mozilla.org 
+    'filezilla'                 # Network/Transfer
 
-    # Office:
-      - {install: evince,           desc: Document viewer (PDF,Postscript,djvu,tiff,dvi,XPS,cbr,cbz,cb7 and cbt) }
-      - {install: gvim,             desc: Improved version of vi text editor, conflict: vim }
-      - {install: leafpad,          desc: Office/Notepad - Simple notepad knock off }
+    #  Office:
+    'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
+    'gvim'                      # Improved version of vi text editor, conflict: vim
+    'leafpad'                   # Office/Notepad - Simple notepad knock off
 
-    # Media-codecs:
-      - {install: gst-libav,        desc: GStreamer libav Plugin }
-      - {install: gst-plugins-bad,  desc: GStreamer Bad Plugins }
-      - {install: gst-plugins-base, desc: GStreamer Base Plugins }
-      - {install: gst-plugins-good, desc: GStreamer Good Plugins }
-      - {install: gst-plugins-ugly, desc: GStreamer Ugly Plugins }
-      - {install: libdvdcss,        desc: DVD media codec support }
-      - {install: x264,             desc: Open Source H264/AVC video encoder, depof: smplayer }
+    #  Media-codecs:
+    'gst-libav'                 # GStreamer libav Plugin
+    'gst-plugins-bad'           # GStreamer Bad Plugins
+    'gst-plugins-base'          # GStreamer Base Plugins
+    'gst-plugins-good'          # GStreamer Good Plugins
+    'gst-plugins-ugly'          # GStreamer Ugly Plugins
+    'libdvdcss'                 # DVD media codec support
+    'x264'                      # Open Source H264/AVC video encoder, depof: smplayer
 
-    # X11-fonts:
-      - {install: adobe-source-code-pro-fonts, desc: Mono-spaced coding environments }
-      - {install: terminus-font,    desc: Monospace bitmap font for consoles }
-      - {install: ttf-bitstream-vera, desc: Bitstream vera fonts }
-      - {install: ttf-dejavu,       desc: Bitstream Vera Fonts w/more characters }
-      - {install: ttf-droid,        desc: Google Android general purpose fonts }
-      - {install: ttf-google-fonts-fun, desc: Handful of fun fonts from the Google Fonts project, repo: CYBERLINUX }
-      - {install: ttf-google-fonts-work, desc: 40 best fonts from the Google Fonts project, repo: CYBERLINUX }
-      - {install: ttf-hack,         desc: Hand groomed/optically balanced typeface based on Bitstream Vera Mono }
-      - {install: ttf-inconsolata-g, desc: Best monospace terminal font, repo: CYBERLINUX }
-      - {install: ttf-indic-otf,    desc: Indic Opentype Fonts collection }
-      - {install: ttf-liberation,   desc: Red Hats Liberation fonts.  }
-      - {install: ttf-ms-fonts,     desc: Microsoft core fonts, repo: CYBERLINUX }
-      - {install: ttf-nerd-fonts-symbols, desc: Nerd Font Symbols, repo: CYBERLINUX }
-    - config-lite
-
+    #  X11-fonts:
+    'adobe-source-code-pro-fonts'  # Mono-spaced coding environments
+    'terminus-font'             # Monospace bitmap font for consoles
+    'ttf-bitstream-vera'        # Bitstream vera fonts
+    'ttf-dejavu'                # Bitstream Vera Fonts w/more characters
+    'ttf-droid'                 # Google Android general purpose fonts
+    'ttf-google-fonts-fun'      # Handful of fun fonts from the Google Fonts project, repo: cyberlinux
+    'ttf-google-fonts-work'     # 40 best fonts from the Google Fonts project, repo: cyberlinux
+    'ttf-hack'                  # Hand groomed/optically balanced typeface based on Bitstream Vera Mono
+    'ttf-inconsolata-g'         # Best monospace terminal font, repo: cyberlinux
+    'ttf-indic-otf'             # Indic Opentype Fonts collection
+    'ttf-liberation'            # Red Hats Liberation fonts. 
+    'ttf-ms-fonts'              # Microsoft core fonts, repo: cyberlinux
+    'ttf-nerd-fonts-symbols'    # Nerd Font Symbols, repo: cyberlinux
   ) 
   pkg lite
 }
 
-#package_cyberlinux-server-profile()
+#package_cyberlinux-standard-server()
 #{
-#  depends=('cyberlinux-lite-profile')
-#  conflicts=('cyberlinux-desktop-profile' 'cyberlinux-laptop-profile' 'cyberlinux-netbook-profile' 'cyberlinux-theater-profile')
+#  depends=('cyberlinux-standard-lite')
+#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-laptop' 'cyberlinux-standard-netbook' 'cyberlinux-standard-theater')
 #  pkg server
 #}
 #
-#package_cyberlinux-theater-profile()
+#package_cyberlinux-standard-theater()
 #{
-#  depends=('cyberlinux-lite-profile')
-#  conflicts=('cyberlinux-desktop-profile' 'cyberlinux-laptop-profile' 'cyberlinux-netbook-profile' 'cyberlinux-server-profile')
+#  depends=('cyberlinux-standard-lite')
+#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-laptop' 'cyberlinux-standard-netbook' 'cyberlinux-standard-server')
 #  pkg theater
 #}
 #
-#package_cyberlinux-netbook-profile()
+#package_cyberlinux-standard-netbook()
 #{
-#  depends=('cyberlinux-lite-profile')
-#  conflicts=('cyberlinux-desktop-profile' 'cyberlinux-laptop-profile' 'cyberlinux-server-profile' 'cyberlinux-theater-profile')
+#  depends=('cyberlinux-standard-lite')
+#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-laptop' 'cyberlinux-standard-server' 'cyberlinux-standard-theater')
 #  pkg netbook
 #}
 #
-#package_cyberlinux-desktop-profile()
+#package_cyberlinux-standard-desktop()
 #{
-#  depends=('cyberlinux-lite-profile')
-#  conflicts=('cyberlinux-server-profile' 'cyberlinux-laptop-profile' 'cyberlinux-netbook-profile' 'cyberlinux-theater-profile')
+#  depends=('cyberlinux-standard-lite')
+#  conflicts=('cyberlinux-standard-server' 'cyberlinux-standard-laptop' 'cyberlinux-standard-netbook' 'cyberlinux-standard-theater')
 #  install=desktop.install
 #  pkg desktop
 #}
 #
-#package_cyberlinux-laptop-profile()
+#package_cyberlinux-standard-laptop()
 #{
-#  depends=('cyberlinux-lite-profile')
-#  conflicts=('cyberlinux-desktop-profile' 'cyberlinux-server-profile' 'cyberlinux-netbook-profile' 'cyberlinux-theater-profile')
+#  depends=('cyberlinux-standard-lite')
+#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-server' 'cyberlinux-standard-netbook' 'cyberlinux-standard-theater')
 #  pkg laptop
 #}
