@@ -273,6 +273,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Build out the lite deployment
 * Clean out cached pacman settings
 
 # Changelog <a name="changelog"/></a>

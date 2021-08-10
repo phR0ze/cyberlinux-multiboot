@@ -27,7 +27,7 @@ pkgname=(
     'cyberlinux-standard-core'
     'cyberlinux-standard-base'
     'cyberlinux-standard-shell'
-#    'cyberlinux-lite-profile'
+    'cyberlinux-lite-profile'
 #    'cyberlinux-server-profile'
 #    'cyberlinux-netbook-profile'
 #    'cyberlinux-theater-profile'
@@ -204,12 +204,81 @@ package_cyberlinux-standard-shell()
   pkg shell
 }
 
-#package_cyberlinux-lite-profile()
-#{
-#  depends=('cyberlinux-shell-profile')
-#  pkg lite
-#}
-#
+package_cyberlinux-lite-profile()
+{
+  pkgdesc="Lite X11 system - a building block specialized X11 deployments"
+  depends=(
+    'cyberlinux-standard-shell' # Full bash system - a building block for heavy deployments
+
+    # lxde
+    # opengl
+    # virtualbox-guest
+    # Utils
+      - {install: dmenu,            desc: Super light weight application runner }
+      - {install: galculator,       desc: Office/Calculator }
+      - {install: gsimplecal,       desc: Simple calendar like windows systray calendar }
+      - {install: powerline,        desc: Status line plugin for bash }
+      - {install: powerline-gitstatus, desc: Powerline plugin for git status, repo: CYBERLINUX }
+      - {install: powerline-fonts,  desc: Powerline font symbols }
+      - {install: xfce4-screenshooter, desc: Plugin that makes screenshots for the Xfce panel }
+      - filelight
+
+    # Media
+      - {install: flac,             desc: Free lossless audio codec }
+      - {install: gpicview,         desc: Image viewer, alt: shotwell/viewnior }
+      - {install: lame,             desc: High quality MPEG layer III audio encoder }
+      - {install: parallel,         desc: Shell tool for executing jobs in parallel }
+      - {install: qt4,              desc: A cross-platform application and UI framework, deps: vlc }
+      - {install: qt5-base,         desc: A cross-platform application and UI framework, deps: mkvtoolnix-gui }
+      - {install: smplayer,         desc: UI wrapper around mplayer with click to pause, alt: vlc }
+      - {install: smplayer-skins,   desc: Skins for SMPlayer }
+      - {install: smplayer-themes,  desc: Themes for SMPlayer }
+      - {install: vlc,              desc: Multi-platform MPEG, VCD/DVD, and DivX player }
+      - {install: winff,            desc: GUI for ffmpeg, repo: CYBERLINUX }
+      - {install: xnviewmp,         desc: A digital photo organizer, repo: CYBERLINUX }
+      - audacious
+
+    # Network
+      - {install: chromium,         desc: Opensource project behind Chrome, repo: CYBERLINUX }
+      - {install: chromium-widevine, desc: Chromium support for Netflix, repo: CYBERLINUX }
+      - {install: flashplugin,      desc: Adobe Flash Player NPAPI }
+      - {install: pepper-flash,     desc: Chromium flash support }
+      - {install: filezilla,        desc: Network/Transfer }
+
+    # Office:
+      - {install: evince,           desc: Document viewer (PDF,Postscript,djvu,tiff,dvi,XPS,cbr,cbz,cb7 and cbt) }
+      - {install: gvim,             desc: Improved version of vi text editor, conflict: vim }
+      - {install: leafpad,          desc: Office/Notepad - Simple notepad knock off }
+
+    # Media-codecs:
+      - {install: gst-libav,        desc: GStreamer libav Plugin }
+      - {install: gst-plugins-bad,  desc: GStreamer Bad Plugins }
+      - {install: gst-plugins-base, desc: GStreamer Base Plugins }
+      - {install: gst-plugins-good, desc: GStreamer Good Plugins }
+      - {install: gst-plugins-ugly, desc: GStreamer Ugly Plugins }
+      - {install: libdvdcss,        desc: DVD media codec support }
+      - {install: x264,             desc: Open Source H264/AVC video encoder, depof: smplayer }
+
+    # X11-fonts:
+      - {install: adobe-source-code-pro-fonts, desc: Mono-spaced coding environments }
+      - {install: terminus-font,    desc: Monospace bitmap font for consoles }
+      - {install: ttf-bitstream-vera, desc: Bitstream vera fonts }
+      - {install: ttf-dejavu,       desc: Bitstream Vera Fonts w/more characters }
+      - {install: ttf-droid,        desc: Google Android general purpose fonts }
+      - {install: ttf-google-fonts-fun, desc: Handful of fun fonts from the Google Fonts project, repo: CYBERLINUX }
+      - {install: ttf-google-fonts-work, desc: 40 best fonts from the Google Fonts project, repo: CYBERLINUX }
+      - {install: ttf-hack,         desc: Hand groomed/optically balanced typeface based on Bitstream Vera Mono }
+      - {install: ttf-inconsolata-g, desc: Best monospace terminal font, repo: CYBERLINUX }
+      - {install: ttf-indic-otf,    desc: Indic Opentype Fonts collection }
+      - {install: ttf-liberation,   desc: Red Hats Liberation fonts.  }
+      - {install: ttf-ms-fonts,     desc: Microsoft core fonts, repo: CYBERLINUX }
+      - {install: ttf-nerd-fonts-symbols, desc: Nerd Font Symbols, repo: CYBERLINUX }
+    - config-lite
+
+  ) 
+  pkg lite
+}
+
 #package_cyberlinux-server-profile()
 #{
 #  depends=('cyberlinux-lite-profile')
