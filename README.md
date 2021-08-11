@@ -256,7 +256,7 @@ or not the change fits with my goals/ideals for the project.
 ## Git-Hook <a name="git-hook"/></a>
 Enable the git hooks to have automatic version increments
 ```bash
-cd ~/Projects/clu
+cd ~/Projects/cyberlinux-multiboot
 git config core.hooksPath .githooks
 ```
 
@@ -273,15 +273,17 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Build out the lite deployment
-* Build out custom LXDM theme for cyberlinux
+* Setup repo versioning
+* Configure openbox
 * libglvnd being pulled from nvidia-340xx-utils
-* Build a rust replacement for oblogout
-* Switch over to neovim
 * Install yay from blackarch into the shell deployment
 * Clean out cached pacman settings
+* Build a rust replacement for oblogout
+* Switch over to neovim
+* Build out custom LXDM theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Build out the lite deployment
 * Set standard language defaults: `LANG = "en_US.UTF-8"`
 * Build out the shell deployment
 * Sort blackarch mirrors according to speed
