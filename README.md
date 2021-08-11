@@ -273,7 +273,6 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Setup repo versioning
 * Configure openbox
 * libglvnd being pulled from nvidia-340xx-utils
 * Install yay from blackarch into the shell deployment
@@ -283,6 +282,7 @@ any additional terms or conditions.
 * Build out custom LXDM theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Setup repo versioning
 * Build out the lite deployment
 * Set standard language defaults: `LANG = "en_US.UTF-8"`
 * Build out the shell deployment

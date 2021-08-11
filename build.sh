@@ -142,8 +142,17 @@ build_repo_packages()
 EOF
   check
 
+  # makepkg will modify the PKGBUILD to inject the most recent version.
+  # saving off the original and replacing it will avoid having that file changed all the time
   echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
-  docker_exec ${BUILDER} "sudo -u build bash -c 'cd ~/profiles/${PROFILE}; BUILDDIR=~/ PKGDEST=/home/build/repo makepkg'"
+  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  cp "${CONT_PROFILES_DIR}/${PROFILE}/PKGBUILD" "${CONT_BUILD_DIR}/PKGBUILD"
+  cd "${CONT_PROFILES_DIR}/${PROFILE}"
+  BUILDDIR=${CONT_BUILD_DIR} PKGDEST=${CONT_REPO_DIR} makepkg
+  rc=$?
+  cp "${CONT_BUILD_DIR}/PKGBUILD" "${CONT_PROFILES_DIR}/${PROFILE}/PKGBUILD"
+  exit $rc
+EOF
   check
 
   # Ensure the builder repo exists locally

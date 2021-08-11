@@ -34,7 +34,7 @@ pkgname=(
 #    "${pkgbase}-desktop"
 #    "${pkgbase}-laptop"
 )
-pkgver=0.0.16
+pkgver=0
 pkgrel=1
 pkgdesc='Configuration for various cyberlinux profiles'
 arch=('any')
@@ -48,9 +48,15 @@ _none="\e[m"
 _cyan="\e[1;36m"
 _profile=standard
 
+pkgver()
+{
+  cat "${startdir}/../VERSION"
+}
+
 # Because were running the makepkg in a container at a specific location
 # the staging location is /home/build/PKG
-pkg() {
+pkg()
+{
   local name=$1                       # e.g. core
   install=$name.install               # Specific installer script for deployment package
   local configs="${startdir}/${name}" # /home/build/profiles/standard/core
