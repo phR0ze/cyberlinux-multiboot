@@ -21,10 +21,31 @@
 
 post_install()
 {
+  # General configuration
+  # ---------------------------------------------------------------------------
+  # Added wallpaper
+  # /usr/share/wallpaper
+
+  # Added missing icons to the hicolor fallback icons
+  # /usr/share/icons/hicolor
+
+  # Added some useful fonts and their licences
+  # /usr/share/fonts/TTF
+  # /usr/share/doc/TTF
+
+  # Added conky systemd user service
+  # /usr/lib/systemd/user/conky.service
+
+  # Openbox configuration
+  # ---------------------------------------------------------------------------
+  # Added custom cyberlinux openbox theme
+  # /usr/share/themes/cyberlinux
+
   # LXDM configuration
   # ---------------------------------------------------------------------------
   # - enable numlock on boot
   # - set openbox-session as the session manager
+  # - set bg=/usr/share/wallpaper/dreamfusion003_1280x1024.jpg
   # - disabled the user list control
   # - disabled the bottom panel from being displayed
   mv -f /etc/lxdm/lxdm.conf_sideload /etc/lxdm/lxdm.conf

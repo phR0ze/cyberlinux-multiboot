@@ -273,6 +273,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Configure lxdm splash image
 * Configure openbox
 * libglvnd being pulled from nvidia-340xx-utils
 * Install yay from blackarch into the shell deployment
