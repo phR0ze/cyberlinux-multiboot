@@ -57,7 +57,7 @@ post_install()
   # SSH login banner for cyberlinux
   mv -f /etc/motd_sideload /etc/motd
 
-  # Enable services that we've installed with this meta package
+  # Enable ssh service to start at boot
   systemctl enable sshd
 }
 

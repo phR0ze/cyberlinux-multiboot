@@ -274,6 +274,8 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Build out the lite deployment
+* Build out custom LXDM theme for cyberlinux
+* libglvnd being pulled from nvidia-340xx-utils
 * Build a rust replacement for oblogout
 * Switch over to neovim
 * Install yay from blackarch into the shell deployment

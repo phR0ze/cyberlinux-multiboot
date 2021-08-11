@@ -574,11 +574,11 @@ config_system()
     echo -e "\n:: Configuring pacman first run experience..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
-    echo -e ":: Initializing the pacman keyring..."
+    echo -en ":: Initializing the pacman keyring..."
     chroot ${rootmnt} pacman-key --init &>/dev/null
     check_status
 
-    echo -e ":: Populating the pacman keyring..."
+    echo -en ":: Populating the pacman keyring..."
     chroot ${rootmnt} pacman-key --populate archlinux blackarch &>/dev/null
     check_status
 

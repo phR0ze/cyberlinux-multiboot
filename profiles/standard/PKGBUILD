@@ -120,15 +120,16 @@ package_cyberlinux-standard-shell()
     'gptfdisk'                  # sgdisk, gdisk, cgdisk
     'logrotate'                 # Rotates system logs automatically
     'inxi'                      # System info display tool for CPUs/RAM/Kernel etc...
-    'man-db'                    # A utility for reading man pages
-    'man-pages'                 # Linux man pages
-    'pkgfile'                   # A pacman files and metadata explorer
-    'psmisc'                    # fuser, killall, pstree
-    'tmux'                      # Terminal multiplexer built off screen
     'libisoburn'                # xorriso ISO creation tools
     'lsof'                      # Lists open files for running processes
+    'man-db'                    # A utility for reading man pages
+    'man-pages'                 # Linux man pages
     'moreutils'                 # Linux utils e.g. parallel-moreutils
+    'pacutils'                  # Pacman helper utilities for libalpm
+    'pkgfile'                   # A pacman files and metadata explorer
+    'psmisc'                    # fuser, killall, pstree
     'smartmontools'             # Control/monitor S.M.A.R.T. Drives
+    'tmux'                      # Terminal multiplexer built off screen
     'udisks2'                   # Enumerate and operate on storage devices
     'usbutils'                  # USB device utilities including lsusb
     'squashfs-tools'            # mksquashfs, unsquashfs
@@ -142,6 +143,7 @@ package_cyberlinux-standard-shell()
     'dnsutils'                  # Network utilities dig/host/nslookup
     'gnu-netcat'                # Network piping application
     'inetutils'                 # hostname, ftp, telnet
+    'iproute2'                  # ip, ifcfg, arpd, bridge, ctstate, ifstate etc...
     'net-tools'                 # arp, ifconfig, iptunnel, netstat
     'nfs-utils'                 # Support programs for Network File Systems
     'nmap'                      # Network discovery and security auditing
@@ -260,6 +262,14 @@ package_cyberlinux-standard-lite()
     'xorg-xwininfo'             # Command-line util to print info about windows, group: xorg, xorg-apps
     'xorg-xwud'                 # X Window System image undumping utility, group: xorg
 
+    # opengl
+    'libglvnd'                  # GL Vendor-Neutral Dispatch, depof: mesa
+    'lib32-mesa'                # OpenGL opensource implementation, depof: kodi, steam
+    'lib32-mesa-vdpau'          # Mesa vdpau drivers, depof: kodi,steam
+    'mesa'                      # Open-source OpenGL implementation
+    'mesa-demos'                # Mesa demos and tools e.g glxinfo, glxgears
+    'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
+
     # lxde
     'lxappearance'              # Feature-rich GTK+ theme switcher of the LXDE Desktop, group: lxde
     'lxappearance-obconf'       # Plugin for LXAppearance to configure Openbox, group: lxde
@@ -307,13 +317,6 @@ package_cyberlinux-standard-lite()
     'xterm'                     # X terminal emulator
     'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
 
-    # opengl
-    'lib32-mesa'                # OpenGL opensource implementation, depof: kodi, steam
-    'lib32-mesa-vdpau'          # Mesa vdpau drivers, depof: kodi,steam
-    'mesa'                      # Open-source OpenGL implementation
-    'mesa-demos'                # Mesa demos and tools e.g glxinfo, glxgears
-    'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
-
     # virtualbox-guest
     'virtualbox-guest-utils'    # VirtualBox guest drivers/utilities
 
@@ -349,7 +352,7 @@ package_cyberlinux-standard-lite()
 
     #  Office:
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
-    'gvim'                      # Improved version of vi text editor, conflict: vim
+#'neovim-qt'                 # Improved version of vi text editor
     'leafpad'                   # Office/Notepad - Simple notepad knock off
 
     #  Media-codecs:
@@ -373,7 +376,6 @@ package_cyberlinux-standard-lite()
     'ttf-inconsolata-g'         # Best monospace terminal font, repo: cyberlinux
     'ttf-indic-otf'             # Indic Opentype Fonts collection
     'ttf-liberation'            # Red Hats Liberation fonts. 
-    'ttf-ms-fonts'              # Microsoft core fonts, repo: cyberlinux
     'ttf-nerd-fonts-symbols'    # Nerd Font Symbols, repo: cyberlinux
   ) 
   pkg lite

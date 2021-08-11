@@ -21,9 +21,17 @@
 
 post_install()
 {
-  # Fully customized .bashrc
-  #mv -f /etc/skel/.bashrc_sideload /etc/skel/.bashrc
-  echo ""
+  # LXDM configuration
+  # ---------------------------------------------------------------------------
+  # - enable numlock on boot
+  # - set openbox-session as the session manager
+  # - disabled the user list control
+  # - disabled the bottom panel from being displayed
+  mv -f /etc/lxdm/lxdm.conf_sideload /etc/lxdm/lxdm.conf
+
+  # Enable lxdm service to start at boot
+  # -f will automatically disable the old display manager
+  systemctl enable lxdm -f
 }
 
 post_upgrade() {
