@@ -50,6 +50,10 @@ post_install()
   # - disabled the bottom panel from being displayed
   mv -f /etc/lxdm/lxdm.conf_sideload /etc/lxdm/lxdm.conf
 
+  # Modify the default Industrial lxdm theme
+  # - change the prompt to white 18 font size
+  mv -f /usr/share/lxdm/themes/Industrial/gtkrc_sideload /usr/share/lxdm/themes/Industrial/gtkrc
+
   # Enable lxdm service to start at boot
   # -f will automatically disable the old display manager
   systemctl enable lxdm -f

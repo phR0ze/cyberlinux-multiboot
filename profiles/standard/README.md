@@ -9,7 +9,7 @@ that were not free to use for commercial purposes.
 your own risk.  Any damages, issues, losses or problems caused by the use of ***cyberlinux*** are
 strictly the responsiblity of the user and not the developer/creator of ***cyberlinux***.
 
-### Table of Contents
+### Quick links
 * [Desktop Deployment](#desktop-deployment)
 * [Lite Deployment](#lite-deployment)
 * [Shell Deployment](#shell-deployment)
@@ -58,7 +58,7 @@ applications and configuration.
     * Evince, GVim, Leafpad
 
 ### Shell Deployment <a name="shell-deployment"/></a>
-Intended as a full shell development environment the ***Shell*** deployment provides:
+Intended as a full shell development environment
 
 <a href="../doc/images/standard-shell.jpg"><img width="639" height="480" src="../doc/images/standard-shell.jpg"></a>
 
