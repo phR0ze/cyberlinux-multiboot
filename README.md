@@ -273,14 +273,15 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Get mouse config xset to work
 * Configure openbox menu
 * libglvnd being pulled from nvidia-340xx-utils
-* Clean out cached pacman settings
 * Build a rust replacement for oblogout
 * Switch over to neovim
 * Build out custom LXDM theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* XDG home directories need adjusting
 * Install yay from blackarch into the shell deployment
 * Configure lxdm splash image
 * Setup repo versioning

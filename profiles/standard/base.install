@@ -32,8 +32,9 @@ post_install()
   # /etc/pacman.d/blackarch.mirrorlist
 
   # Added in the following property changes:
-  #   ILoveCandy
-  #   ParallelDownloads = 5
+  # Set Color
+  # Set ILoveCandy
+  # Set ParallelDownloads = 5
   # Added the cyberlinux repo  
   # Uncommented the multilib repo
   # Switched the repo mirrorlist to /etc/pacman.d/archlinux.mirrorlist

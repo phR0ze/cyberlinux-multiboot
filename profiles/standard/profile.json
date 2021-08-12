@@ -37,25 +37,25 @@
   },
   {
     "name": "lite",
-    "entry": "Install standard lite             // Shell + minimal desktop env",
+    "entry": "Install standard lite             // Shell + lite desktop env",
     "kernel": "linux",
     "layers": "standard/core,standard/base,standard/shell,standard/lite"
   },
   {
     "name": "shell",
-    "entry": "Install standard shell            // Full command line system",
+    "entry": "Install standard shell            // Full bash system",
     "kernel": "linux",
     "layers": "standard/core,standard/base,standard/shell"
   },
   {
     "name": "base",
-    "entry": "Install standard base             // Minimal command line system",
+    "entry": "Install standard base             // Minimal bash system",
     "kernel": "linux",
     "layers": "standard/core,standard/base"
   },
   {
     "name": "core",
-    "entry": "Smallest set of packages possible for a container with bash",
+    "entry": "Minimal bash container",
     "layers": "standard/core"
   }
 ]

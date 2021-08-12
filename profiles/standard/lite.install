@@ -36,6 +36,9 @@ post_install()
   # Added conky systemd user service
   # /usr/lib/systemd/user/conky.service
 
+  # Configure default user directories
+  mv -f /etc/xdg/user-dirs.defaults_sideload /etc/xdg/user-dirs.defaults
+
   # Openbox configuration
   # ---------------------------------------------------------------------------
   # Added custom cyberlinux openbox theme
@@ -44,7 +47,7 @@ post_install()
   # LXDM configuration
   # ---------------------------------------------------------------------------
   # - enable numlock on boot
-  # - set openbox-session as the session manager
+  # - set /usr/bin/lxsession -s default -e default as the session manager
   # - set bg=/usr/share/wallpaper/dreamfusion003_1280x1024.jpg
   # - disabled the user list control
   # - disabled the bottom panel from being displayed

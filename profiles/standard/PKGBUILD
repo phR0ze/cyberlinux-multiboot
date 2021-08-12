@@ -28,7 +28,7 @@ pkgname=(
     "${pkgbase}-base"
     "${pkgbase}-shell"
     "${pkgbase}-lite"
-#    "${pkgbase}-server"
+    "${pkgbase}-server"
 #    "${pkgbase}-netbook"
 #    "${pkgbase}-theater"
 #    "${pkgbase}-desktop"
@@ -200,6 +200,7 @@ package_cyberlinux-standard-shell()
     'ltrace'                    # Tracks runtime library calls in dynamically linked programs
     'python-pip'                # The PyPA recommended tool for installing Python packages
     'strace'                    # A diagnostic, debugging and instructional userspace tracer
+    'ruby'                      # Excellent scripting language
     'yq'                        # Command-line YAML processor - jq wrapper for YAML documents
 
     # Golang
@@ -213,14 +214,13 @@ package_cyberlinux-standard-shell()
 
 package_cyberlinux-standard-lite()
 {
-  pkgdesc="Lite X11 system - a building block specialized X11 deployments"
+  pkgdesc="Lite x11 system - a building block specialized x11 deployments"
   depends=(
-    # cyberlinux packages
-    'cyberlinux-standard-shell' # Full bash system - a building block for heavy deployments
+    'cyberlinux-standard-shell' # full bash system - a building block for heavy deployments
 
-    # Xorg
-    'xf86-input-libinput'       # X.org generic input driver, group: xorg-drivers
-    'xf86-video-vesa'           # X.org vesa video driver, group: xorg, xorg-drivers
+    # xorg
+    'xf86-input-libinput'       # x.org generic input driver, group: xorg-drivers
+    'xf86-video-vesa'           # x.org vesa video driver, group: xorg, xorg-drivers
     'xorg-bdftopcf'             # Convert X font from Bitmap to PNG, group: xorg, xorg-apps
     'xorg-docs'                 # X.org documentation, group: xorg
     'xorg-font-util'            # X.org font utilities, group: xorg
@@ -294,6 +294,8 @@ package_cyberlinux-standard-lite()
     'openbox'                   # Lightweight X11 window manager, group: lxde
     'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
     'paper-icon-theme'          # Paper icon theme, repo: cyberlinux
+    'xdg-user-dirs'             # Manage user directories like ~/Desktop
+    'xdg-utils'                 # Desktop integration utilities
 
     # file manager utilities
     'gvfs'                      # Support for Trash and USB, depof: thunar-volman
@@ -318,8 +320,6 @@ package_cyberlinux-standard-lite()
     'pulseaudio-alsa'           # ALSA Configuration for PulseAudio
     'tint2'                     # Lightweight taskmanager and system tray
     'wmctrl'                    # Control your EWMH compliant window manager from command line
-    'xdg-user-dirs'             # Manage user directories like ~/Desktop
-    'xdg-utils'                 # Desktop integration utilities
     'xsel'                      # Tool for getting/setting X selection
     'xterm'                     # X terminal emulator
     'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
@@ -388,38 +388,20 @@ package_cyberlinux-standard-lite()
   pkg lite
 }
 
-#package_cyberlinux-standard-server()
-#{
-#  depends=('cyberlinux-standard-lite')
-#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-laptop' 'cyberlinux-standard-netbook' 'cyberlinux-standard-theater')
-#  pkg server
-#}
-#
-#package_cyberlinux-standard-theater()
-#{
-#  depends=('cyberlinux-standard-lite')
-#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-laptop' 'cyberlinux-standard-netbook' 'cyberlinux-standard-server')
-#  pkg theater
-#}
-#
-#package_cyberlinux-standard-netbook()
-#{
-#  depends=('cyberlinux-standard-lite')
-#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-laptop' 'cyberlinux-standard-server' 'cyberlinux-standard-theater')
-#  pkg netbook
-#}
-#
-#package_cyberlinux-standard-desktop()
-#{
-#  depends=('cyberlinux-standard-lite')
-#  conflicts=('cyberlinux-standard-server' 'cyberlinux-standard-laptop' 'cyberlinux-standard-netbook' 'cyberlinux-standard-theater')
-#  install=desktop.install
-#  pkg desktop
-#}
-#
-#package_cyberlinux-standard-laptop()
-#{
-#  depends=('cyberlinux-standard-lite')
-#  conflicts=('cyberlinux-standard-desktop' 'cyberlinux-standard-server' 'cyberlinux-standard-netbook' 'cyberlinux-standard-theater')
-#  pkg laptop
-#}
+package_cyberlinux-standard-server()
+{
+  pkgdesc="Server x11 system - build on the lite deployment adding server apps"
+  depends=(
+    'cyberlinux-standard-lite'  # lite x11 system - a building block for specialized x11 deployments
+
+    'docker'                    # Pack, ship and run any application as a lightweight container
+    'handbrake'                 # Video encoding tool for mp4/mkv
+    'handbrake-cli'             # Video encoding tool for mp4/mkv
+    'keepass'                   # Password manager written in .net
+    'mkvtoolnix-gui'            # Set of tools to create, edit and inspect MKV files
+    'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
+    'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
+    'tiny-media-manager'        # Cross platform media manager, repo: cyberlinux
+  )
+  pkg server
+}

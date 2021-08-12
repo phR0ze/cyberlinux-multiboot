@@ -19,17 +19,14 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-# If not running interactively, don't do anything
-#[ -z "$PS1" ] && return
-
 # Set terminal type if not set
 [ -z ${TERM+x} ] && export TERM=xterm
 
-# Enable programmable completion features
-for x in /etc/bash_completion.d/* ; do . $x > /dev/null 2>&1; done
-
 # Enable dircolors if supported
 [ -x /usr/bin/dircolors ] && [ -r ~/.dircolors ] && eval "$(dircolors -b ~/.dircolors)"
+
+# Enable programmable completion features
+[ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 
 # Various configs
 #----------------------------------------------------------------------------------------
@@ -46,7 +43,8 @@ export HISTSIZE=10000               # Set history length
 export HISTFILESIZE=${HISTSIZE}     # Set history file size
 export HISTCONTROL=ignoreboth       # Ignore duplicates and lines starting with space
 export KUBE_EDITOR=vim              # Set the editor to use for Kubernetes edit commands
-export GOPATH=~/Projects/go         # GOPATH for all Go projects
+
+# Preserve bash history in multiple terminal windows
 export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 
 # Command Aliases
@@ -62,8 +60,6 @@ alias ll='ls -lah --group-directories-first --color=auto'
 alias diff='diff --color=auto'
 alias grep='grep --color=auto'
 alias free='free -m'                    # show sizes in MB
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
 
 # Modify the Command Prompt
 # \u User name, \h Host name, \w Current path, \W Current directory, \" Quote sign
