@@ -1,8 +1,2 @@
 .git
-*.iso
-temp/iso
-temp/layers
-temp/root
-temp/work
-temp/x86_64
-temp/bios.img
+temp

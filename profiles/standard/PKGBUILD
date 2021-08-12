@@ -34,7 +34,7 @@ pkgname=(
 #    "${pkgbase}-desktop"
 #    "${pkgbase}-laptop"
 )
-pkgver=0
+pkgver=0.0.2
 pkgrel=1
 pkgdesc='Configuration for various cyberlinux profiles'
 arch=('any')
@@ -139,6 +139,7 @@ package_cyberlinux-standard-shell()
     'udisks2'                   # Enumerate and operate on storage devices
     'usbutils'                  # USB device utilities including lsusb
     'squashfs-tools'            # mksquashfs, unsquashfs
+    'yay'                       # Pacman wrapper and AUR helper written in golang, repo: blackarch
 
     # recovery tools
     'ddrescue'                  # GNU data recovery tool

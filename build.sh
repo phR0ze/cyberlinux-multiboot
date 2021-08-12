@@ -28,7 +28,7 @@ CONFIG_DIR="${PROJECT_DIR}/config"        # Location for config files and templa
 PROFILES_DIR="${PROJECT_DIR}/profiles"    # Location for profile descriptions, packages and configs
 INSTALLER_DIR="${PROJECT_DIR}/installer"  # Location to pull installer hooks from
 BOOT_CFG_PATH="${ISO_DIR}/boot/grub/boot.cfg"  # Boot menu entries to read in
-PACMAN_BUILDER_CONF="${CONFIG_DIR}/pacman.builder" # Pacman config template to turn into the actual config
+PACMAN_CONF_CACHING="${CONFIG_DIR}/pacman.conf_1_for_caching" # Pacman config template to turn into the actual config
 
 # Container directories and mount locations
 CONT_BUILD_DIR="/home/build"              # Build location for layer components
@@ -73,28 +73,6 @@ trap release SIGINT
 # We need to use a docker container in order to get the isolation needed. arch-chroot alone seems
 # to allow leakage. Building off the `archlinux:base-devel` image provides a quick start.
 # docker run --name builder --rm -it archlinux:base-devel bash
-#
-# archlinux:base-devel contains needed 
-# `coreutils`             provides basic linux tooling
-# `pacman`                provides the ability to add additional packages via a chroot to our build env
-# `sed`                   is used by the installer to update configuration files as needed
-#
-# Need to install in container
-# `grub`                  is needed by the installer for creating the EFI and BIOS boot partitions
-# `dosfstools`            provides `mkfs.fat` needed by the installer for creating the EFI boot partition
-# `mkinitcpio`            provides the tooling to build the initramfs early userspace installer
-# `mkinitcpio-vt-colors`  required for the initramfs installer to use cyberlinux blue output
-# `rsync`                 used by the installer to copy install data to the install target
-# `gptfdisk`              used by the installer to prepare target media for install
-# `linux`                 need to load the kernel to satisfy GRUB
-# `intel-ucode`           standard practice to load the intel-ucode
-# `memtest86+`            boot memory tester tool
-# `libisoburn`            needed for xorriso support
-# `linux-firmware`        needed to reduce issing firmware during mkinitcpio builds
-# `arch-install-scripts`  needed for `pacstrap`
-# `squashfs-tools`        provides `mksquashfs` for creating squashfs images
-# `jq`                    provides `jq` json manipulation
-# `efibootmgr`            provides `efibootmgr` for EFI boot manager entry manipulation
 build_env()
 {
   echo -e "${yellow}:: Configuring build environment...${none}"
@@ -102,16 +80,6 @@ build_env()
   # Build the builder image
   if ! docker_image_exists ${BUILDER}; then
     docker_kill ${BUILDER}
-
-    # Cache packages ahead of time as mounts are not allowed in builds
-    docker_run archlinux:base-devel
-    docker_cp "${PACMAN_BUILDER_CONF}" "${BUILDER}:/etc/pacman.conf"
-    local packages="vim grub dosfstools mkinitcpio mkinitcpio-vt-colors rsync gptfdisk linux \
-      intel-ucode memtest86+ libisoburn squashfs-tools"
-    docker_exec ${BUILDER} "pacman -Syw --noconfirm ${packages}"
-    docker_kill ${BUILDER}
-
-    # Build the builder image
     docker build --force-rm -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
@@ -132,15 +100,6 @@ build_repo_packages()
 
   echo -e "${yellow}:: Caching package artifacts..."
   docker_run ${BUILDER}
-
-  echo -en ":: Downloading ${cyan}blackarch-keyring${none}..."
-  cat <<EOF | docker exec --privileged -i ${BUILDER} bash
-  if [ ! -f ${CONT_REPO_DIR}/blackarch-keyring.pkg.tar.xz ]; then
-    cd ${CONT_REPO_DIR}
-    curl -s -O https://blackarch.org/keyring/blackarch-keyring.pkg.tar.xz
-  fi
-EOF
-  check
 
   # makepkg will modify the PKGBUILD to inject the most recent version.
   # saving off the original and replacing it will avoid having that file changed all the time

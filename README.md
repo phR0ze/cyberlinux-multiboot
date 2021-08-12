@@ -273,16 +273,16 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Configure lxdm splash image
-* Configure openbox
+* Configure openbox menu
 * libglvnd being pulled from nvidia-340xx-utils
-* Install yay from blackarch into the shell deployment
 * Clean out cached pacman settings
 * Build a rust replacement for oblogout
 * Switch over to neovim
 * Build out custom LXDM theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Install yay from blackarch into the shell deployment
+* Configure lxdm splash image
 * Setup repo versioning
 * Build out the lite deployment
 * Set standard language defaults: `LANG = "en_US.UTF-8"`
