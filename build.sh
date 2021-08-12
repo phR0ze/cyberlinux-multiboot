@@ -100,6 +100,7 @@ build_repo_packages()
 
   echo -e "${yellow}:: Caching package artifacts..."
   docker_run ${BUILDER}
+  cp "${PROJECT_DIR}/VERSION" "${PROFILES_DIR}"
 
   # makepkg will modify the PKGBUILD to inject the most recent version.
   # saving off the original and replacing it will avoid having that file changed all the time
