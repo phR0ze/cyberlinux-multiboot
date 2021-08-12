@@ -34,7 +34,7 @@ pkgname=(
 #    "${pkgbase}-desktop"
 #    "${pkgbase}-laptop"
 )
-pkgver=0.0.2
+pkgver=0
 pkgrel=1
 pkgdesc='Configuration for various cyberlinux profiles'
 arch=('any')
