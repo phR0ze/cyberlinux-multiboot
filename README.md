@@ -273,7 +273,6 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Get mouse config xset to work
 * Configure openbox menu
 * libglvnd being pulled from nvidia-340xx-utils
 * Build a rust replacement for oblogout
