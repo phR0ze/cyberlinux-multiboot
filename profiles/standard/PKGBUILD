@@ -357,7 +357,6 @@ package_cyberlinux-standard-lite()
 
     # Office
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
-    'gvim'                      # Improved version of vi text editor
     'leafpad'                   # Office/Notepad - Simple notepad knock off
 
     # Media-codecs
