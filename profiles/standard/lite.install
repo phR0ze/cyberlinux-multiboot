@@ -19,6 +19,17 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
+pre_install()
+{
+  # Remove the neovim to vim link before installing
+  rm -f /usr/bin/vim
+}
+
+pre_upgrade()
+{
+	pre_install
+}
+
 post_install()
 {
   # General configuration
@@ -38,6 +49,9 @@ post_install()
 
   # Configure default user directories
   mv -f /etc/xdg/user-dirs.defaults_sideload /etc/xdg/user-dirs.defaults
+
+  # Create a vim link for neovim
+  ln -sf /usr/bin/nvim /usr/bin/vim
 
   # Openbox configuration
   # ---------------------------------------------------------------------------
