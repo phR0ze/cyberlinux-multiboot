@@ -274,7 +274,6 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Current GTK themes is missing Thunar icons
-* Powerline font doesn't look right in bash
 
 # Later <a name="later"/></a>
 * what does the lxsession config mean https://github.com/lxde/lxsession/blob/master/data/desktop.conf.example
@@ -285,6 +284,7 @@ any additional terms or conditions.
 * Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Powerline font doesn't look right in bash
 * Switch over to neovim
 * Default lite openbox menu looks good
 * Fixed keyboard repeat rate with lxsession config
