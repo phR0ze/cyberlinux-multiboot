@@ -31,6 +31,11 @@ post_install()
   # rankmirrors -n 10 profiles/standard/base/etc/pacman.d/blackarch.mirrorlist
   # /etc/pacman.d/blackarch.mirrorlist
 
+  # Added configuration to make use of multiple CPU cores
+  # MAKEFLAGS="-j8" use more parallel threads
+  # COMPRESSXZ=(xz -c -z - --threads=0) which enables multi core use
+  mv -f /etc/makepkg.conf_sideload /etc/makepkg.conf
+
   # Added in the following property changes:
   # Set Color
   # Set ILoveCandy
