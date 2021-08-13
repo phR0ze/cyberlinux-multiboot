@@ -456,6 +456,7 @@ config_system()
     LOCALE="en_US"
     echo -en ":: Setting localization to ${cyber}${LOCALE}${none}..."
     echo "LANG=${LOCALE}.UTF-8" > ${rootmnt}/etc/locale.conf
+    echo "LANGUAGE=${LOCALE}.UTF-8" >> ${rootmnt}/etc/locale.conf
     echo "${LOCALE}.UTF-8 UTF-8" > ${rootmnt}/etc/locale.gen &>/dev/null
     chroot ${rootmnt} locale-gen &>/dev/null
     check_status
