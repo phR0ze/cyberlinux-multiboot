@@ -273,16 +273,21 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* lxterminal sessions to be full screen if small display
-* Audacious is missing its icon in the menu
-* Keyboard repeat rate, .xprofile and lxsession don't work
-* Configure openbox menu
+* Current GTK themes is missing Thunar icons
 * Powerline font doesn't look right in bash
+
+# Later <a name="later"/></a>
+* what does the lxsession config mean https://github.com/lxde/lxsession/blob/master/data/desktop.conf.example
+* Add cyberlinux-repo README about packages and warnings and how to configure
+* lxterminal window is off screen slightly be default, openbox?
+* Audacious is missing its icon in the menu
 * Build a rust replacement for oblogout
-* Switch over to neovim
 * Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Switch over to neovim
+* Default lite openbox menu looks good
+* Fixed keyboard repeat rate with lxsession config
 * XDG home directories need adjusting
 * Install yay from blackarch into the shell deployment
 * Configure lxdm splash image
@@ -295,7 +300,7 @@ any additional terms or conditions.
 * Enable sshd out of the box
 * Add skel configs to root user
 * Get basic networking working
-* Don't require new users to immediately change their passwords
+* Passwords need to be SHA512 to avoid being flagged by pam policies
 * Test UEFI install with custom steps
 * Test UEFI automated install
 * mkinitcpio-vt-colors is not taking affect on boot
