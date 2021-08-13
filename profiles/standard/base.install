@@ -53,6 +53,9 @@ post_install()
   # Default custom vim config without any plugins and only using built in colors
   # /etc/skel/.vimrc
 
+  # Create a vim link for neovim
+  ln -sf /usr/bin/nvim /usr/bin/vim
+
   # SSH configuration
   # ---------------------------------------------------------------------------
   # SSH login banner for cyberlinux

@@ -44,6 +44,12 @@ post_install()
   # Added custom cyberlinux openbox theme
   # /usr/share/themes/cyberlinux
 
+  # Added openbox main configuration
+  # /etc/skel/.config/openbox/rc.xml
+
+  # Added openbox lite menu
+  mv -f /etc/skel/.config/openbox/menu.xml_sideload_lite /etc/skel/.config/openbox/menu.xml
+
   # LXDM configuration
   # ---------------------------------------------------------------------------
   # - enable numlock on boot

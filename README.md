@@ -273,11 +273,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Keyboard repeat rate, .xprofile and lxsession don't work
 * Configure openbox menu
-* libglvnd being pulled from nvidia-340xx-utils
+* Powerline font doesn't look right in bash
 * Build a rust replacement for oblogout
 * Switch over to neovim
-* Build out custom LXDM theme for cyberlinux
+* Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
 * XDG home directories need adjusting

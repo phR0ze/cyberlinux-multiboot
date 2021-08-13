@@ -106,7 +106,7 @@ package_cyberlinux-standard-base()
 
     # Essential tools
     'sudo'                      # Elevate user commands on demand to root
-    'vim'                       # Improved version of vi text editor
+    'neovim'                    # Improved version of vi text editor
   )
 
   pkg base
@@ -195,8 +195,8 @@ package_cyberlinux-standard-shell()
     'gcc-multilib'              # GNU Compiler Collection
     'git'                       # Fast distributed version control system
     'jq'                        # Command line JSON processor, depof: kubectl
-    'lld'                       # Linker from the LLVM project, depof: chromium
-    'llvm'                      # Low Level compiler infrastructure, depof: chromium
+    'lld'                       # Linker from the LLVM project
+    'llvm'                      # Low Level compiler infrastructure
     'ltrace'                    # Tracks runtime library calls in dynamically linked programs
     'python-pip'                # The PyPA recommended tool for installing Python packages
     'strace'                    # A diagnostic, debugging and instructional userspace tracer
@@ -351,18 +351,16 @@ package_cyberlinux-standard-lite()
     'xnviewmp'                  # A digital photo organizer, repo: cyberlinux
     'audacious'                 # Lightweight advanced audio player
 
-    #  Network
-    #'chromium'                  # Opensource project behind Chrome
-    #'chromium-widevine'         # Chromium support for Netflix
+    # Network
     'firefox'                   # Standalone web browser from mozilla.org 
     'filezilla'                 # Network/Transfer
 
-    #  Office:
+    # Office
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
-#'neovim-qt'                 # Improved version of vi text editor
+    'gvim'                      # Improved version of vi text editor
     'leafpad'                   # Office/Notepad - Simple notepad knock off
 
-    #  Media-codecs:
+    # Media-codecs
     'gst-libav'                 # GStreamer libav Plugin
     'gst-plugins-bad'           # GStreamer Bad Plugins
     'gst-plugins-base'          # GStreamer Base Plugins
@@ -371,7 +369,7 @@ package_cyberlinux-standard-lite()
     'libdvdcss'                 # DVD media codec support
     'x264'                      # Open Source H264/AVC video encoder, depof: smplayer
 
-    #  X11-fonts:
+    # X11-fonts
     'adobe-source-code-pro-fonts'  # Mono-spaced coding environments
     'terminus-font'             # Monospace bitmap font for consoles
     'ttf-bitstream-vera'        # Bitstream vera fonts
