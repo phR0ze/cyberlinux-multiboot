@@ -21,14 +21,19 @@
 
 post_install()
 {
-  # Fully customized terminal colors to use
+  # Customize terminal colors to use
   # /etc/skel/.dircolors
 
-  # Custom .bash_profile that simply loads the .bashrc
+  # Customize .bash_profile
+  # Make it simply load .bashrc
   mv -f /etc/skel/.bash_profile_sideload /etc/skel/.bash_profile
 
-  # Fully customized .bashrc
+  # Customize .bashrc
   mv -f /etc/skel/.bashrc_sideload /etc/skel/.bashrc
+
+  # Customize hosts
+  # 127.0.0.1 localhost
+  mv -f /etc/hosts_sideload /etc/hosts
 
   # Customize the lsb-release and os-release configs
   mv -f /etc/lsb-release_sideload /etc/lsb-release
