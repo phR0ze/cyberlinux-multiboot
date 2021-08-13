@@ -273,6 +273,8 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* lxterminal sessions to be full screen if small display
+* Audacious is missing its icon in the menu
 * Keyboard repeat rate, .xprofile and lxsession don't work
 * Configure openbox menu
 * Powerline font doesn't look right in bash
