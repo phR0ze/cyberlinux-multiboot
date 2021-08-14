@@ -37,15 +37,16 @@
     </menu>
     <menu id="Settings" icon="/usr/share/icons/Paper/32x32/categories/applications-accessories.png" label="Settings">
       <menu id="Desktop/Login" icon="/usr/share/icons/Paper/32x32/apps/preferences-system-login.png" label="Desktop/Login">
-         <item label="LXDM Config" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/lxdm/lxdm.conf"</execute></action></item>
-         <item label="Openbox Menu" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/openbox/menu.xml"</execute></action></item>
-         <item label="Openbox RC" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/openbox/rc.xml"</execute></action></item>
-         <item label="Tint2 Panel" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/tint2/tint2rc"</execute></action></item>
+        <item label="Conky" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/conky/active"</execute></action></item>
+        <item label="LXDM Config" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/lxdm/lxdm.conf"</execute></action></item>
+        <item label="Openbox Menu" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/openbox/menu.xml"</execute></action></item>
+        <item label="Openbox RC" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/openbox/rc.xml"</execute></action></item>
+        <item label="Tint2 Panel" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>lxterminal -e "vim ~/.config/tint2/tint2rc"</execute></action></item>
       </menu>
       <menu id="Pacman/Servers" icon="/usr/share/icons/Paper/32x32/apps/software-center.png" label="Pacman/Servers">
-         <item label="Pacman Config" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/pacman.conf"</execute></action></item>
-         <item label="ArchLinux Mirrorlist" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/pacman.d/archlinux.mirrorlist"</execute></action></item>
-         <item label="BlackArch Mirrorlist" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/pacman.d/blackarch.mirrorlist"</execute></action></item>
+        <item label="Pacman Config" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/pacman.conf"</execute></action></item>
+        <item label="ArchLinux Mirrorlist" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/pacman.d/archlinux.mirrorlist"</execute></action></item>
+        <item label="BlackArch Mirrorlist" icon="/usr/share/icons/Paper/32x32/apps/gvim.png"><action name="Execute"><execute>sudo lxterminal -e "vim /etc/pacman.d/blackarch.mirrorlist"</execute></action></item>
       </menu>
       <item label="Dconf Editor" icon="/usr/share/icons/Paper/32x32/apps/dconf-editor.png"><action name="Execute"><execute>dconf-editor</execute></action></item>
       <item label="LXAppearance" icon="/usr/share/icons/Paper/32x32/apps/preferences-desktop-theme.png"><action name="Execute"><execute>lxappearance</execute></action></item>

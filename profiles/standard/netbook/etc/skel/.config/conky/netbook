@@ -70,14 +70,14 @@ ${font Designer Block:bold:size=100}${color1}${time %I}\
 ${offset 3}${voffset -38}${font Designer Block:bold:size=50}${color3}:${time %M}\
 ${font Designer Block:bold:size=14}${time %p}\
 ${offset -110}${voffset 13}${font Designer Block:bold:size=35}${color1}${time %a} ${time %d}\
-${voffset -10}${font Designer Block:bold:size=20}${exec /etc/xdg/conky/bin/date.rb}
+${voffset -10}${font Designer Block:bold:size=20}${exec /etc/xdg/conky/date.rb}
 # Month/Year
 ${voffset 25}${offset 1050}\
 ${font Designer Block:normal:size=24}${color1}${time %B}.${time %Y} ${hr 2}
 # Day names
 ${offset 1038}${font Liberation Mono:bold:size=14}${color2}  Su  Mo  Tu  We  Th  Fr  Sa
 # Days
-${font Liberation Mono:size=14}${color1}${execp /etc/xdg/conky/bin/cal.rb 2 1038}
+${font Liberation Mono:size=14}${color1}${execp /etc/xdg/conky/cal.rb 2 1038}
 
 #-------------------------------------------------------------------------------
 # Distro
@@ -91,8 +91,8 @@ ${font Audiowide:size=30}${color1}cyber${color2}linux${font Liberation Mono:size
 ${color2}${font Liberation Mono:size=20}SYSTEM${font Liberation Mono:size=12}
 ${voffset 4}${color lightgrey} Name: $color${nodename}
 ${color lightgrey} Kernel: $color${kernel}
-${voffset 8}${color lightgrey} WiFi:      $color${exec /etc/xdg/conky/bin/radio.rb wifi}
-${color lightgrey} Bluetooth: $color${exec ~/bin/conky_radio.rb bluetooth}
+${voffset 8}${color lightgrey} WiFi:      $color${exec /etc/xdg/conky/radio.rb wifi}
+${color lightgrey} Bluetooth: $color${exec /etc/xdg/conky/radio.rb bluetooth}
 ${voffset 8}${color lightgrey} SSID:      $color ${wireless_essid}
 ${color lightgrey} Private IP:$color ${addrs wlo1}
 ${color lightgrey} Public  IP:$color ${curl ipinfo.io/ip 5}

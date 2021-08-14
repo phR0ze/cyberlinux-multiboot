@@ -273,10 +273,12 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Server not booting after install reboot, it takes another reboot to work
+* Build netbook deployment
 * Current GTK themes is missing Thunar icons
 
 # Later <a name="later"/></a>
+* Write clu to replace conky scripts, cal.rb, date.rb and radio.rb
+* Migrate to nvim
 * what does the lxsession config mean https://github.com/lxde/lxsession/blob/master/data/desktop.conf.example
 * Add cyberlinux-repo README about packages and warnings and how to configure
 * lxterminal window is off screen slightly be default, openbox?
@@ -285,9 +287,7 @@ any additional terms or conditions.
 * Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
-* Powerline font doesn't look right in bash
-* Switch over to neovim
-* Default lite openbox menu looks good
+* Powerline font doesn't look right in bash - solved set fontconfig
 * Fixed keyboard repeat rate with lxsession config
 * XDG home directories need adjusting
 * Install yay from blackarch into the shell deployment
