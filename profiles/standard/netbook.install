@@ -26,6 +26,17 @@ post_install()
 
   # Openbox menu changes for netbook
   mv -f /etc/skel/.config/openbox/menu.xml_sideload_netbook /etc/skel/.config/openbox/menu.xml
+
+  # Lock screen configuration
+  # ---------------------------------------------------------------------------
+  # Autostart for cinnamon-screensaver
+  # /etc/skel/.config/autostart/cinnamon-screensaver.desktop
+
+  # Default background to use for cinnamon-screensaver
+  # /etc/dconf/db/local.d/04-cinnamon
+
+  # Hack to fix broken cinnamon-screensaver dependencies
+  # /usr/share/glib-2.0/schemas/org.cinnamon.desktop.screensaver.gschema.xml
 }
 
 post_upgrade() {

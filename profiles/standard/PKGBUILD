@@ -415,8 +415,7 @@ package_cyberlinux-standard-netbook()
     'abiword'                   # Lite weight word processor
     'android-tools'             # Android platform tools
     'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
-    # android
-    # cinnamon-screensaver
+    'cinnamon-screensaver'      # Screensaver for the Cinnamon desktop, repo cyberlinux
     # conky
     # gimp
     # gnumeric
