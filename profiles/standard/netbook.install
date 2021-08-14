@@ -60,7 +60,8 @@ post_install()
   # /etc/skel/.config/autostart/cinnamon-screensaver.desktop
 
   # Default background to use for cinnamon-screensaver
-  # /etc/dconf/db/local.d/04-cinnamon
+  # /usr/share/wallpaper/dreamfusion003_1280x1024.jpg
+  mv -f /etc/dconf/db/local.d/04-cinnamon_sideload_netbook /etc/dconf/db/local.d/04-cinnamon
 
   # Hack to fix broken cinnamon-screensaver dependencies
   # /usr/share/glib-2.0/schemas/org.cinnamon.desktop.screensaver.gschema.xml

@@ -23,7 +23,22 @@ post_install()
 {
   # General configuration
   # ---------------------------------------------------------------------------
-  echo ""
+
+  # Conky configuration
+  # ---------------------------------------------------------------------------
+
+  # Add conky theater conky settings and set it to active
+  # /etc/skel/.config/conky/theater
+  pushd /etc/skel/.config/conky
+  ln -sf theater active
+  popd
+
+  # Lock screen configuration
+  # ---------------------------------------------------------------------------
+
+  # Default background to use for cinnamon-screensaver
+  # /usr/share/wallpaper/dreamfusion003_1280x1024.jpg
+  mv -f /etc/dconf/db/local.d/04-cinnamon_sideload_theater /etc/dconf/db/local.d/04-cinnamon
 }
 
 post_upgrade() {
