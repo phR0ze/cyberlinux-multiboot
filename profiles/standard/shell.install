@@ -21,8 +21,11 @@
 
 post_install()
 {
-  # Fully customized .bashrc
-  #mv -f /etc/skel/.bashrc_sideload /etc/skel/.bashrc
+  # Configured git
+  # /etc/gitconfig
+
+  # Configured tmux
+  # /etc/skel/.tmux.conf
   echo ""
 }
 

@@ -16,7 +16,9 @@
       <item label="Screenshot" icon="/usr/share/icons/Paper/32x32/apps/applets-screenshooter.png"><action name="Execute"><execute>xfce4-screenshooter</execute></action></item>
     </menu>
     <menu id="Graphics" icon="/usr/share/icons/Paper/32x32/categories/applications-graphics.png" label="Graphics">
+      <item label="Gimp" icon="/usr/share/icons/Paper/32x32/apps/gimp.png"><action name="Execute"><execute>gimp</execute></action></item>
       <item label="Image Viewer" icon="/usr/share/icons/Paper/32x32/apps/gpicview.png"><action name="Execute"><execute>gpicview</execute></action></item>
+      <item label="LibreOffice Draw" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-draw.png"><action name="Execute"><execute>libreoffice --draw</execute></action></item>
       <item label="Nitrogen" icon="/usr/share/icons/hicolor/32x32/apps/nitrogen.png"><action name="Execute"><execute>nitrogen</execute></action></item>
       <item label="XnViewMP" icon="/opt/xnviewmp/xnview.png"><action name="Execute"><execute>xnviewmp</execute></action></item>
     </menu>
@@ -29,11 +31,21 @@
     </menu>
     <menu id="Network" icon="/usr/share/icons/Paper/32x32/categories/applications-internet.png" label="Network">
       <item label="Firefox" icon="/usr/share/icons/Paper/32x32/apps/firefox.png"><action name="Execute"><execute>firefox</execute></action></item>
+      <item label="Remmina" icon="/usr/share/icons/Paper/32x32/apps/remmina.png"><action name="Execute"><execute>remmina</execute></action></item>
+      <item label="Synergy" icon="/usr/share/icons/Paper/32x32/apps/synergy.png"><action name="Execute"><execute>synergy</execute></action></item>
       <item label="FileZilla" icon="/usr/share/icons/Paper/32x32/apps/filezilla.png"><action name="Execute"><execute>filezilla</execute></action></item>
+      <item label="WPA Gui" icon="/usr/share/icons/hicolor/32x32/apps/wpa_gui.png"><action name="Execute"><execute>sudo wpa_gui</execute></action></item>
     </menu>
     <menu id="Office" icon="/usr/share/icons/Paper/32x32/categories/applications-office.png" label="Office">
-      <item label="AbiWord" icon="/usr/share/icons/hicolor/32x32/apps/abiword.png"><action name="Execute"><execute>abiword</execute></action></item>
       <item label="Evince" icon="/usr/share/icons/Paper/32x32/apps/evince.png"><action name="Execute"><execute>evince</execute></action></item>
+      <item label="LibreOffice" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-startcenter.png"><action name="Execute"><execute>libreoffice</execute></action></item>
+      <item label="LibreOffice Base" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-base.png"><action name="Execute"><execute>libreoffice --base</execute></action></item>
+      <item label="LibreOffice Calc" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-calc.png"><action name="Execute"><execute>libreoffice --calc</execute></action></item>
+      <item label="LibreOffice Draw" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-draw.png"><action name="Execute"><execute>libreoffice --draw</execute></action></item>
+      <item label="LibreOffice Impress" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-impress.png"><action name="Execute"><execute>libreoffice --impress</execute></action></item>
+      <item label="LibreOffice Math" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-math.png"><action name="Execute"><execute>libreoffice --math</execute></action></item>
+      <item label="LibreOffice Writer" icon="/usr/share/icons/Paper/32x32/apps/libreoffice-writer.png"><action name="Execute"><execute>libreoffice --writer</execute></action></item>
+      <item label="PDFMod" icon="/usr/share/icons/Paper/32x32/apps/pdfmod.png"><action name="Execute"><execute>pdfmod</execute></action></item>
     </menu>
     <menu id="Settings" icon="/usr/share/icons/Paper/32x32/categories/applications-accessories.png" label="Settings">
       <menu id="Desktop/Login" icon="/usr/share/icons/Paper/32x32/apps/preferences-system-login.png" label="Desktop/Login">

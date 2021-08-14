@@ -37,7 +37,6 @@
     </menu>
     <menu id="Office" icon="/usr/share/icons/Paper/32x32/categories/applications-office.png" label="Office">
       <item label="Evince" icon="/usr/share/icons/Paper/32x32/apps/evince.png"><action name="Execute"><execute>evince</execute></action></item>
-      <item label="KeePass" icon="/usr/share/icons/hicolor/32x32/apps/keepass.png"><action name="Execute"><execute>keepass</execute></action></item>
     </menu>
     <menu id="Settings" icon="/usr/share/icons/Paper/32x32/categories/applications-accessories.png" label="Settings">
       <menu id="Desktop/Login" icon="/usr/share/icons/Paper/32x32/apps/preferences-system-login.png" label="Desktop/Login">

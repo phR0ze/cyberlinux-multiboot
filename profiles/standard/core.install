@@ -21,6 +21,14 @@
 
 post_install()
 {
+  # Runtime kernel variable overrides
+  # ---------------------------------------------------------------------------
+  # Set minimal amount of swapping without disabling it entirely
+  # Enable kernel IPv4 forwarding for containers
+  # Disable IPv6 forwarding
+  # Increase the number of user files to max
+  # /etc/sysctl.d/10-cyberlinux.conf
+
   # Customize terminal colors to use
   # /etc/skel/.dircolors
 

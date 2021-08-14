@@ -21,12 +21,26 @@
 
 post_install()
 {
-  # Pacman configuration
+  # Boot configuration
   # ---------------------------------------------------------------------------
-  # Change systemd-networkd-wait-online to only wait for a single NIC rather than
-  # block on waiting on all NICs to start that are not configured. This is critical
-  # for systems with multiple unconfigured physical or virtual NICs
-  # /etc/systemd/system/systemd-networkd-wait-oneline.service.d/override.conf
+  # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
+  # color theme for the virtual terminal that scrolls by during boot.
+  # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
+  mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
+
+  # Disable pc speaker
+  # /etc/modprobe.d/pcspkr.conf
+
+  # Tools configuration
+  # ---------------------------------------------------------------------------
+  # Default custom vim config without any plugins and only using built in colors
+  # /etc/skel/.vimrc
+
+  # Create neovim config
+  # /etc/skel/.config/nvim/init.vim
+
+  # Create a vim link for neovim
+  ln -sf /usr/bin/nvim /usr/bin/vim
 
   # Pacman configuration
   # ---------------------------------------------------------------------------
@@ -53,23 +67,13 @@ post_install()
   # Added the blackarch repo mirrorlist entry
   mv -f /etc/pacman.conf_sideload /etc/pacman.conf
 
-  # Boot configuration
+  # Network configuration
   # ---------------------------------------------------------------------------
-  # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
-  # color theme for the virtual terminal that scrolls by during boot.
-  # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
-  mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
+  # Change systemd-networkd-wait-online to only wait for a single NIC rather than
+  # block on waiting on all NICs to start that are not configured. This is critical
+  # for systems with multiple unconfigured physical or virtual NICs
+  # /etc/systemd/system/systemd-networkd-wait-oneline.service.d/override.conf
 
-  # Tools configuration
-  # ---------------------------------------------------------------------------
-  # Default custom vim config without any plugins and only using built in colors
-  # /etc/skel/.vimrc
-
-  # Create a vim link for neovim
-  ln -sf /usr/bin/nvim /usr/bin/vim
-
-  # SSH configuration
-  # ---------------------------------------------------------------------------
   # SSH login banner for cyberlinux
   mv -f /etc/motd_sideload /etc/motd
 

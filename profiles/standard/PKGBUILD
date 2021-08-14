@@ -357,10 +357,12 @@ package_cyberlinux-standard-lite()
     'filezilla'                 # Network/Transfer
     'openvpn'                   # An easy-to-use, robust and highly configurable VPN (Virtual Private Network)
     'vopono'                    # Run applications through VPN connections in network namespaces, repo: cyberlinux
+    'openvpn-update-systemd-resolved' # OpenVPN systemd-resolved updater, repo: cyberlinux
 
     # Office
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
     'leafpad'                   # Office/Notepad - Simple notepad knock off
+    'keepass'                   # Password manager written in .net
 
     # Media-codecs
     'gst-libav'                 # GStreamer libav Plugin
@@ -394,13 +396,17 @@ package_cyberlinux-standard-server()
   depends=(
     "cyberlinux-standard-lite>=${pkgver}"
 
+    # Utils
     'docker'                    # Pack, ship and run any application as a lightweight container
+    'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
+
+    # Media
     'handbrake'                 # Video encoding tool for mp4/mkv
     'handbrake-cli'             # Video encoding tool for mp4/mkv
-    'keepass'                   # Password manager written in .net
     'mkvtoolnix-gui'            # Set of tools to create, edit and inspect MKV files
+
+    # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
-    'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
     'tiny-media-manager'        # Cross platform media manager, repo: cyberlinux
   )
   pkg server
@@ -412,21 +418,26 @@ package_cyberlinux-standard-netbook()
   depends=(
     "cyberlinux-standard-lite>=${pkgver}"
 
-    'abiword'                   # Lite weight word processor
+    # Utils
     'android-tools'             # Android platform tools
     'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
     'cinnamon-screensaver'      # Screensaver for the Cinnamon desktop, repo cyberlinux
     'conky'                     # Lightweight system monitor for X
-    # gimp
-    # gnumeric
-    # keepass
-    # pdfmod
-    # synergy
-    # libreoffice
-    # veracrypt
-    # wpa-supplicant
-
     'light'                     # Control laptop backlights both screen and keyboard
+
+    # Media
+    'gimp'                      # Excellent image editor
+
+    # Office
+    'hunspell-en_US'            # US dictionaries for spell checking
+    'libreoffice-fresh'         # Libreoffice with new features and enhancments
+    'pdfmod'                    # Simple PDF editor
+
+    # Network
+    'remmina'                   # Nice remoting UI for RDP and other protocols
+    'synergy'                   # Share a single mouse and keyboard between multiple computers
+    'wpa_gui'                   # A Qt frontend to wpa_supplicant, repo: cyberlinux
+    'wpa_supplicant'            # A utility providing key negotiation for WPA wireless networks
   )
   pkg server
 }
