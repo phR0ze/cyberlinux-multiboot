@@ -85,7 +85,7 @@ package_cyberlinux-standard-base()
 {
   pkgdesc="Minimal bash system - a building block for lite deployments"
   depends=(
-    "cyberlinux-standard-core=${pkgver}"
+    "cyberlinux-standard-core>=${pkgver}"
 
     'base'                      # Requireed for all Arch Packages, provides: pacman, makepkg, repo-add, useradd ...
     'gnutls'                    # required by systemd-resolved to work
@@ -117,7 +117,7 @@ package_cyberlinux-standard-shell()
 {
   pkgdesc="Full bash system - a building block for heavy deployments"
   depends=(
-    "cyberlinux-standard-base=${pkgver}"
+    "cyberlinux-standard-base>=${pkgver}"
 
     # system tools
     'cdrtools'                  # isoinfo, mkisofs
@@ -217,7 +217,7 @@ package_cyberlinux-standard-lite()
 {
   pkgdesc="Lite x11 system - a building block specialized x11 deployments"
   depends=(
-    "cyberlinux-standard-shell=${pkgver}"
+    "cyberlinux-standard-shell>=${pkgver}"
 
     # xorg
     'xf86-input-libinput'       # x.org generic input driver, group: xorg-drivers
@@ -390,7 +390,7 @@ package_cyberlinux-standard-server()
 {
   pkgdesc="Server x11 system - build on the lite deployment adding server apps"
   depends=(
-    "cyberlinux-standard-lite=${pkgver}"
+    "cyberlinux-standard-lite>=${pkgver}"
 
     'docker'                    # Pack, ship and run any application as a lightweight container
     'handbrake'                 # Video encoding tool for mp4/mkv
