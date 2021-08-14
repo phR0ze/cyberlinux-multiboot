@@ -168,7 +168,6 @@ build_multiboot()
       echo -e "}" >> "${BOOT_CFG_PATH}"
     fi
   done
-  exit
 
   echo -e "${yellow}:: Creating BIOS boot files...${none}"
   docker_cp "${BUILDER}:/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
