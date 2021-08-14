@@ -414,7 +414,7 @@ umount_chroot_dirs()
         umount -f ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
     fi
 
-    for x in "sys proc dev/pts dev"; do
+    for x in "dev/pts dev proc sys"; do
         umount -f ${rootmnt}/${x} &>/dev/null
     done
 }
