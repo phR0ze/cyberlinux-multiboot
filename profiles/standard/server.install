@@ -37,8 +37,8 @@ post_install()
   # NFS configuration
   # ---------------------------------------------------------------------------
   # NFS shares using default 192.168.1.0/24 network
-  # /etc/exports
   # /srv/nfs/{Cache,Documents,Educational,Family,Install,Movies,Pictures,TV}
+  mv -f /etc/exports_sideload /etc/exports
 
   # Enable the NFS service
   systemctl enable nfs-server.service
