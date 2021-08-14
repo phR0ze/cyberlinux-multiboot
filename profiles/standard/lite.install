@@ -27,6 +27,8 @@ post_install()
   # /usr/share/wallpaper
 
   # Added missing icons to the hicolor fallback icons
+  # convert -background none -density 384 -resize x32 /usr/share/icons/hicolor/scalable/apps/audacious.svg \
+  #   /usr/share/icons/hicolor/32x32/apps/audacious.png
   # /usr/share/icons/hicolor
 
   # Added some useful fonts and their licences

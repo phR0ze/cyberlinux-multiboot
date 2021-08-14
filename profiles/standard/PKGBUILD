@@ -356,7 +356,7 @@ package_cyberlinux-standard-lite()
     'firefox'                   # Standalone web browser from mozilla.org 
     'filezilla'                 # Network/Transfer
     'openvpn'                   # An easy-to-use, robust and highly configurable VPN (Virtual Private Network)
-    'vopono'                    # Run applications through VPN connections in network namespaces
+    'vopono'                    # Run applications through VPN connections in network namespaces, repo: cyberlinux
 
     # Office
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
@@ -390,7 +390,7 @@ package_cyberlinux-standard-lite()
 
 package_cyberlinux-standard-server()
 {
-  pkgdesc="Server x11 system - build on the lite deployment adding server apps"
+  pkgdesc="Server x11 system - built on the lite deployment adding server apps"
   depends=(
     "cyberlinux-standard-lite>=${pkgver}"
 
@@ -408,11 +408,13 @@ package_cyberlinux-standard-server()
 
 package_cyberlinux-standard-netbook()
 {
-  pkgdesc="Netbook x11 system - build on the lite deployment adding productivity apps"
+  pkgdesc="Netbook x11 system - built on the lite deployment adding productivity apps"
   depends=(
     "cyberlinux-standard-lite>=${pkgver}"
 
-    # abiword
+    'abiword'                   # Lite weight word processor
+    'android-tools'             # Android platform tools
+    'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
     # android
     # cinnamon-screensaver
     # conky
