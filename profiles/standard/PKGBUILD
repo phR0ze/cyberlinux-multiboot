@@ -355,6 +355,8 @@ package_cyberlinux-standard-lite()
     # Network
     'firefox'                   # Standalone web browser from mozilla.org 
     'filezilla'                 # Network/Transfer
+    'openvpn'                   # An easy-to-use, robust and highly configurable VPN (Virtual Private Network)
+    'vopono'                    # Run applications through VPN connections in network namespaces
 
     # Office
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
