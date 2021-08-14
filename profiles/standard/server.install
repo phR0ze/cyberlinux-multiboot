@@ -21,10 +21,26 @@
 
 post_install()
 {
+  # Openbox configuration
+  # ---------------------------------------------------------------------------
+
+  # Adding openbox server menu
+  mv -f /etc/skel/.config/openbox/menu.xml_sideload_server /etc/skel/.config/openbox/menu.xml
+
+  # Docker configuration
+  # ---------------------------------------------------------------------------
+  # /etc/docker/daemon.json
+
+  # Enable the Docker service
+  systemctl enable docker.service
+
+  # NFS configuration
+  # ---------------------------------------------------------------------------
   # NFS shares using default 192.168.1.0/24 network
   # /etc/exports
+  # /srv/nfs/{Cache,Documents,Educational,Family,Install,Movies,Pictures,TV}
 
-  # Enable the NFS server
+  # Enable the NFS service
   systemctl enable nfs-server.service
 }
 
