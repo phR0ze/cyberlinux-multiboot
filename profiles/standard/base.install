@@ -77,6 +77,9 @@ post_install()
   # SSH login banner for cyberlinux
   mv -f /etc/motd_sideload /etc/motd
 
+  # Disable SSH root login
+  mv -f /etc/ssh/sshd_config_sideload /etc/ssh/sshd_config
+
   # Enable ssh service to start at boot
   systemctl enable sshd
 }
