@@ -361,7 +361,8 @@ package_cyberlinux-standard-lite()
 
     # Office
     'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
-    'leafpad'                   # Office/Notepad - Simple notepad knock off
+    'geany'                     # Fast and lightweight IDE
+    'geany-plugins'             # Plugins for Geany
     'keepass'                   # Password manager written in .net
 
     # Media-codecs

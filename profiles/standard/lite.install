@@ -67,6 +67,7 @@ post_install()
   # ---------------------------------------------------------------------------
 
   # Set file chooser to
+  # show-hidden=true
   # sort-directories-first=true
   # /etc/dconf/db/local.d/02-gtk
 

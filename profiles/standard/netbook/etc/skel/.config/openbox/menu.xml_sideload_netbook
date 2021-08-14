@@ -12,7 +12,7 @@
       <item label="Bulk Rename" icon="/usr/share/icons/Paper/32x32/apps/Thunar.png"><action name="Execute"><execute>Thunar --bulk-rename</execute></action></item>
       <item label="FileLight" icon="/usr/share/icons/hicolor/32x32/apps/filelight.png"><action name="Execute"><execute>filelight</execute></action></item>
       <item label="Galculator" icon="/usr/share/icons/Paper/32x32/apps/galculator.png"><action name="Execute"><execute>galculator</execute></action></item>
-      <item label="Leafpad" icon="/usr/share/icons/hicolor/32x32/apps/leafpad.png"><action name="Execute"><execute>leafpad</execute></action></item>
+      <item label="Geany" icon="/usr/share/icons/Paper/32x32/apps/geany.png"><action name="Execute"><execute>geany</execute></action></item>
       <item label="Screenshot" icon="/usr/share/icons/Paper/32x32/apps/applets-screenshooter.png"><action name="Execute"><execute>xfce4-screenshooter</execute></action></item>
     </menu>
     <menu id="Graphics" icon="/usr/share/icons/Paper/32x32/categories/applications-graphics.png" label="Graphics">
