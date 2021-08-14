@@ -39,7 +39,7 @@
 # -----------------------------------------------------------------------------
 
 # Configure color codes using tput which requires terminfo set
-# I've overridden bold using the mkinitcpio-vt-colors pakage to cyberlinux blue
+# I've overridden bold using the mkinitcpio-vt-colors package to cyberlinux blue
 # which is why simply using blue here will give use cyberlinux blue.
 export TERMINFO=/usr/lib/terminfo
 _bold=$(tput bold)
@@ -293,7 +293,7 @@ partition_and_mount_disk()
 
     # mkfs.ext4 option descriptions
     # -F            force creation even if some params don't make sense
-    # -L            set volume name to 'cyberlinux' used by bootloaders
+    # -L            set volume name to well known label used by bootloaders
     # -m 0          don't reserve blocks for super user daemons
     # -q            run in quiet mode for scripts
     echo -en ":: Formatting ${cyber}${PART_ROOT}${none} as ${cyber}ext4${none}..."
@@ -542,7 +542,7 @@ config_system()
 
     # Filter groups down to just those that exist
     local groups=""
-    for x in ${ALL_GROUPS//,/ }; do
+    for x in ${GROUPS//,/ }; do
         if [ $(grep -E "^$x:" ${rootmnt}/etc/group) ]; then
             [ $groups ] && groups="${groups},${x}" || groups="${x}"
         fi
@@ -814,6 +814,12 @@ run_hook()
         case "${x}" in
             'kernel'=*) KERNEL=${x//kernel=} ;;
             'layers'=*) LAYERS=${x//layers=} ;;
+            'params'=*) KERNEL_PARAMS=${x//params=} ;;
+            'distro'=*) DISTRO=${x//distro=} ;;
+            'timezone'=*) TIMEZONE=${x//timezone=} ;;
+            'groups'=*) GROUPS=${x//groups=} ;;
+            'dns1'=*) DNS1=${x//dns1=} ;;
+            'dns2'=*) DNS2=${x//dns2=} ;;
             'autologin'=*) AUTOLOGIN=${x//autologin=} ;;
             *) continue ;;
         esac
@@ -825,16 +831,17 @@ run_hook()
     READ_MNT=/mnt/read
     WRITE_MNT=/mnt/write
 
-    # Variables
-    MOUNTS=""
-    ROOT_LABEL="CYBERLINUX"
-    INSTALLER_LABEL="CYBERLINUX_INSTALLER"
-    DISTRO="cyberlinux"
-    TIMEZONE="America/Boise"
-    ALL_GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
-    KERNEL_PARAMS="rd.systemd.show_status=auto rd.udev.log_priority=3 ipv6.disable=1"
-    DNS1="1.1.1.1"
-    DNS2="1.0.0.1"
+    # Default distro and set labels based on it
+    [ -z ${DISTRO+x} ] && DISTRO="cyberlinux"
+    ROOT_LABEL="$(echo ${DISTRO} | tr a-z A-Z)"
+    INSTALLER_LABEL="${ROOT_LABEL}_INSTALLER"
+
+    # Configure various options
+    [ -z ${DNS1+x} ] && DNS1="1.1.1.1"
+    [ -z ${DNS2+x} ] && DNS2="1.0.0.1"
+    [ -z ${TIMEZONE+x} ] && TIMEZONE="America/Boise"
+    [ -z ${GROUPS+x} ] && GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
+    [ -z ${KERNEL_PARAMS+x} ] && KERNEL_PARAMS="rd.systemd.show_status=auto rd.udev.log_priority=3 ipv6.disable=1"
 
     # Detect an EFI supported system
     [ -d /sys/firmware/efi ] && EFI=1 || EFI=0

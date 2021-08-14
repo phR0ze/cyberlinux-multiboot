@@ -21,37 +21,43 @@
     "name": "netbook",
     "entry": "Install standard netbook          // Lite + office apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook",
+    "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp"
   },
   {
     "name": "theater",
     "entry": "Install standard theater          // Lite + media apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/theater"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/theater",
+    "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "server",
     "entry": "Install standard server           // Lite + server apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/server"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/server",
+    "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "lite",
     "entry": "Install standard lite             // Shell + lite desktop env",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite",
+    "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "shell",
     "entry": "Install standard shell            // Full bash system",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell"
+    "layers": "standard/core,standard/base,standard/shell",
+    "groups": "lp,wheel,network,storage,users"
   },
   {
     "name": "base",
     "entry": "Install standard base             // Minimal bash system",
     "kernel": "linux",
-    "layers": "standard/core,standard/base"
+    "layers": "standard/core,standard/base",
+    "groups": "lp,wheel,network,storage,users"
   },
   {
     "name": "core",

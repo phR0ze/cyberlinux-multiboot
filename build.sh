@@ -147,16 +147,28 @@ build_multiboot()
 
     # Don't include entries that don't have a kernel called out as they are intended
     # as a non-installable option for building on only
-    if [ ${KERNEL} != "null" ]; then
+    if [ ${DE_KERNEL} != "null" ]; then
       echo -e ":: Creating ${cyan}${layer}${none} boot entry in ${cyan}${ISO_DIR}/boot/grub/boot.cfg${none}"
-      echo -e "menuentry --class=deployment ${ENTRY} {" >> "${BOOT_CFG_PATH}"
+      echo -e "menuentry --class=deployment ${DE_ENTRY} {" >> "${BOOT_CFG_PATH}"
       echo -e "  cat /boot/grub/themes/cyberlinux/splash" >> "${BOOT_CFG_PATH}"
       #echo -e "  sleep 5" >> "${BOOT_CFG_PATH}"
-      echo -e "  linux	/boot/vmlinuz-${KERNEL} kernel=${KERNEL} layers=${LAYERS_STR}" >> "${BOOT_CFG_PATH}"
+
+      # Add in optionals which will be default on the installer side if missing
+      echo -en "  linux	/boot/vmlinuz-${DE_KERNEL} kernel=${DE_KERNEL} layers=${DE_LAYERS}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_PARAMS} != "null" ] && echo -en " params=${DE_PARAMS}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_DISTRO} != "null" ] && echo -en " distro=${DE_DISTRO}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_TIMEZONE} != "null" ] && echo -en " timezone=${DE_TIMEZONE}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_GROUPS} != "null" ] && echo -en " groups=${DE_GROUPS}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_DNS1} != "null" ] && echo -en " dns1=${DE_DNS1}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_DNS2} != "null" ] && echo -en " dns2=${DE_DNS2}" >> "${BOOT_CFG_PATH}"
+      [ ${DE_AUTOLOGIN} != "null" ] && echo -en " autologin=${DE_AUTOLOGIN}" >> "${BOOT_CFG_PATH}"
+      echo -en "\n" >> "${BOOT_CFG_PATH}"
+
       echo -e "  initrd	/boot/intel-ucode.img /boot/installer" >> "${BOOT_CFG_PATH}"
       echo -e "}" >> "${BOOT_CFG_PATH}"
     fi
   done
+  exit
 
   echo -e "${yellow}:: Creating BIOS boot files...${none}"
   docker_cp "${BUILDER}:/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
@@ -223,7 +235,7 @@ build_deployments()
   # Iterate over the deployments
   for target in ${1//,/ }; do
     read_deployment $target
-    echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${LAYERS_STR}${none}"
+    echo -e ":: Building deployment ${cyan}${target}${none} composed of ${cyan}${DE_LAYERS}${none}"
 
     # Build each of the deployment's layers
     for i in "${!LAYERS[@]}"; do
@@ -408,12 +420,19 @@ check()
 read_deployment()
 {
   local layer=$(echo "$PROFILE_JSON" | jq '.[] | select(.name=="'$1'")')
-  ENTRY=$(echo "$layer" | jq '.entry')
-  KERNEL=$(echo "$layer" | jq -r '.kernel')
-  LAYERS_STR=$(echo "$layer" | jq -r '.layers')
+  DE_ENTRY=$(echo "$layer" | jq '.entry')
+  DE_KERNEL=$(echo "$layer" | jq -r '.kernel')
+  DE_PARAMS=$(echo "$layer" | jq -r '.params')
+  DE_DISTRO=$(echo "$layer" | jq -r '.distro')
+  DE_TIMEZONE=$(echo "$layer" | jq -r '.timezone')
+  DE_GROUPS=$(echo "$layer" | jq -r '.groups')
+  DE_DNS1=$(echo "$layer" | jq -r '.dns1')
+  DE_DNS2=$(echo "$layer" | jq -r '.dns2')
+  DE_AUTOLOGIN=$(echo "$layer" | jq -r '.autologin')
   
   # Create an array out of the layers as well
-  LAYERS=($(echo ${LAYERS_STR} | tr ',' ' '))
+  DE_LAYERS=$(echo "$layer" | jq -r '.layers')
+  LAYERS=($(echo ${DE_LAYERS} | tr ',' ' '))
 }
 
 # Read the given profile from disk
