@@ -23,6 +23,12 @@ post_install()
 {
   # Pacman configuration
   # ---------------------------------------------------------------------------
+  # Change systemd-networkd-wait-online to only wait for a single NIC rather than
+  # block on waiting on all NICs to start that are not configured
+  # /etc/systemd/system/systemd-networkd-wait-oneline.service.d/override.conf
+
+  # Pacman configuration
+  # ---------------------------------------------------------------------------
   # Custom arch linux mirrorlist location
   # rankmirrors -n 10 profiles/standard/base/etc/pacman.d/archlinux.mirrorlist
   # /etc/pacman.d/archlinux.mirrorlist

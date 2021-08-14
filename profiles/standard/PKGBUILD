@@ -29,7 +29,7 @@ pkgname=(
     "${pkgbase}-shell"
     "${pkgbase}-lite"
     "${pkgbase}-server"
-#    "${pkgbase}-netbook"
+    "${pkgbase}-netbook"
 #    "${pkgbase}-theater"
 #    "${pkgbase}-desktop"
 #    "${pkgbase}-laptop"
@@ -400,6 +400,30 @@ package_cyberlinux-standard-server()
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
     'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
     'tiny-media-manager'        # Cross platform media manager, repo: cyberlinux
+  )
+  pkg server
+}
+
+package_cyberlinux-standard-server()
+{
+  pkgdesc="Netbook x11 system - build on the lite deployment adding productivity apps"
+  depends=(
+    "cyberlinux-standard-lite>=${pkgver}"
+
+    # abiword
+    # android
+    # cinnamon-screensaver
+    # conky
+    # gimp
+    # gnumeric
+    # keepass
+    # pdfmod
+    # synergy
+    # libreoffice
+    # veracrypt
+    # wpa-supplicant
+
+    'light'                     # Control laptop backlights both screen and keyboard
   )
   pkg server
 }
