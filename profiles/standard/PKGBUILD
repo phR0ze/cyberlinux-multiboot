@@ -404,7 +404,7 @@ package_cyberlinux-standard-server()
   pkg server
 }
 
-package_cyberlinux-standard-server()
+package_cyberlinux-standard-netbook()
 {
   pkgdesc="Netbook x11 system - build on the lite deployment adding productivity apps"
   depends=(
