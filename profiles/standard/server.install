@@ -21,9 +21,11 @@
 
 post_install()
 {
-  # Fully customized .bashrc
-  #mv -f /etc/skel/.bashrc_sideload /etc/skel/.bashrc
-  echo ""
+  # NFS shares using default 192.168.1.0/24 network
+  # /etc/exports
+
+  # Enable the NFS server
+  systemctl enable nfs-server.service
 }
 
 post_upgrade() {
