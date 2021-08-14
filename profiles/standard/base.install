@@ -21,12 +21,36 @@
 
 post_install()
 {
-  # Boot configuration
+  # System configuration
   # ---------------------------------------------------------------------------
+
   # Added the 'vt-colors' hook to the end of the HOOKS list which provides a cusotimzed
   # color theme for the virtual terminal that scrolls by during boot.
   # see http://github.com/phR0ze/cyberlinux-aur/mkinitcpio-vt-colors
   mv -f /etc/mkinitcpio.conf_sideload /etc/mkinitcpio.conf
+
+  # Restrict journald to 100M of space instead of the default 10% of disk
+  # SystemMaxuse=100M
+  mv -f /etc/systemd/journald.conf_sideload /etc/systemd/journald.conf
+
+  # Configure user login controls
+  # KillUserProcesses=yes
+  # HandlepowerKey=poweroff
+  # HandleSuspendKey=suspend
+  # HandleHibernateKey=hibernate
+  # HandleLidSwitch=suspend
+  # HandleLidSwitchDocked=ignore
+  mv -f /etc/systemd/logind.conf_sideload /etc/systemd/logind.conf
+
+  # Configure NTP servers and fallback servers
+  # NTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
+  # FallbackNTP=0.pool.ntp.org 1.pool.ntp.org 0.fr.pool.ntp.org
+  mv -f /etc/systemd/timesyncd.conf_sideload /etc/systemd/timesyncd.conf
+
+  # Configure DNS to use CloudFlare by default and fallback on Google
+  # DNS=1.1.1.1 1.0.0.1
+  # FallbackDNS=8.8.8.8 8.8.4.4
+  mv -f /etc/systemd/resolved.conf_sideload /etc/systemd/resolved.conf
 
   # Disable pc speaker
   # /etc/modprobe.d/pcspkr.conf
@@ -80,8 +104,13 @@ post_install()
   # Disable SSH root login
   mv -f /etc/ssh/sshd_config_sideload /etc/ssh/sshd_config
 
-  # Enable ssh service to start at boot
-  systemctl enable sshd
+  # Enable core services
+  # ---------------------------------------------------------------------------
+  systemctl enable systemd-networkd.service
+  systemctl enable systemd-networkd-wait-online.service
+  systemctl enable systemd-resolved.service
+  systemctl enable systemd-timesyncd.service
+  systemctl enable sshd.service
 }
 
 post_upgrade() {

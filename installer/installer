@@ -586,27 +586,6 @@ config_system()
     echo -en ":: Populating the pacman keyring..."
     chroot ${rootmnt} pacman-key --populate archlinux blackarch &>/dev/null
     check_status
-
-    # Enable core services for the system
-    #---------------------------------------------------------------------------
-    echo -e "\n:: Enabling core services for the system..."
-    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
-
-    echo -en ":: Enabling ${cyber}systemd-networkd${none}..."
-    chroot ${rootmnt} systemctl enable systemd-networkd &>/dev/null
-    check_status
-
-    echo -en ":: Enabling ${cyber}systemd-networkd-wait-online${none}..."
-    chroot ${rootmnt} systemctl enable systemd-networkd-wait-online &>/dev/null
-    check_status
-
-    echo -en ":: Enabling ${cyber}systemd-resolved${none}..."
-    chroot ${rootmnt} systemctl enable systemd-resolved &>/dev/null
-    check_status
-
-    echo -en ":: Enabling ${cyber}systemd-timesyncd${none}..."
-    chroot ${rootmnt} systemctl enable systemd-timesyncd &>/dev/null
-    check_status
 }
 
 # Create a new system mount then overlay layers as specified
