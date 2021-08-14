@@ -24,7 +24,8 @@ post_install()
   # Pacman configuration
   # ---------------------------------------------------------------------------
   # Change systemd-networkd-wait-online to only wait for a single NIC rather than
-  # block on waiting on all NICs to start that are not configured
+  # block on waiting on all NICs to start that are not configured. This is critical
+  # for systems with multiple unconfigured physical or virtual NICs
   # /etc/systemd/system/systemd-networkd-wait-oneline.service.d/override.conf
 
   # Pacman configuration
