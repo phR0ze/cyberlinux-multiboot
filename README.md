@@ -273,6 +273,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Server not booting after install reboot, it takes another reboot to work
 * Current GTK themes is missing Thunar icons
 
 # Later <a name="later"/></a>

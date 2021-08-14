@@ -304,6 +304,7 @@ partition_and_mount_disk()
     echo -en ":: Mounting ${cyber}${PART_ROOT}${none} as ${cyber}${rootmnt}${none}..."
     mount -o noatime ${PART_ROOT} ${rootmnt} &>/dev/null
     check_status
+    MOUNTS="${rootmnt} ${MOUNTS}"
 
     # UEFI: boot partition needs to be mounted over the root at /boot to capture the Arch Linus
     # standard boot file install e.g. kernel and initramfs. We keep them on the same partition
@@ -314,6 +315,7 @@ partition_and_mount_disk()
         mkdir -p ${rootmnt}/boot
         mount ${PART_BOOT} ${rootmnt}/boot &>/dev/null
         check_status
+        MOUNTS="${rootmnt}/boot ${MOUNTS}"
     fi
 }
 
@@ -419,6 +421,8 @@ umount_chroot_dirs()
 
 umount_all()
 {
+    swapoff ${PART_SWAP} &>/dev/null
+
     for x in ${MOUNTS}; do
         echo -en ":: Unmounting ${x}..."
         umount -f ${x} &>/dev/null
