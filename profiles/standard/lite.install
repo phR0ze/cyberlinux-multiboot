@@ -63,6 +63,13 @@ post_install()
   # Added openbox lite menu
   mv -f /etc/skel/.config/openbox/menu.xml_sideload_lite /etc/skel/.config/openbox/menu.xml
 
+  # GTK configuration
+  # ---------------------------------------------------------------------------
+
+  # Set file chooser to
+  # sort-directories-first=true
+  # /etc/dconf/db/local.d/02-gtk
+
   # LXDM configuration
   # ---------------------------------------------------------------------------
   # - enable numlock on boot
