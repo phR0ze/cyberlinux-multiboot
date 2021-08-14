@@ -411,11 +411,11 @@ umount_chroot_dirs()
 {
     # First umount the efivars mount point
     if [ "x${EFI}" == "x1" ]; then
-        umount -f ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
+        umount -lf ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
     fi
 
     for x in "dev/pts dev proc sys"; do
-        umount -f ${rootmnt}/${x} &>/dev/null
+        umount -lf ${rootmnt}/${x} &>/dev/null
     done
 }
 
@@ -425,7 +425,7 @@ umount_all()
 
     for x in ${MOUNTS}; do
         echo -en ":: Unmounting ${x}..."
-        umount -f ${x} &>/dev/null
+        umount -lf ${x} &>/dev/null
         check_status
     done
 }
@@ -602,7 +602,13 @@ installer()
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
     echo -e "${cyber}:: *${padleft}${msg}${padright}*${none}"
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '*'{1..107}")${none}"
-    echo -e "   ${PARAMS}"
+
+    # Print out the given params
+    echo -e ":: Incoming deployment options"
+    for x in ${PARAMS}; do
+        [[ "$x" != BOOT_IMAGE=* ]] && echo -e "   ${x}"
+    done
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     # Mount install source device
     #---------------------------------------------------------------------------
@@ -708,7 +714,7 @@ installer()
     local rw_ram_size="75%"
     local mode=$([ "$LAYER" == 'live' ] && echo 'Starting' || echo 'Installing')
     echo -e "\n${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
-    echo -e ":: ${mode} ${cyber}${LAYER}${none} multi layer deployment"
+    echo -e ":: ${mode} ${cyber}${LAYER}${none} multi-layer deployment"
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     echo -e ":: Options being used for installation"
