@@ -41,6 +41,17 @@ post_install()
   # Configure default user directories
   mv -f /etc/xdg/user-dirs.defaults_sideload /etc/xdg/user-dirs.defaults
 
+  # X11 configuration
+  # ---------------------------------------------------------------------------
+
+  # Disable blanking of screen 
+  # /etc/X11/xorg.conf.d/20-dpms.conf
+
+  # Configure mouns, keyboard and touchpads to be controlled by libinput
+  # Set mouse acceleration to 0.6
+  # Set touchpad to tapping, accleration 1, naturalscrolling on
+  # /etc/X11/xorg.conf.d/40-input.conf
+
   # Openbox configuration
   # ---------------------------------------------------------------------------
   # Added custom cyberlinux openbox theme
