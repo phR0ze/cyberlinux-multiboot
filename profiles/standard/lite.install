@@ -39,6 +39,7 @@ post_install()
   # /usr/lib/systemd/user/conky.service
 
   # Configure default user directories
+  # Documents, Downloads, Music, Pictures, Projects, bin
   mv -f /etc/xdg/user-dirs.defaults_sideload /etc/xdg/user-dirs.defaults
 
   # X11 configuration
