@@ -409,11 +409,11 @@ umount_chroot_dirs()
 {
     # First umount the efivars mount point
     if [ "x${EFI}" == "x1" ]; then
-        umount -lf ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
+        umount -f ${rootmnt}/sys/firmware/efi/efivars &>/dev/null
     fi
 
     for x in "dev/pts dev proc sys"; do
-        umount -lf ${rootmnt}/${x} &>/dev/null
+        umount -f ${rootmnt}/${x} &>/dev/null
     done
 }
 
@@ -423,7 +423,7 @@ umount_all()
 
     for x in ${MOUNTS}; do
         echo -en ":: Unmounting ${x}..."
-        umount -lf ${x} &>/dev/null
+        umount -f ${x} &>/dev/null
         check_status
     done
 }
@@ -581,6 +581,27 @@ config_system()
 
     echo -en ":: Populating the pacman keyring..."
     chroot ${rootmnt} pacman-key --populate archlinux blackarch &>/dev/null
+    check_status
+
+    # Enable core services for the system
+    #---------------------------------------------------------------------------
+    echo -e "\n:: Enabling core services for the system..."
+    echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
+
+    echo -en ":: Enabling ${cyber}systemd-networkd${none}..."
+    chroot ${rootmnt} systemctl enable systemd-networkd &>/dev/null
+    check_status
+
+    echo -en ":: Enabling ${cyber}systemd-networkd-wait-online${none}..."
+    chroot ${rootmnt} systemctl enable systemd-networkd-wait-online &>/dev/null
+    check_status
+
+    echo -en ":: Enabling ${cyber}systemd-resolved${none}..."
+    chroot ${rootmnt} systemctl enable systemd-resolved &>/dev/null
+    check_status
+
+    echo -en ":: Enabling ${cyber}systemd-timesyncd${none}..."
+    chroot ${rootmnt} systemctl enable systemd-timesyncd &>/dev/null
     check_status
 }
 

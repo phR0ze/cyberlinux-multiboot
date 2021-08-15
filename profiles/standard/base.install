@@ -106,11 +106,11 @@ post_install()
 
   # Enable core services
   # ---------------------------------------------------------------------------
-  systemctl enable systemd-networkd.service
-  systemctl enable systemd-networkd-wait-online.service
-  systemctl enable systemd-resolved.service
-  systemctl enable systemd-timesyncd.service
-  systemctl enable sshd.service
+  systemctl enable -f systemd-networkd.service
+  systemctl enable -f systemd-networkd-wait-online.service
+  systemctl enable -f systemd-resolved.service
+  systemctl enable -f systemd-timesyncd.service
+  systemctl enable -f sshd.service
 }
 
 post_upgrade() {

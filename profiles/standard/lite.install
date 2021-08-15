@@ -87,7 +87,7 @@ post_install()
 
   # Enable lxdm service to start at boot
   # -f will automatically disable the old display manager
-  systemctl enable lxdm -f
+  systemctl enable -f lxdm
 }
 
 post_upgrade() {
