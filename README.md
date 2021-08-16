@@ -15,8 +15,13 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 
 ### Quick links
 * [Usage](#usage)
-  * [Install prerequisites](#install-prerequisites)
+  * [Prerequisites](#prerequisites)
+    * [Passwordless sudo](#passwordless-sudo)
+    * [Docker to build](#docker-to-build)
+    * [VirtualBox for testing](#virtualbox-for-testing)
   * [Create multiboot USB](#create-multiboot-usb)
+* [Hardware](#hardware)
+  * [Dell XPS 13 9310](#dell-xps-13-9310)
 * [Installer](#installer)
   * [initramfs installer](#initramfs-installer)
     * [create initramfs installer](#create-initramfs-installer)
@@ -47,36 +52,102 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 
 # Usage <a name="usage"/></a>
 
-## Install prerequisites <a name="install-prerequisites"/></a>
-1. Install dependencies for building boot images:
-   ```bash
-   $ sudo pacman -S arch-install-scripts grub mtools libisoburn pacman-contrib mkinitcpio sudo \
-     util-linux pacutils jq sed docker tar
-   ```
-2. Install dependencies for testing boot images:
-   ```bash
-   $ sudo pacman -S virtualbox virtualbox-host-modules-arch
-   $ sudo usermod -aG vboxusers USER
-   $ sudo reboot
-   ```
-3. Ensure user has passwordless sudo access  
-   a. Edit `/etc/sudoers`  
-   b. Append for your user: `YOUR_USER ALL=(ALL) NOPASSWD: ALL`  
+## Prerequisites <a name="prerequisites"/></a>
+The mutli-boot ISO is build entirely in a docker container with data cached on the local host for
+quicker rebuilds. This makes it possible to build on systmes with a minimal amount of dependencies.
+All that is required is ***passwordless sudo*** and ***docker***.
 
-4. Clone the profiles repo at the same level as the multiboot repo:
+### Passwordless sudo <a name="passwordless-sudo"/></a>
+Building a filesystem and working with docker requires root access and since were automating this
+programatically the user that executes the build needs passwordless sudo.
+
+```bash
+sudo bash -c "echo 'YOUR_USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
+```
+
+### Docker to build <a name="docker-to-build"/></a>
+
+***Arch Linux***  
+1. Install docker:
+   ```bash
+   $ sudo pacman -S docker
+   $ sudo usermod -aG docker USER
+   ```
+2. Enable and start docker:
+   ```bash
+   $ sudo systemctl enable docker
+   $ sudo systemctl start docker
+   ```
+
+***Ubuntu Install***  
+1. Install docker:
+   ```bash
+   $ sudo apt update
+   $ sudo apt install docker
+   $ sudo usermod -aG docker USER
+   ```
+2. Enable and start docker:
+   ```bash
+   ```
+
+### VirtualBox for testing <a name="virtualbox-for-testing"/></a>
+
+***Arch Linux***  
+```bash
+$ sudo pacman -S virtualbox virtualbox-host-modules-arch
+$ sudo usermod -aG vboxusers USER
+$ sudo reboot
+```
+
+***Ubuntu Install***  
+```bash
+$ sudo apt update
+$ sudo apt install virtualbox
+$ sudo usermod -aG vboxusers USER
+$ sudo reboot
+```
+
+# Hardware <a name="hardware"/></a>
+
+## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
+
+References:
+* 
+
+### Ubuntu install <a name="ubuntu-install"/></a>
+* kernel: 5.6.0-1039-oem
+* CPU: 11th Gen Intel Core i7-1185G7@3.00GHz
+* RAM: 16GB
+* SSD: NVMe 256GB
+
+### UEFI Secure Boot <a name="uefi-secure-boot"/></a>
+You need to disable UEFI secure boot in order to install cyberlinux as only the Ubuntu factory
+firmware that comes with the machine will be cryptographically signed for the machine.
+
+1. Hit `F2` while booting
+2. In the left hand navigation select `Boot Configuration`
+3. On the right side scroll down to `Secure Boot`
+4. Flip the toggle on `Enable Secure Boot` to `OFF`
+5. Select `Yes` on the Secure Boot disable confirmation
+6. Select `APPLY CHANGES` at the bottom
+7. Select `OK` on the Apply Settings Confirmation page
+8. Select `EXIT` bottom right of the screen to reboot
+
+## Create multiboot USB <a name="create-multiboot-usb"/></a>
+We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
+systems to make this as universal as possible.
+
+1. Clone the profiles repo at the same level as the multiboot repo:
    ```bash
    $ cd ~/Projects
    $ git clone git@github.com:phR0ze/cyberlinux-multiboot
    $ git clone git@github.com:phR0ze/cyberlinux-profiles
    ```
 
-## Create multiboot USB <a name="create-multiboot-usb"/></a>
-We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
-systems to make this as universal as possible.
-
-```bash
-$ ./build.sh
-```
+2. Execute the build:
+   ```bash
+   $ ./build.sh
+   ```
 
 # Installer <a name="installer"/></a>
 **Goals:** *boot speed*, *simplicity*, and *automation*
