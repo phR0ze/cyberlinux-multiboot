@@ -219,7 +219,7 @@ mount_layers()
     MOUNTS="${layered_mnt} ${MOUNTS}"
 }
 
-# Partition disk and mount for install at ${NEWROOT}
+# Partition disk and mount for install at ${NEW_ROOT}
 partition_and_mount_disk()
 {
     echo -e "\n:: Partitioning and mounting destination disk ${cyber}${INSTALL_DEV}${none}..."
@@ -300,9 +300,9 @@ partition_and_mount_disk()
     mkfs.ext4 -F -m 0 -q -L ${ROOT_LABEL} ${PART_ROOT} &>/dev/null
     check_status
 
-    # Mount root as NEWROOT and disable access time writes (speeds things up)
-    echo -en ":: Mounting ${cyber}${PART_ROOT}${none} as ${cyber}${NEWROOT}${none}..."
-    mount -o noatime ${PART_ROOT} ${NEWROOT} &>/dev/null
+    # Mount root as NEW_ROOT and disable access time writes (speeds things up)
+    echo -en ":: Mounting ${cyber}${PART_ROOT}${none} as ${cyber}${NEW_ROOT}${none}..."
+    mount -o noatime ${PART_ROOT} ${NEW_ROOT} &>/dev/null
     check_status
 
     # UEFI: boot partition needs to be mounted over the root at /boot to capture the Arch Linus
@@ -310,9 +310,9 @@ partition_and_mount_disk()
     # as the EFI/BOOT/BOOTX64.efi as EFI can't mount a ext4 filesystem.
     # BIOS: boot partition shouldn't be formatted or mounted in this case as its just for the MBR
     if [ "x${EFI}" == "x1" ]; then
-        echo -en ":: Mounting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}${NEWROOT}/boot${none}..."
-        mkdir -p ${NEWROOT}/boot
-        mount ${PART_BOOT} ${NEWROOT}/boot &>/dev/null
+        echo -en ":: Mounting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}${NEW_ROOT}/boot${none}..."
+        mkdir -p ${NEW_ROOT}/boot
+        mount ${PART_BOOT} ${NEW_ROOT}/boot &>/dev/null
         check_status
     fi
 }
@@ -328,16 +328,16 @@ install_bootloader()
     # entry. The bootloader will use the configuration stored at $esp/loader/loader.conf to find the
     # default configuration to load.
     if [ "x${EFI}" == "x1" ]; then
-        local esp_mnt="${NEWROOT}/boot"
-        local boot_conf="${NEWROOT}/boot/loader/entries/arch.conf"
+        local esp_mnt="${NEW_ROOT}/boot"
+        local boot_conf="${NEW_ROOT}/boot/loader/entries/arch.conf"
 
         echo -en ":: Installing systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
-        chroot ${NEWROOT} bootctl install &>/dev/null
+        chroot ${NEW_ROOT} bootctl install &>/dev/null
         check_status
 
         echo -en ":: Setting default boot entry to be ${cyber}${boot_conf}/${none}..."
-        mkdir -p ${NEWROOT}/boot/loader &>/dev/null
-        echo "default arch.conf" > ${NEWROOT}/boot/loader/loader.conf
+        mkdir -p ${NEW_ROOT}/boot/loader &>/dev/null
+        echo "default arch.conf" > ${NEW_ROOT}/boot/loader/loader.conf
         check_status
 
         echo -en ":: Configuring systemd-boot at ${cyber}${boot_conf}${none}..."
@@ -353,12 +353,12 @@ install_bootloader()
     # with any customizations from ${grub_dir}/grub.cfg
     else
         local platform=i386-pc
-        local grub_dir="${NEWROOT}/boot/grub"
+        local grub_dir="${NEW_ROOT}/boot/grub"
         local shared_modules="ext2 all_video font gfxterm"
 
         echo -en ":: Installing GRUB BIOS bootloader to ${cyber}${INSTALL_DEV}${none}..."
         mkdir -p ${grub_dir} &>/dev/null
-        chroot ${NEWROOT} grub-install --target=${platform} \
+        chroot ${NEW_ROOT} grub-install --target=${platform} \
             --modules="part_msdos ${shared_modules}" ${INSTALL_DEV} &>/dev/null
         check_status
 
@@ -381,8 +381,8 @@ install_bootloader()
     # Hit the "/dev must be mounted" issue reported below and employing the same fix
     # https://wiki.archlinux.org/title/mkinitcpio#%22/dev_must_be_mounted%22_when_it_already_is
     echo -en ":: Generating new initramfs specific to this machine..."
-    [ ! -e ${NEWROOT}/dev/fd ] && ln -s /proc/self/fd /dev/
-    chroot ${NEWROOT} mkinitcpio -p $KERNEL &>/dev/null
+    [ ! -e ${NEW_ROOT}/dev/fd ] && ln -s /proc/self/fd /dev/
+    chroot ${NEW_ROOT} mkinitcpio -p $KERNEL &>/dev/null
     check_status
 }
 
@@ -390,18 +390,18 @@ mount_chroot_dirs()
 {
     # Ensure mount point directories exist
     for x in "sys proc dev dev/pts"; do
-        mkdir -p ${NEWROOT}/${x} &>/dev/null
+        mkdir -p ${NEW_ROOT}/${x} &>/dev/null
     done
 
     # Mount current system in newchroot
-    mount -t sysfs sysfs ${NEWROOT}/sys &>/dev/null
-    mount -t proc /proc ${NEWROOT}/proc &>/dev/null
-    mount -o bind /dev ${NEWROOT}/dev &>/dev/null
-    mount -t devpts /dev/pts ${NEWROOT}/dev/pts &>/dev/null
+    mount -t sysfs sysfs ${NEW_ROOT}/sys &>/dev/null
+    mount -t proc /proc ${NEW_ROOT}/proc &>/dev/null
+    mount -o bind /dev ${NEW_ROOT}/dev &>/dev/null
+    mount -t devpts /dev/pts ${NEW_ROOT}/dev/pts &>/dev/null
 
     # Required for UEFI systems to get access to the efivars during bootloader install
     if [ "x${EFI}" == "x1" ]; then
-        mount -o bind /sys/firmware/efi/efivars ${NEWROOT}/sys/firmware/efi/efivars &>/dev/null
+        mount -o bind /sys/firmware/efi/efivars ${NEW_ROOT}/sys/firmware/efi/efivars &>/dev/null
     fi
 }
 
@@ -409,11 +409,11 @@ umount_chroot_dirs()
 {
     # First umount the efivars mount point
     if [ "x${EFI}" == "x1" ]; then
-        umount -f ${NEWROOT}/sys/firmware/efi/efivars &>/dev/null
+        umount -f ${NEW_ROOT}/sys/firmware/efi/efivars &>/dev/null
     fi
 
     for x in "dev/pts dev proc sys"; do
-        umount -f ${NEWROOT}/${x} &>/dev/null
+        umount -f ${NEW_ROOT}/${x} &>/dev/null
     done
 }
 
@@ -438,11 +438,11 @@ config_system()
 
     # Note the new pam rules require SHA512 encryption else first login will require reset
     echo -en ":: Setting root user password${pass}..."
-    chroot ${NEWROOT} /bin/bash -c "echo 'root:${PASS}' | chpasswd -c SHA512"
+    chroot ${NEW_ROOT} /bin/bash -c "echo 'root:${PASS}' | chpasswd -c SHA512"
     check_status
 
     echo -en ":: Copying skel configs to root user..."
-    chroot ${NEWROOT} /bin/bash -c "shopt -s dotglob; cp -r /etc/skel/* /root"
+    chroot ${NEW_ROOT} /bin/bash -c "shopt -s dotglob; cp -r /etc/skel/* /root"
     check_status
 
     # Configure general system settings
@@ -453,16 +453,16 @@ config_system()
     # Configure localization to US by default
     LOCALE="en_US"
     echo -en ":: Setting localization to ${cyber}${LOCALE}${none}..."
-    echo "LANG=${LOCALE}.UTF-8" > ${NEWROOT}/etc/locale.conf
-    echo "LANGUAGE=${LOCALE}.UTF-8" >> ${NEWROOT}/etc/locale.conf
-    echo "${LOCALE}.UTF-8 UTF-8" > ${NEWROOT}/etc/locale.gen &>/dev/null
-    chroot ${NEWROOT} locale-gen &>/dev/null
+    echo "LANG=${LOCALE}.UTF-8" > ${NEW_ROOT}/etc/locale.conf
+    echo "LANGUAGE=${LOCALE}.UTF-8" >> ${NEW_ROOT}/etc/locale.conf
+    echo "${LOCALE}.UTF-8 UTF-8" > ${NEW_ROOT}/etc/locale.gen &>/dev/null
+    chroot ${NEW_ROOT} locale-gen &>/dev/null
     check_status
 
     # Configure timezone
     echo -en ":: Setting timezone to ${cyber}${TIMEZONE}${none}..."
-    chroot ${NEWROOT} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
-    chroot ${NEWROOT} hwclock --systohc &>/dev/null
+    chroot ${NEW_ROOT} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
+    chroot ${NEW_ROOT} hwclock --systohc &>/dev/null
     check_status
 
     # Configure networking
@@ -471,21 +471,21 @@ config_system()
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     echo -en ":: Setting hostname to ${cyber}${HOSTNAME}${none}..."
-    echo $HOSTNAME > "${NEWROOT}/etc/hostname"
+    echo $HOSTNAME > "${NEW_ROOT}/etc/hostname"
     check_status
 
     # Configure wifi before user is created to pick up autostart
     if [ "x$ENABLE_WIFI" == "x1" ]; then
         echo -en ":: Enabling Wifi..."
-        chroot ${NEWROOT} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
-        chroot ${NEWROOT} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
+        chroot ${NEW_ROOT} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
+        chroot ${NEW_ROOT} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
         check_status
     fi
 
     # Configure static LAN
     netmatch='en* eth*'
     if [ "x${NETIP}" != "xDHCP" ]; then
-        local conf="${NEWROOT}/etc/systemd/network/10-static.network"
+        local conf="${NEW_ROOT}/etc/systemd/network/10-static.network"
         echo -en ":: Configuring ${cyber}static${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nAddress=${NETIP}\nGateway=${gateway}\nDNS=${DNS1}\nDNS=${DNS2}" >> $conf
@@ -494,7 +494,7 @@ config_system()
 
     # Configure DHCP LAN
     else
-        local conf="${NEWROOT}/etc/systemd/network/20-dhcp.network"
+        local conf="${NEW_ROOT}/etc/systemd/network/20-dhcp.network"
         echo -en ":: Configuring ${cyber}dhcp${none} networking..."
         echo -e "[Match]\nName=${netmatch}\n" > $conf
         echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
@@ -503,7 +503,7 @@ config_system()
     fi
 
     # Configure wireless
-    local conf="${NEWROOT}/etc/systemd/network/30-wireless.network"
+    local conf="${NEW_ROOT}/etc/systemd/network/30-wireless.network"
     echo -en ":: Configuring ${cyber}dhcp wireless${none} networking..."
     echo -e "[Match]\nName=wl*\n" > $conf
     echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
@@ -513,18 +513,18 @@ config_system()
     if [ $PROXY ] && [ "x$PROXY" != "xNone" ]; then
         echo -en ":: Set PROXY to ${cyber}${PROXY}${none}..."
         if [ $NO_PROXY ] && [ "x$NO_PROXY" != "xNone" ]; then
-            chroot ${NEWROOT} /opt/$DISTRO/bin/setproxy enable $PROXY $NO_PROXY &>/dev/null
+            chroot ${NEW_ROOT} /opt/$DISTRO/bin/setproxy enable $PROXY $NO_PROXY &>/dev/null
         else
-            chroot ${NEWROOT} /opt/$DISTRO/bin/setproxy enable $PROXY &>/dev/null
+            chroot ${NEW_ROOT} /opt/$DISTRO/bin/setproxy enable $PROXY &>/dev/null
         fi
         check_status
     fi
 
     # Configure root access for sshd if default deployment
-    if [ -e "${NEWROOT}/etc/ssh/sshd_config" ]; then
+    if [ -e "${NEW_ROOT}/etc/ssh/sshd_config" ]; then
         if [ "x$DEFAULT" == "xy" ]; then
             echo -en ":: Enable sshd root access for ${cyber}auto default${none} deployment..."
-            sed -i -e 's/^PermitRootLogin.*/PermitRootLogin yes/' "${NEWROOT}/etc/ssh/sshd_config"
+            sed -i -e 's/^PermitRootLogin.*/PermitRootLogin yes/' "${NEW_ROOT}/etc/ssh/sshd_config"
             check_status
         fi
     fi
@@ -535,35 +535,35 @@ config_system()
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     echo -en ":: Creating user group ${cyber}${USER}${none}..."
-    chroot ${NEWROOT} groupadd ${USER}
+    chroot ${NEW_ROOT} groupadd ${USER}
     check_status
 
     # Filter groups down to just those that exist
     local groups=""
     for x in ${GROUPS//,/ }; do
-        if [ $(grep -E "^$x:" ${NEWROOT}/etc/group) ]; then
+        if [ $(grep -E "^$x:" ${NEW_ROOT}/etc/group) ]; then
             [ $groups ] && groups="${groups},${x}" || groups="${x}"
         fi
     done
 
     echo -en ":: Creating user ${cyber}${USER}${none} with groups ${cyber}${groups}${none}..."
-    chroot ${NEWROOT} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
+    chroot ${NEW_ROOT} useradd -m -g ${USER} -G ${groups} -s /bin/bash ${USER}
     check_status
 
     # Note the new pam rules require SHA512 encryption else first login will require reset
     echo -en ":: Setting user password${pass}..."
-    chroot ${NEWROOT} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd -c SHA512"
+    chroot ${NEW_ROOT} /bin/bash -c "echo '${USER}:${PASS}' | chpasswd -c SHA512"
     check_status
 
     echo -en ":: Adding new user to sudoers list..."
-    chroot ${NEWROOT} /bin/bash -c "echo '${USER} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
+    chroot ${NEW_ROOT} /bin/bash -c "echo '${USER} ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
     check_status
 
     # Autologin if lxdm exists and parameter is set
-    if [ -e "${NEWROOT}/etc/lxdm/lxdm.conf" ]; then
+    if [ -e "${NEW_ROOT}/etc/lxdm/lxdm.conf" ]; then
         if [ "x$AUTOLOGIN" == "x1" ]; then
             echo -en ":: Enable autologin for LXDM..."
-            sed -i -e "s/^#\s*autologin=.*/autologin=${USER}/" "${NEWROOT}/etc/lxdm/lxdm.conf"
+            sed -i -e "s/^#\s*autologin=.*/autologin=${USER}/" "${NEW_ROOT}/etc/lxdm/lxdm.conf"
             check_status
         fi
     fi
@@ -574,11 +574,11 @@ config_system()
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     echo -en ":: Initializing the pacman keyring..."
-    chroot ${NEWROOT} pacman-key --init &>/dev/null
+    chroot ${NEW_ROOT} pacman-key --init &>/dev/null
     check_status
 
     echo -en ":: Populating the pacman keyring..."
-    chroot ${NEWROOT} pacman-key --populate archlinux blackarch &>/dev/null
+    chroot ${NEW_ROOT} pacman-key --populate archlinux blackarch &>/dev/null
     check_status
 }
 
@@ -704,7 +704,7 @@ installer()
 
     # Mount live system / Install to local disk
     #---------------------------------------------------------------------------
-    NEWROOT="${1}"                          # /new_root passed in as 1st param
+    NEW_ROOT="${1}"     # /new_root passed in as 1st param from initcpio porcess
     local rw_ram_size="75%"
     local mode=$([ "$LAYER" == 'live' ] && echo 'Starting' || echo 'Installing')
     echo -e "\n${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
@@ -733,16 +733,16 @@ installer()
         check_status
         mount_layers "${ISO_MNT}/images" ${WRITE_MNT}/root ${WRITE_MNT}/temp
 
-        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${cyber}${NEWROOT}${none}..."
-        mount -o bind ${WRITE_MNT}/root ${NEWROOT} &>/dev/null
+        echo -en ":: Re-bind ${WRITE_MNT}/root to new root location ${cyber}${NEW_ROOT}${none}..."
+        mount -o bind ${WRITE_MNT}/root ${NEW_ROOT} &>/dev/null
         check_status
     else
         # Copies /mnt/read/root/ to /new_root
         mount_layers "${ISO_MNT}/images" ${READ_MNT}/root ${READ_MNT}/temp
         partition_and_mount_disk
-        echo -e "\n:: Copying deployment overlay ${cyber}${READ_MNT}/root${none} to destination ${cyber}${NEWROOT}${none}"
+        echo -e "\n:: Copying deployment overlay ${cyber}${READ_MNT}/root${none} to destination ${cyber}${NEW_ROOT}${none}"
         echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
-        rsync -ah --info=progress2 ${READ_MNT}/root/* ${NEWROOT}
+        rsync -ah --info=progress2 ${READ_MNT}/root/* ${NEW_ROOT}
     fi
 
     # Install bootloader and initramfs
@@ -756,8 +756,8 @@ installer()
     #---------------------------------------------------------------------------
     config_system
     echo -en ":: Set unique machine-id..."
-    chroot ${NEWROOT} dbus-uuidgen --ensure=/etc/machine-id &>/dev/null
-    chroot ${NEWROOT} ln -sf /etc/machine-id /var/lib/dbus/machine-id &>/dev/null
+    chroot ${NEW_ROOT} dbus-uuidgen --ensure=/etc/machine-id &>/dev/null
+    chroot ${NEW_ROOT} ln -sf /etc/machine-id /var/lib/dbus/machine-id &>/dev/null
     check_status
 
     # Unmount chroot dirs for either
@@ -784,9 +784,10 @@ installer()
 
         # Eject media
         eject &>/dev/null
-
-        # System will now boot into the new root
     fi
+
+    # this function will return control back to the initramfs process which
+    # will boot into the /new_root we just constructed
 }
 
 #----------------------------------------------------------------------------------------
@@ -844,7 +845,10 @@ run_hook()
     [ -z ${AUTOLOGIN+x} ] && AUTOLOGIN=0
     [ "$LAYER" == "live" ] && AUTOLOGIN=1
 
-    # Custom handler defined above.
+    # Set the function name to use to mount the root filesystem.
+    # In this case we are subverting the normal boot process to first mount all desired squashfs
+    # layers, then to install and configure this new root filesystem and ultimately return from that
+    # function and allow the initramfs to continue the process boot into the /new_root
     mount_handler="installer"
 }
 

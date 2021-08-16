@@ -344,6 +344,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Install base boot to newroot has no networking
 * Build netbook deployment
 * Current GTK themes is missing Thunar icons
 
