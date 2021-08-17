@@ -28,6 +28,13 @@ post_install()
   # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
   # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
 
+  # Xorg configuration
+  # ---------------------------------------------------------------------------
+
+  # Display resolution for theater deployment
+  # /etc/X11/xorg.conf.d/10-display.conf
+
+  # Theater sized icons for desktop
   # Conky configuration
   # ---------------------------------------------------------------------------
 
