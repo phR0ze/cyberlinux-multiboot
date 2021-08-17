@@ -783,7 +783,7 @@ installer()
         fi
 
         # Eject media
-        eject &>/dev/null
+        eject --force &>/dev/null
     fi
 
     # this function will return control back to the initramfs process which
