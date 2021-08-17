@@ -120,6 +120,19 @@ $ sudo usermod -aG vboxusers USER
 $ sudo reboot
 ```
 
+## Create multiboot USB <a name="create-multiboot-usb"/></a>
+
+1. Clone the multiboot repo:
+   ```bash
+   $ cd ~/Projects
+   $ git clone git@github.com:phR0ze/cyberlinux-multiboot
+   ```
+
+2. Execute the build:
+   ```bash
+   $ ./build.sh -a
+   ```
+
 # Hardware <a name="hardware"/></a>
 
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
@@ -145,22 +158,6 @@ firmware that comes with the machine will be cryptographically signed for the ma
 6. Select `APPLY CHANGES` at the bottom
 7. Select `OK` on the Apply Settings Confirmation page
 8. Select `EXIT` bottom right of the screen to reboot
-
-## Create multiboot USB <a name="create-multiboot-usb"/></a>
-We need to create a bootable USB that will work on older BIOS systems as well as the newer UEFI
-systems to make this as universal as possible.
-
-1. Clone the profiles repo at the same level as the multiboot repo:
-   ```bash
-   $ cd ~/Projects
-   $ git clone git@github.com:phR0ze/cyberlinux-multiboot
-   $ git clone git@github.com:phR0ze/cyberlinux-profiles
-   ```
-
-2. Execute the build:
-   ```bash
-   $ ./build.sh
-   ```
 
 # Installer <a name="installer"/></a>
 **Goals:** *boot speed*, *simplicity*, and *automation*

@@ -117,9 +117,12 @@ EOF
   check
 
   # Ensure the builder repo exists locally
-  pushd "${REPO_DIR}"
+  echo -e "${yellow}:: Build the repo locally...${none}"
+  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  cd "${CONT_REPO_DIR}"
   repo-add builder.db.tar.gz *.pkg.tar.*
-  popd
+EOF
+  check
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
