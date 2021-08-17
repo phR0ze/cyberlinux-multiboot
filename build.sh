@@ -231,6 +231,11 @@ build_installer()
 # Build deployments
 build_deployments() 
 {
+  if [ -z ${DEPLOYMENTS+x} ]; then
+    echo -e "${yellow}:: Reading in all deployments${none}..."
+    read_deployments
+  fi
+
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
   docker_exec ${BUILDER} "mkdir -p ${CONT_ROOT_DIR}"
@@ -432,14 +437,20 @@ read_deployment()
   DE_DNS1=$(echo "$layer" | jq -r '.dns1')
   DE_DNS2=$(echo "$layer" | jq -r '.dns2')
   DE_AUTOLOGIN=$(echo "$layer" | jq -r '.autologin')
+  DE_LAYERS=$(echo "$layer" | jq -r '.layers')
   
   # Create an array out of the layers as well
-  DE_LAYERS=$(echo "$layer" | jq -r '.layers')
-  LAYERS=($(echo ${DE_LAYERS} | tr ',' ' '))
+  LAYERS=($(echo "$layer" | jq -r '.layers | split(",") | join(" ")'))
+}
+
+# Retrieve all deployments in reverse sequential order
+read_deployments()
+{
+  DEPLOYMENTS=$(echo "$PROFILE_JSON" | jq -r '[reverse[].name] | join(",")')
 }
 
 # Read the given profile from disk
-# $1 is expected to be the name of the profile
+# $1 is expected to be the name of the profile 
 read_profile()
 {
   PROFILE_DIR="${PROFILES_DIR}/${1}"
@@ -612,7 +623,6 @@ fi
 
 # Needs to happen before the multiboot as deployments will be boot entries
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
-  [ -z ${DEPLOYMENTS+x} ] && echo -e "Error: ${red}missing deployment value${none}" && exit
   build_deployments $DEPLOYMENTS
 fi
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
