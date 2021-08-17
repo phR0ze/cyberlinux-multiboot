@@ -24,6 +24,10 @@ post_install()
   # General configuration
   # ---------------------------------------------------------------------------
 
+  # Theater sized icons for desktop
+  # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
+  # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
+
   # Conky configuration
   # ---------------------------------------------------------------------------
 

@@ -449,26 +449,10 @@ package_cyberlinux-standard-theater()
   depends=(
     "cyberlinux-standard-netbook>=${pkgver}"
 
-    # Utils
-    'android-tools'             # Android platform tools
-    'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
-    'cinnamon-screensaver'      # Screensaver for the Cinnamon desktop, repo cyberlinux
-    'conky'                     # Lightweight system monitor for X
-    'light'                     # Control laptop backlights both screen and keyboard
+    # Desktop
+    'idesk'                     # Lightweight desktop icons for X
 
     # Media
-    'gimp'                      # Excellent image editor
-
-    # Office
-    'hunspell-en_US'            # US dictionaries for spell checking
-    'libreoffice-fresh'         # Libreoffice with new features and enhancments
-    'pdfmod'                    # Simple PDF editor
-
-    # Network
-    'remmina'                   # Nice remoting UI for RDP and other protocols
-    'synergy'                   # Share a single mouse and keyboard between multiple computers
-    'wpa_gui'                   # A Qt frontend to wpa_supplicant, repo: cyberlinux
-    'wpa_supplicant'            # A utility providing key negotiation for WPA wireless networks
   )
   pkg server
 }
