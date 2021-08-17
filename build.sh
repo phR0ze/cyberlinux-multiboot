@@ -231,11 +231,6 @@ build_installer()
 # Build deployments
 build_deployments() 
 {
-  if [ -z ${DEPLOYMENTS+x} ]; then
-    echo -e "${yellow}:: Reading in all deployments${none}..."
-    read_deployments
-  fi
-
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
   docker_exec ${BUILDER} "mkdir -p ${CONT_ROOT_DIR}"
@@ -446,6 +441,7 @@ read_deployment()
 # Retrieve all deployments in reverse sequential order
 read_deployments()
 {
+  echo -e "${yellow}:: Reading in all deployments${none}..."
   DEPLOYMENTS=$(echo "$PROFILE_JSON" | jq -r '[reverse[].name] | join(",")')
 }
 
@@ -623,6 +619,7 @@ fi
 
 # Needs to happen before the multiboot as deployments will be boot entries
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
+  [ -z ${DEPLOYMENTS+x} ] && read_deployments
   build_deployments $DEPLOYMENTS
 fi
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
