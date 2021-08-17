@@ -80,7 +80,8 @@ build_env()
   # Build the builder image
   if ! docker_image_exists ${BUILDER}; then
     docker_kill ${BUILDER}
-    docker build --force-rm -t ${BUILDER} "${PROJECT_DIR}"
+    # Use the same user id as the one runing the docker build so we don't get mixed up
+    docker build --build-arg USER_ID=$(id -u) --force-rm -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
   # Build repo packages

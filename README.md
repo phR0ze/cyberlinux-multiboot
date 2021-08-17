@@ -17,6 +17,7 @@ strictly the responsiblity of the user and not the developer/creator of ***cyber
 * [Usage](#usage)
   * [Prerequisites](#prerequisites)
     * [Passwordless sudo](#passwordless-sudo)
+    * [jq for configs](#jq-for-configs)
     * [Docker to build](#docker-to-build)
     * [VirtualBox for testing](#virtualbox-for-testing)
   * [Create multiboot USB](#create-multiboot-usb)
@@ -64,6 +65,18 @@ programatically the user that executes the build needs passwordless sudo.
 ```bash
 sudo bash -c "echo 'YOUR_USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
 ```
+
+### jq for configs <a name="jq-for-configs"/></a>
+
+***Arch Linux***  
+```bash
+$ sudo pacman -S jq
+```
+
+***Ubuntu Install***  
+```bash
+$ sudo apt install jq
+ ```
 
 ### Docker to build <a name="docker-to-build"/></a>
 

@@ -1,5 +1,9 @@
 FROM archlinux:base-devel
 
+# Build argument to use the executing user id as the build user in the container
+# so that there isn't any confusion on ownership
+ARG USER_ID
+
 # Copy in basic configuration
 COPY profiles/standard/core/etc/skel/.bash_profile_sideload /root/.bash_profile
 COPY profiles/standard/core/etc/skel/.bashrc_sideload /root/.bashrc
@@ -55,8 +59,8 @@ RUN echo ">> Install blackarch repo" && \
   # --no-log-init to avoid an unresolved Go archive/tar bug with docker \
   echo ">> Add the build user" && \
   cp /root/.bash_profile /root/.bashrc /root/.vimrc /etc/skel && \
-  groupadd -g 1000 build && \
-  useradd --no-log-init -r -m -u 1000 -g build build && \
+  groupadd -g $USER_ID build && \
+  useradd --no-log-init -r -m -u $USER_ID -g build build && \
   echo "build ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Update the pacman config after we installed the target packages so that future runs
