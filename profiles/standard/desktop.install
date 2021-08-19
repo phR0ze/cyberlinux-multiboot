@@ -21,53 +21,19 @@
 
 post_install()
 {
-  # General configuration
-  # ---------------------------------------------------------------------------
-
-  # Theater sized icons for desktop
-  # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
-  # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
-
-  # Lock screen configuration
-  # ---------------------------------------------------------------------------
-
-  # Default background to use for cinnamon-screensaver
-  # /usr/share/wallpaper/dreamfusion003_1280x1024.jpg
-  mv -f /etc/dconf/db/local.d/04-cinnamon_sideload_theater /etc/dconf/db/local.d/04-cinnamon
-
-  # idesk configuration
-  # ---------------------------------------------------------------------------
-
-  # Autostart idesk
-  # /etc/skel/.config/autostart/idesk.desktop
-
-  # idesk desktop icons
-  # /etc/skel/.idesktop/browser.lnk
-  # /etc/skel/.idesktop/kodi.lnk
-  # /etc/skel/.idesktop/pandora.lnk
-  # /etc/skel/.idesktop/reboot.lnk
-  # /etc/skel/.idesktop/shutdown.lnk
-  # /etc/skel/.idesktop/smplayer.lnk
-
-  # Xorg configuration
-  # ---------------------------------------------------------------------------
-
-  # Display resolution for theater deployment
-  # /etc/X11/xorg.conf.d/10-display.conf
-
   # Openbox configuration
   # ---------------------------------------------------------------------------
 
-  # Openbox menu changes for netbook
-  mv -f /etc/skel/.config/openbox/menu.xml_sideload_theater /etc/skel/.config/openbox/menu.xml
+  # Openbox menu changes for desktop
+  mv -f /etc/skel/.config/openbox/menu.xml_sideload_desktop /etc/skel/.config/openbox/menu.xml
 
   # Conky configuration
   # ---------------------------------------------------------------------------
 
   # Add conky theater conky settings and set it to active
-  # /etc/skel/.config/conky/theater
+  # /etc/skel/.config/conky/desktop
   pushd /etc/skel/.config/conky
-  ln -sf theater active
+  ln -sf desktop active
   popd
 }
 

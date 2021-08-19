@@ -455,7 +455,7 @@ config_system()
     echo -en ":: Setting localization to ${cyber}${LOCALE}${none}..."
     echo "LANG=${LOCALE}.UTF-8" > ${NEW_ROOT}/etc/locale.conf
     echo "LANGUAGE=${LOCALE}.UTF-8" >> ${NEW_ROOT}/etc/locale.conf
-    echo "${LOCALE}.UTF-8 UTF-8" > ${NEW_ROOT}/etc/locale.gen &>/dev/null
+    echo "${LOCALE}.UTF-8 UTF-8" > ${NEW_ROOT}/etc/locale.gen
     chroot ${NEW_ROOT} locale-gen &>/dev/null
     check_status
 

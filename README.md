@@ -10,8 +10,8 @@ multiboot ISO that supports booting on both BIOS and UEFI hardware systems as a 
 
 ### Disclaimer
 ***cyberlinux-boot*** comes with absolutely no guarantees or support of any kind. It is to be used at
-your own risk.  Any damages, issues, losses or problems caused by the use of ***cyberlinux-boot*** are
-strictly the responsiblity of the user and not the developer/creator of ***cyberlinux-boot***.
+your own risk.  Any damages, issues, losses or problems caused by the use of ***cyberlinux-multiboot***
+are strictly the responsiblity of the user and not the developer/creator of ***cyberlinux-multiboot***.
 
 ### Quick links
 * [Usage](#usage)
@@ -354,8 +354,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Install base boot to newroot has no networking
-* Build netbook deployment
+* screen lock app
 * Current GTK themes is missing Thunar icons
 
 # Later <a name="later"/></a>
@@ -369,25 +368,9 @@ any additional terms or conditions.
 * Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Replaced oblogout with arcologout a simple clean overlay logout app
 * Powerline font doesn't look right in bash - solved set fontconfig
 * Fixed keyboard repeat rate with lxsession config
-* XDG home directories need adjusting
 * Install yay from blackarch into the shell deployment
-* Configure lxdm splash image
-* Setup repo versioning
-* Build out the lite deployment
 * Set standard language defaults: `LANG = "en_US.UTF-8"`
-* Build out the shell deployment
-* Sort blackarch mirrors according to speed
-* Add pacman support to base
-* Enable sshd out of the box
-* Add skel configs to root user
-* Get basic networking working
 * Passwords need to be SHA512 to avoid being flagged by pam policies
-* Test UEFI install with custom steps
-* Test UEFI automated install
-* mkinitcpio-vt-colors is not taking affect on boot
-* Test BIOS install with custom steps
-* Containerize the builder
-* Compress layers into squashfs images 
-* Build bootable USB with custom menus

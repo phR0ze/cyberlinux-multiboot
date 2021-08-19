@@ -379,9 +379,9 @@
       <action name="Execute">
         <startupnotify>
           <enabled>true</enabled>
-          <name>oblogout</name>
+          <name>arcologout</name>
         </startupnotify>
-        <command>oblogout</command>
+        <command>arcologout</command>
       </action>
     </keybind>
 
@@ -837,9 +837,9 @@
     </application>
     -->
 
-    <!-- Position oblogout on second monitor -->
+    <!-- Position arcologout on second monitor -->
     <!-- 
-    <application name="oblogout">
+    <application name="arcologout">
       <position force="yes">
         <x>right</x>
         <y>0</y>
