@@ -9,9 +9,10 @@ recovery system for the <b>cyberlinux project</b> including documentation to bui
 multiboot ISO that supports booting on both BIOS and UEFI hardware systems as a USB stick or CD-ROM.
 
 ### Disclaimer
-***cyberlinux-boot*** comes with absolutely no guarantees or support of any kind. It is to be used at
-your own risk.  Any damages, issues, losses or problems caused by the use of ***cyberlinux-multiboot***
-are strictly the responsiblity of the user and not the developer/creator of ***cyberlinux-multiboot***.
+***cyberlinux-multiboot*** comes with absolutely no guarantees or support of any kind. It is to be
+used at your own risk.  Any damages, issues, losses or problems caused by the use of
+***cyberlinux-multiboot*** are strictly the responsiblity of the user and not the developer/creator
+of ***cyberlinux-multiboot***.
 
 ### Quick links
 * [Usage](#usage)

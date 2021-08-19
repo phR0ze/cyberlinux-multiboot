@@ -421,9 +421,11 @@ package_cyberlinux-standard-netbook()
     # Utils
     'android-tools'             # Android platform tools
     'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
-    'cinnamon-screensaver'      # Screensaver for the Cinnamon desktop, repo cyberlinux
+    # Replace with i3lock-color or BetterLockScreen
+    #'cinnamon-screensaver'      # Screensaver for the Cinnamon desktop, repo cyberlinux
     'conky'                     # Lightweight system monitor for X
     'light'                     # Control laptop backlights both screen and keyboard
+    #'picom'                     # X compositor fork of comptom
 
     # Media
     'gimp'                      # Excellent image editor
@@ -461,7 +463,7 @@ package_cyberlinux-standard-desktop()
   depends=(
     "cyberlinux-standard-netbook>=${pkgver}"
 
-    # guake
+    'guake'                     # Drop-down python based guake style terminal
     # media
     # plank
     # printing
@@ -474,7 +476,6 @@ package_cyberlinux-standard-desktop()
     'meld'                      # Develop/Diff Tool - Graphical diff tool cross platform
     'ripgrep'                   # A search tool combining the usability of ag with speed of grep, depof: vscode
     'visual-studio-code-bin'    # Editor for modern development, repo: CYBERLINUX
-
 
     # Graphics
     'inkscape'                  # Professional vector graphics editor

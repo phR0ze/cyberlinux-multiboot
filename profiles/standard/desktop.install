@@ -21,6 +21,12 @@
 
 post_install()
 {
+  # Autostart configuration
+  # ---------------------------------------------------------------------------
+  # Needed to call it guake-term instead of just guake or guake would automatically
+  # remove it if not set in the guake preferences
+  # /etc/skel/.config/autostart/guake-term.desktop
+
   # Openbox configuration
   # ---------------------------------------------------------------------------
 
