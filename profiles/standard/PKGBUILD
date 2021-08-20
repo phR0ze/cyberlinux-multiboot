@@ -32,7 +32,7 @@ pkgname=(
     "${pkgbase}-netbook"
     "${pkgbase}-theater"
     "${pkgbase}-desktop"
-#    "${pkgbase}-laptop"
+    "${pkgbase}-laptop"
 )
 pkgver=0
 pkgrel=1
@@ -201,8 +201,15 @@ package_cyberlinux-standard-shell()
     'ltrace'                    # Tracks runtime library calls in dynamically linked programs
     'python-pip'                # The PyPA recommended tool for installing Python packages
     'strace'                    # A diagnostic, debugging and instructional userspace tracer
-    'ruby'                      # Excellent scripting language
     'yq'                        # Command-line YAML processor - jq wrapper for YAML documents
+
+    # Ruby
+    'ruby'                      # Excellent scripting language
+
+    # Rust
+    'lldb'                      # Next generation, high-performance debugger
+    'rust'                      # Systems programming language focused on safety, speed and concurrency
+    'rust-musl'                 # Musl target for Rust
 
     # Golang
     'delve'                     # A debugger for the Go Programming Language
@@ -459,7 +466,7 @@ package_cyberlinux-standard-theater()
 
 package_cyberlinux-standard-desktop()
 {
-  pkgdesc="Theater system - a lean back entertainment experience"
+  pkgdesc="Full desktop system - built on top of netbook with additional media and productivity apps"
   depends=(
     "cyberlinux-standard-netbook>=${pkgver}"
 
@@ -509,4 +516,13 @@ package_cyberlinux-standard-desktop()
     'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
   )
   pkg desktop
+}
+
+package_cyberlinux-standard-laptop()
+{
+  pkgdesc="Laptop system - built on top of desktop with laptop configuration"
+  depends=(
+    "cyberlinux-standard-desktop>=${pkgver}"
+  )
+  pkg laptop
 }

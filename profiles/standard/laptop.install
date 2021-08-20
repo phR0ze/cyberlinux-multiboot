@@ -23,23 +23,20 @@ post_install()
 {
   # Autostart configuration
   # ---------------------------------------------------------------------------
-  # Needed to call it guake-term instead of just guake or guake would automatically
-  # remove it if not set in the guake preferences
-  # /etc/skel/.config/autostart/guake-term.desktop
 
   # Openbox configuration
   # ---------------------------------------------------------------------------
 
   # Openbox menu changes for desktop
-  mv -f /etc/skel/.config/openbox/menu.xml_sideload_desktop /etc/skel/.config/openbox/menu.xml
+  mv -f /etc/skel/.config/openbox/menu.xml_sideload_laptop /etc/skel/.config/openbox/menu.xml
 
   # Conky configuration
   # ---------------------------------------------------------------------------
 
-  # Add conky desktop conky settings and set it to active
-  # /etc/skel/.config/conky/desktop
+  # Add conky laptop conky settings and set it to active
+  # /etc/skel/.config/conky/laptop
   pushd /etc/skel/.config/conky
-  ln -sf desktop active
+  ln -sf laptop active
   popd
 }
 
