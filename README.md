@@ -355,7 +355,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* screen lock app
+* Add gtk2fontsel to menu in lite
 * Current GTK themes is missing Thunar icons
 
 # Later <a name="later"/></a>
@@ -369,6 +369,7 @@ any additional terms or conditions.
 * Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
+* Replaced cinnamon-screensaver with i3lock-color
 * Replaced oblogout with arcologout a simple clean overlay logout app
 * Powerline font doesn't look right in bash - solved set fontconfig
 * Fixed keyboard repeat rate with lxsession config

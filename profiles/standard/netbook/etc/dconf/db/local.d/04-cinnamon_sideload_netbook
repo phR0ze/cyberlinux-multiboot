@@ -1,7 +1,0 @@
-[org/cinnamon/desktop/screensaver]
-use-custom-format=true
-time-format='%I:%M%P'
-
-[org/cinnamon/desktop/background]
-picture-uri='file:///usr/share/wallpaper/dreamfusion003_1280x1024.jpg'
-

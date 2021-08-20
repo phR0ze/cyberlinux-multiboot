@@ -56,15 +56,9 @@ post_install()
 
   # Lock screen configuration
   # ---------------------------------------------------------------------------
-  # Autostart for cinnamon-screensaver
-  # /etc/skel/.config/autostart/cinnamon-screensaver.desktop
 
-  # Default background to use for cinnamon-screensaver
-  # /usr/share/wallpaper/dreamfusion003_1280x1024.jpg
-  #mv -f /etc/dconf/db/local.d/04-cinnamon_sideload_netbook /etc/dconf/db/local.d/04-cinnamon
-
-  # Hack to fix broken cinnamon-screensaver dependencies
-  # /usr/share/glib-2.0/schemas/org.cinnamon.desktop.screensaver.gschema.xml
+  # i3lock-color automation script
+  # /usr/bin/lockscreen
 }
 
 post_upgrade() {
