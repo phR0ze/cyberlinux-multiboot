@@ -41,6 +41,10 @@ post_install()
   pushd /etc/skel/.config/conky
   ln -sf desktop active
   popd
+
+  # Enable system services
+  # ---------------------------------------------------------------------------
+  systemctl enable org.cups.cupsd.service
 }
 
 post_upgrade() {

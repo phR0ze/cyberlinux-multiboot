@@ -478,15 +478,19 @@ package_cyberlinux-standard-desktop()
     'picom'                     # X compositor fork of comptom
     'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
 
-    # printing
-    # virutalbox-host
-    # simplescreenrecorder
+    # Printing
+    'cups-pdf'                  # System/Printer Driver with PDF print support
+    'epson-inkjet-printer-escpr2' # Epson printer drivers for newer Workforce printers
+    'system-config-printer'     # A CUPS printer configuration tool and status applet
 
     # Develop
     'awf-git'                   # Widget Factory for developing GTK themes, repo: CYBERLINUX
     'glade'                     # User Interface Builder for GTK+ applications
     'meld'                      # Develop/Diff Tool - Graphical diff tool cross platform
     'ripgrep'                   # A search tool combining the usability of ag with speed of grep, depof: vscode
+    'virutalbox'                # Cross platform virtualization with UI
+    'virutalbox-guest-iso'      # VirtualBox guest additions iso image
+    'virutalbox-host-modules-arch' # VirtualBox host kernel modules
     'visual-studio-code-bin'    # Editor for modern development, repo: CYBERLINUX
 
     # Graphics
@@ -502,6 +506,7 @@ package_cyberlinux-standard-desktop()
     'handbrake-cli'             # Video encoding tool for mp4/mkv
     'mkvtoolnix-gui'            # Set of tools to create, edit and inspect MKV files
     'openshot'                  # Simple powerful Video Editor, alt: pitivi, kdenlive
+    'simplescreenrecorder'      # Awesome screen recorder
 
     # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
