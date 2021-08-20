@@ -368,9 +368,9 @@
       <action name="Execute">
         <startupnotify>
           <enabled>true</enabled>
-          <name>cinnamon-screensaver-command</name>
+          <name>i3lock</name>
         </startupnotify>
-        <command>cinnamon-screensaver-command --lock</command>
+        <command>lockscreen</command>
       </action>
     </keybind>
 

@@ -330,11 +330,12 @@ package_cyberlinux-standard-lite()
     'dmenu'                     # Super light weight application runner
     'galculator'                # Office/Calculator
     'gsimplecal'                # Simple calendar like windows systray calendar
+    'gtk2fontsel'               # Simple font viewer
+    'filelight'                 # View disk usage information
     'powerline'                 # Status line plugin for bash
     'powerline-fonts'           # Powerline font symbols
     'powerline-gitstatus'       # Powerline plugin for git status, repo: cyberlinux
     'xfce4-screenshooter'       # Plugin that makes screenshots for the Xfce panel
-    'filelight'
 
     # Media
     'audacious'                 # Lightweight advanced audio player
@@ -421,8 +422,7 @@ package_cyberlinux-standard-netbook()
     # Utils
     'android-tools'             # Android platform tools
     'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
-    # Replace with i3lock-color or BetterLockScreen
-    #'cinnamon-screensaver'      # Screensaver for the Cinnamon desktop, repo cyberlinux
+    'i3lock-color'              # Simple lightweight screen locker
     'conky'                     # Lightweight system monitor for X
     'light'                     # Control laptop backlights both screen and keyboard
     #'picom'                     # X compositor fork of comptom
