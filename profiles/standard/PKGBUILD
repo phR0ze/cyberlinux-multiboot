@@ -456,6 +456,7 @@ package_cyberlinux-standard-theater()
   depends=(
     "cyberlinux-standard-netbook>=${pkgver}"
 
+    'guake'                     # Drop-down python based guake style terminal
     'idesk'                     # Lightweight desktop icons for X
     'kodi'                      # A software media player and entertainment hub for digital media
   )
@@ -470,17 +471,16 @@ package_cyberlinux-standard-desktop()
 
     # Utils
     'catfish'                   # System/File Search - File search tool
+    'cyberlinux-plank'          # Light weight, simple clean app dock
     'docker'                    # Pack, ship and run any application as a lightweight container
     'gnome-multi-writer'        # Write an ISO file to multiple USB devices at once
     'guake'                     # Drop-down python based guake style terminal
+    'picom'                     # X compositor fork of comptom
     'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
 
-    # media
-    # plank
     # printing
     # virutalbox-host
     # simplescreenrecorder
-    #'picom'                     # X compositor fork of comptom
 
     # Develop
     'awf-git'                   # Widget Factory for developing GTK themes, repo: CYBERLINUX
