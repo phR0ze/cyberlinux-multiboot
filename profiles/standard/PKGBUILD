@@ -319,6 +319,8 @@ package_cyberlinux-standard-lite()
     'desktop-file-utils'        # Command line utilities for working with desktop entries
     'gtk-engines'               # GTK theme engines for cyberlinux theme
     'gtk-engine-murrine'        # GTK theme engine for cyberlinux theme
+    'imagescan'                 # EPSON Image Scan v3 front-end for scanners and all-in-ones
+    'imagescan-plugin-networkscan' # Plugin for using Epson scanners with Image scan v3 over network
     'nitrogen'                  # Lightweight wallpaper manager
     'paprefs'                   # Configuration dialog for pulse audio
     'pavucontrol'               # PulseAudio Volume Control

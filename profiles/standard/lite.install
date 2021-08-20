@@ -77,7 +77,7 @@ post_install()
 
   # Modifying the original lxdm script to inject a hook to execute
   # /usr/bin/pre-xorg for dynamic system adjustments
-  mv -f /usr/sbin/lxdm_sideload /usr/sbin/lxdm
+  mv -f /usr/sbin_sideload/lxdm /usr/sbin/lxdm
 
   # - enable numlock on boot
   # - set /usr/bin/lxsession -s default -e default as the session manager
