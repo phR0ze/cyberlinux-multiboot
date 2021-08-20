@@ -15,6 +15,9 @@
       <item label="Geany" icon="/usr/share/icons/Paper/32x32/apps/geany.png"><action name="Execute"><execute>geany</execute></action></item>
       <item label="Screenshot" icon="/usr/share/icons/Paper/32x32/apps/applets-screenshooter.png"><action name="Execute"><execute>xfce4-screenshooter</execute></action></item>
     </menu>
+    <menu id="Development" icon="/usr/share/icons/Paper/32x32/categories/applications-development.png" label="Development">
+      <item label="Geany" icon="/usr/share/icons/Paper/32x32/apps/geany.png"><action name="Execute"><execute>geany</execute></action></item>
+    </menu>
     <menu id="Graphics" icon="/usr/share/icons/Paper/32x32/categories/applications-graphics.png" label="Graphics">
       <item label="Gimp" icon="/usr/share/icons/Paper/32x32/apps/gimp.png"><action name="Execute"><execute>gimp</execute></action></item>
       <item label="Image Viewer" icon="/usr/share/icons/Paper/32x32/apps/gpicview.png"><action name="Execute"><execute>gpicview</execute></action></item>
