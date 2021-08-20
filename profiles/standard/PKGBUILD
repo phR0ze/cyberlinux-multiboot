@@ -490,9 +490,9 @@ package_cyberlinux-standard-desktop()
     'glade'                     # User Interface Builder for GTK+ applications
     'meld'                      # Develop/Diff Tool - Graphical diff tool cross platform
     'ripgrep'                   # A search tool combining the usability of ag with speed of grep, depof: vscode
-    'virutalbox'                # Cross platform virtualization with UI
-    'virutalbox-guest-iso'      # VirtualBox guest additions iso image
-    'virutalbox-host-modules-arch' # VirtualBox host kernel modules
+    'virtualbox'                # Cross platform virtualization with UI
+    'virtualbox-guest-iso'      # VirtualBox guest additions iso image
+    'virtualbox-host-modules-arch' # VirtualBox host kernel modules
     'visual-studio-code-bin'    # Editor for modern development, repo: CYBERLINUX
 
     # Graphics
