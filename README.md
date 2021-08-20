@@ -356,9 +356,9 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Validate
-  * server: docker group for user
   * theater: desktop icons, resolution, wallpaper, conky, menu, kodi, arcologout
-  * desktop: vscode settings
+  * desktop: 
+    * Tune vscode settings: rust, golang, plugins
 * Personal packages
   * TeamViewer
   * Wallpaper
@@ -366,12 +366,12 @@ any additional terms or conditions.
 
 # Later <a name="later"/></a>
 * Add gtk2fontsel to menu in lite
-* clu - automation
+* clu - cyberlinux automation
   * replace conky scripts, cal.rb, date.rb and radio.rb
+  * build in skel copy for updates
 * Migrate to nvim
-* what does the lxsession config mean https://github.com/lxde/lxsession/blob/master/data/desktop.conf.example
 * Add cyberlinux-repo README about packages and warnings and how to configure
-* lxterminal window is off screen slightly be default, openbox?
+  * Automate updates to the readme when updating the packages
 * Build a rust replacement for oblogout
 
 # Changelog <a name="changelog"/></a>
