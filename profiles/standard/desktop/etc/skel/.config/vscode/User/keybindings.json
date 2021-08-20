@@ -5,10 +5,6 @@
         "command": "workbench.action.files.saveAll"
     },
     {
-        "key": "ctrl+shift+enter",
-        "command": "git.push"
-    },
-    {
         "key": "ctrl+shift+s",
         "command": "-workbench.action.files.saveAs"
     },

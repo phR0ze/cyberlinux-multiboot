@@ -1,18 +1,27 @@
-# cyberlinux Standard Profile
-<img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
+cyberlinux standard profile
+[![build-badge](https://travis-ci.com/phR0ze/cyberlinux-multiboot.svg?branch=master)](https://travis-ci.com/phR0ze/cyberlinux-multiboot)
+[![license-badge](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+====================================================================================================
 
-The [Standard profile](standard.yml) was developed carefully to exclude any applications
-that were not free to use for commercial purposes.
+<img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
+The <b>cyberlinux standard profile</b> provides a reference build with multiple highly opinionated
+pre-configured deployments ready to install. The **standard** was developed carefully to exclude any
+applications that were not free to use for commercial purposes.
 
 ### Disclaimer
-***cyberlinux*** comes with absolutely no guarantees or support of any kind. It is to be used at
-your own risk.  Any damages, issues, losses or problems caused by the use of ***cyberlinux*** are
-strictly the responsiblity of the user and not the developer/creator of ***cyberlinux***.
+***cyberlinux*** and any of its components come with absolutely no guarantees or support of any kind.
+It is to be used at your own risk.  Any damages, issues, losses or problems caused by the use of
+***cyberlinux*** or its components are strictly the responsiblity of the user and not the
+developer/creator of ***cyberlinux***.
 
 ### Quick links
 * [Desktop Deployment](#desktop-deployment)
+* [Laptop Deployment](#laptop-deployment)
+* [Theater Deployment](#theater-deployment)
+* [Netbook Deployment](#netbook-deployment)
 * [Lite Deployment](#lite-deployment)
 * [Shell Deployment](#shell-deployment)
+* [Base Deployment](#base-deployment)
 
 ### Desktop Deployment <a name="desktop-deployment"/></a>
 The ***desktop*** deployment was created to serve as a full developer environment and daily runner.

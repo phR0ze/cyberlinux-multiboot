@@ -432,7 +432,6 @@ package_cyberlinux-standard-netbook()
     'i3lock-color'              # Simple lightweight screen locker
     'conky'                     # Lightweight system monitor for X
     'light'                     # Control laptop backlights both screen and keyboard
-    #'picom'                     # X compositor fork of comptom
 
     # Media
     'gimp'                      # Excellent image editor
@@ -445,7 +444,6 @@ package_cyberlinux-standard-netbook()
     # Network
     'freerdp'                   # RDP client plugin for remmina
     'remmina'                   # Nice remoting UI for RDP and other protocols
-    'synergy'                   # Share a single mouse and keyboard between multiple computers
     'wpa_gui'                   # A Qt frontend to wpa_supplicant, repo: cyberlinux
     'wpa_supplicant'            # A utility providing key negotiation for WPA wireless networks
   )
@@ -470,12 +468,19 @@ package_cyberlinux-standard-desktop()
   depends=(
     "cyberlinux-standard-netbook>=${pkgver}"
 
+    # Utils
+    'catfish'                   # System/File Search - File search tool
+    'docker'                    # Pack, ship and run any application as a lightweight container
+    'gnome-multi-writer'        # Write an ISO file to multiple USB devices at once
     'guake'                     # Drop-down python based guake style terminal
+    'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
+
     # media
     # plank
     # printing
     # virutalbox-host
     # simplescreenrecorder
+    #'picom'                     # X compositor fork of comptom
 
     # Develop
     'awf-git'                   # Widget Factory for developing GTK themes, repo: CYBERLINUX
@@ -500,7 +505,7 @@ package_cyberlinux-standard-desktop()
 
     # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
-    'tiny-media-manager'        # Cross platform media manager, repo: cyberlinux
+    'synergy'                   # Share a single mouse and keyboard between multiple computers
 
     # Office
     'fbreader'                  # An e-book reader for linux
@@ -508,12 +513,6 @@ package_cyberlinux-standard-desktop()
     'id3v2'                     # Utility to edit id3v2 tags
     'kolourpaint'               # Paint application that saves jpg in format for GFXBoot
     'scribus'                   # Open Source Desktop Publishing
-
-    # Utils
-    'catfish'                   # System/File Search - File search tool
-    'docker'                    # Pack, ship and run any application as a lightweight container
-    'gnome-multi-writer'        # Write an ISO file to multiple USB devices at once
-    'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
   )
   pkg desktop
 }

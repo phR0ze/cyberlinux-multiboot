@@ -1,6 +1,5 @@
 {
     "window.zoomLevel": 0,
-    "go.gopath": "~/Projects/go",
     "http.proxyStrictSSL": true,
     "editor.minimap.enabled": true,
     "workbench.iconTheme": "vscode-icons",

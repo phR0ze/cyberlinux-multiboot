@@ -355,18 +355,24 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Add gtk2fontsel to menu in lite
+* Validate
+  * server: docker group for user
+  * theater: desktop icons, resolution, wallpaper, conky, menu, kodi, arcologout
+  * desktop: vscode settings
+* Personal packages
+  * TeamViewer
+  * Wallpaper
 * Current GTK themes is missing Thunar icons
 
 # Later <a name="later"/></a>
-* Write clu to replace conky scripts, cal.rb, date.rb and radio.rb
+* Add gtk2fontsel to menu in lite
+* clu - automation
+  * replace conky scripts, cal.rb, date.rb and radio.rb
 * Migrate to nvim
 * what does the lxsession config mean https://github.com/lxde/lxsession/blob/master/data/desktop.conf.example
 * Add cyberlinux-repo README about packages and warnings and how to configure
 * lxterminal window is off screen slightly be default, openbox?
-* Audacious is missing its icon in the menu
 * Build a rust replacement for oblogout
-* Build out custom LXDM greeter theme for cyberlinux
 
 # Changelog <a name="changelog"/></a>
 * Replaced cinnamon-screensaver with i3lock-color

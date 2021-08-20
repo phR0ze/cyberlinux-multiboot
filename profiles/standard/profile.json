@@ -9,13 +9,15 @@
     "name": "desktop",
     "entry": "Install standard desktop          // Netbook + dev and media apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop",
+    "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
   },
   {
     "name": "laptop",
     "entry": "Install standard laptop           // Desktop + laptop config",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/laptop"
+    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/laptop",
+    "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
   },
   {
     "name": "netbook",
@@ -36,7 +38,7 @@
     "entry": "Install standard server           // Lite + server apps",
     "kernel": "linux",
     "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/server",
-    "groups": "lp,wheel,network,storage,users,video,audio"
+    "groups": "lp,wheel,network,storage,users,video,audio,docker"
   },
   {
     "name": "lite",
