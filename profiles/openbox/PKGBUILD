@@ -417,6 +417,7 @@ package_cyberlinux-openbox-server()
 
     # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
+    'teamviewer'                # Remote software restricted to Personal Use Only by licensing
     'tiny-media-manager'        # Cross platform media manager, repo: cyberlinux
   )
   pkg server
@@ -460,6 +461,7 @@ package_cyberlinux-openbox-theater()
 
     'guake'                     # Drop-down python based guake style terminal
     'idesk'                     # Lightweight desktop icons for X
+    'teamviewer'                # Remote software restricted to Personal Use Only by licensing
     'kodi'                      # A software media player and entertainment hub for digital media
   )
   pkg theater
@@ -514,6 +516,7 @@ package_cyberlinux-openbox-desktop()
     # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
     'synergy'                   # Share a single mouse and keyboard between multiple computers
+    'teamviewer'                # Remote software restricted to Personal Use Only by licensing
 
     # Office
     'fbreader'                  # An e-book reader for linux

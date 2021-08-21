@@ -1,62 +1,62 @@
 [
   {
     "name": "live",
-    "entry": "Start live environment            // Based on openbox desktop",
+    "entry": "Start live environment      // Recovery env and Personal Use Only licensing",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook,openbox/desktop,openbox/live"
   },
   {
     "name": "desktop",
-    "entry": "Install openbox desktop           // Netbook + dev and media apps",
+    "entry": "Install openbox desktop     // Full X11 env and Personal Use Only licensing",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook,openbox/desktop",
     "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
   },
   {
     "name": "laptop",
-    "entry": "Install openbox laptop            // Desktop + laptop config",
+    "entry": "Install openbox laptop      // Desktop + config and Personal Use Only licensing",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook,openbox/desktop,openbox/laptop",
     "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
   },
   {
     "name": "netbook",
-    "entry": "Install openbox netbook           // Lite + office apps",
+    "entry": "Install openbox netbook     // Lite + office, networking and android apps",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook",
     "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp"
   },
   {
     "name": "theater",
-    "entry": "Install openbox theater           // Lite + media apps",
+    "entry": "Install openbox theater     // Lite + media apps and Personal Use Only licensing",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/theater",
     "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "server",
-    "entry": "Install openbox server            // Lite + server apps",
+    "entry": "Install openbox server      // Lite + server apps and Personal Use Only licensing",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/server",
     "groups": "lp,wheel,network,storage,users,video,audio,docker"
   },
   {
     "name": "lite",
-    "entry": "Install openbox lite              // Shell + lite desktop env",
+    "entry": "Install openbox lite        // Shell + functional lite X11 desktop env",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite",
     "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "shell",
-    "entry": "Install openbox shell             // Full bash system",
+    "entry": "Install openbox shell       // Full bash base to build your own desktop env from",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base,openbox/shell",
     "groups": "lp,wheel,network,storage,users"
   },
   {
     "name": "base",
-    "entry": "Install openbox base              // Minimal bash system",
+    "entry": "Install openbox base        // Minimal bash with pacman to build your own system",
     "kernel": "linux",
     "layers": "openbox/core,openbox/base",
     "groups": "lp,wheel,network,storage,users"
