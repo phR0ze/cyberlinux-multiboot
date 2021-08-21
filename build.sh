@@ -619,7 +619,9 @@ fi
 
 # Needs to happen before the multiboot as deployments will be boot entries
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
-  [ -z ${DEPLOYMENTS+x} ] && read_deployments
+  if [ ! -z ${BUILD_ALL+x} ] || [ "${DEPLOYMENTS}" == "all" ]; then
+    read_deployments
+  fi
   build_deployments $DEPLOYMENTS
 fi
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
