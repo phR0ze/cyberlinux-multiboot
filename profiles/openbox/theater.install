@@ -28,8 +28,10 @@ post_install()
   # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
   # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
 
-  # Default background to use for wallpaper
+  # Nitrogen background
+  # ---------------------------------------------------------------------------
   # /usr/share/backgrounds/theater_curtains1.jpg
+  mv -f /etc/skel/.config/nitrogen/bg-saved.cfg_theater /etc/skel/.config/nitrogen/bg-saved.cfg
 
   # idesk configuration
   # ---------------------------------------------------------------------------

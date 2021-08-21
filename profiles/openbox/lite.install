@@ -64,6 +64,10 @@ post_install()
   # Added openbox lite menu
   mv -f /etc/skel/.config/openbox/menu.xml_sideload_lite /etc/skel/.config/openbox/menu.xml
 
+  # Nitrogen background
+  # ---------------------------------------------------------------------------
+  mv -f /etc/skel/.config/nitrogen/bg-saved.cfg_lite /etc/skel/.config/nitrogen/bg-saved.cfg
+
   # GTK configuration
   # ---------------------------------------------------------------------------
 
