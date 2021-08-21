@@ -136,6 +136,15 @@ $ sudo reboot
    $ ./build.sh -a
    ```
 
+3. Burn resulting ISO to USB:
+   ```bash
+   # Determine the correct USB device
+   $ lsblk
+
+   # Burn to USB using dd
+   $ sudo dd bs=4M if=temp/output/cyberlinux.iso of=/dev/sdd status=progress oflag=sync
+   ```
+
 # Configuration <a name="configuration"/></a>
 ## dconf <a name="dconf"/></a>
 To get setting persisted from dconf configure the target app as desired then dump the settings out
@@ -367,13 +376,9 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Validate
-  * theater: desktop icons, wallpaper
-* Personal packages
-  * TeamViewer
-  * Wallpaper
+* Migrate to nvim
 
-# Later <a name="later"/></a>
+* Personal packages: Wallpaper
 * Add GTK Arc Dark theme
 * Add utshushi menu entry
 * devede and asunder icons in Paper are both the same?
@@ -382,7 +387,6 @@ any additional terms or conditions.
 * clu - cyberlinux automation
   * replace conky scripts, cal.rb, date.rb and radio.rb
   * build in skel copy for updates
-* Migrate to nvim
 * Add cyberlinux-repo README about packages and warnings and how to configure
   * Automate updates to the readme when updating the packages
 * Build a rust replacement for oblogout
