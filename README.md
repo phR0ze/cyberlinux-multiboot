@@ -22,6 +22,8 @@ of ***cyberlinux-multiboot***.
     * [Docker to build](#docker-to-build)
     * [VirtualBox for testing](#virtualbox-for-testing)
   * [Create multiboot USB](#create-multiboot-usb)
+* [Configuration](#configuration)
+  * [dconf](#dconf)
 * [Hardware](#hardware)
   * [Dell XPS 13 9310](#dell-xps-13-9310)
 * [Installer](#installer)
@@ -133,6 +135,16 @@ $ sudo reboot
    ```bash
    $ ./build.sh -a
    ```
+
+# Configuration <a name="configuration"/></a>
+## dconf <a name="dconf"/></a>
+To get setting persisted from dconf configure the target app as desired then dump the settings out
+and save them in the dconf load location.
+
+Dump out the target app setttings to the load area
+```bash
+$ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
+```
 
 # Hardware <a name="hardware"/></a>
 

@@ -1,8 +1,9 @@
 {
     "window.zoomLevel": 0,
-    "http.proxyStrictSSL": true,
     "editor.minimap.enabled": true,
     "workbench.iconTheme": "vscode-icons",
+    "telemetry.enableTelemetry": false,
+    "enable-crash-reporter": false,
     "vim.disableAnnoyingNeovimMessage": true,
     "vsicons.dontShowNewVersionMessage": true,
     "vim.handleKeys": {
