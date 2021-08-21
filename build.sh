@@ -145,6 +145,7 @@ build_multiboot()
   docker_cp "${BUILDER}:/usr/share/grub/unicode.pf2" "${ISO_DIR}/boot/grub"
 
   # Create the target profile's boot entries
+  # ------------------------------------------------------------------------------------------------
   rm -f "$BOOT_CFG_PATH"
   for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
     read_deployment $layer
@@ -173,17 +174,24 @@ build_multiboot()
     fi
   done
 
+  # Creating BIOS boot files
+  # ------------------------------------------------------------------------------------------------
   echo -e "${yellow}:: Creating BIOS boot files...${none}"
+
+  # Stage the grub modules
+  # GRUB doesn't have a stble binary ABI so modules from one version can't be used with another one
+  # and will cause failures so we need to remove then all in advance
+  rm -rf "${ISO_DIR}/boot/grub/i386-pc"
   docker_cp "${BUILDER}:/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
   rm -f "${ISO_DIR}/boot/grub/i386-pc"/*.img
-  # We need to create our bios.img that contains just enough code to find the grub configuration and
-  # grub modules in /boot/grub/i386-pc directory we'll stage in the next step
-  # -O i386-pc                Format of the image to generate
+
+  # We need to create our core image i.e bios.img that contains just enough code to find the grub
+  # configuration and grub modules in /boot/grub/i386-pc directory
   # -p /boot/grub             Directory to find grub once booted
   # -d /usr/lib/grub/i386-pc  Use resources from this location when building the boot image
   # -o $TEMP_DIR/bios.img     Output destination
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
-  grub-mkimage -O i386-pc -p /boot/grub -d /usr/lib/grub/i386-pc -o "$CONT_BUILD_DIR/bios.img" \
+  grub-mkimage --format i386-pc -p /boot/grub -d /usr/lib/grub/i386-pc -o "$CONT_BUILD_DIR/bios.img" \
     biosdisk disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
     search_fs_file true iso9660 search_label gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
   echo -e ":: Concatenate cdboot.img to bios.img to create CD-ROM bootable image $CONT_BUILD_DIR/eltorito.img..."
@@ -193,16 +201,25 @@ build_multiboot()
 EOF
   check
 
+  # Creating UEFI boot files
+  # ------------------------------------------------------------------------------------------------
   echo -e "${yellow}:: Creating UEFI boot files...${none}"
   mkdir -p "${ISO_DIR}/efi/boot"
+
+  # Stage the grub modules
+  # GRUB doesn't have a stble binary ABI so modules from one version can't be used with another one
+  # and will cause failures so we need to remove then all in advance
+  rm -rf "${ISO_DIR}/boot/grub/x86_64-efi"
   docker_cp "$BUILDER:/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
   rm -f "$ISO_DIR/grub/x86_64-efi"/*.img
-  # -O x86_64-efi                     Format of the image to generate
+
+  # We need to create our core image i.e. bootx64.efi that contains just enough code to find the grub
+  # configuration and grub modules in /boot/grub/x86_64-efi directory
   # -p /boot/grub                     Directory to find grub once booted
   # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
   # -o "$ISO_DIR/efi/boot/bootx64.efi"      Output destination, using wellknown compatibility location
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
-  grub-mkimage -O x86_64-efi -p /boot/grub -d /usr/lib/grub/x86_64-efi -o \
+  grub-mkimage --format x86_64-efi -p /boot/grub -d /usr/lib/grub/x86_64-efi -o \
     "$CONT_ISO_DIR/efi/boot/bootx64.efi" disk part_msdos part_gpt linux linux16 loopback normal \
     configfile test search search_fs_uuid search_fs_file true iso9660 search_label efi_uga \
     efi_gop gfxterm gfxmenu gfxterm_menu ext2 ntfs cat echo ls memdisk tar
@@ -612,23 +629,27 @@ if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
   build_env
 fi
 
+# Build the grub multiboot images
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
+  build_multiboot
+fi
+
+# Build the installer
+if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_INSTALLER+x} ]; then
+  build_installer
+fi
+
 # Build repo packages
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_REPO+x} ]; then
   build_repo_packages
 fi
 
-# Needs to happen before the multiboot as deployments will be boot entries
+# Build the deployments
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${DEPLOYMENTS+x} ]; then
   if [ ! -z ${BUILD_ALL+x} ] || [ "${DEPLOYMENTS}" == "all" ]; then
     read_deployments
   fi
   build_deployments $DEPLOYMENTS
-fi
-if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
-  build_multiboot
-fi
-if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_INSTALLER+x} ]; then
-  build_installer
 fi
 
 # Build the actual ISO

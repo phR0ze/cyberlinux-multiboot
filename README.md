@@ -17,14 +17,14 @@ of ***cyberlinux-multiboot***.
 ### Quick links
 * [Usage](#usage)
   * [Prerequisites](#prerequisites)
-    * [Passwordless sudo](#passwordless-sudo)
-    * [jq for configs](#jq-for-configs)
-    * [Docker to build](#docker-to-build)
-    * [VirtualBox for testing](#virtualbox-for-testing)
+    * [Arch Linux](#arch-linux)
+    * [Ubuntu](#ubuntu)
   * [Create multiboot USB](#create-multiboot-usb)
+    * [Test USB in VirtualBox](#test-usb-in-virtualbox)
 * [Configuration](#configuration)
   * [dconf](#dconf)
 * [Hardware](#hardware)
+  * [ACEPC AK1](#acepc-ak1)
   * [Dell XPS 13 9310](#dell-xps-13-9310)
 * [Installer](#installer)
   * [initramfs installer](#initramfs-installer)
@@ -41,7 +41,7 @@ of ***cyberlinux-multiboot***.
     * [autodetect](#autodetect)
     * [arch-chroot](#arch-chroot)
 * [GRUB2 bootloader](#grub2-bootloader)
-  * [GRUB2 configuration](#grub2-configuration)
+  * [incompatible license](#incompatible-license)
   * [GFXMenu module](#gfxmenu-module)
 * [Bash pro tips](#bash-pro-tips)
   * [heredoc](#heredoc)
@@ -61,67 +61,38 @@ The mutli-boot ISO is build entirely in a docker container with data cached on t
 quicker rebuilds. This makes it possible to build on systmes with a minimal amount of dependencies.
 All that is required is ***passwordless sudo*** and ***docker***.
 
-### Passwordless sudo <a name="passwordless-sudo"/></a>
-Building a filesystem and working with docker requires root access and since were automating this
-programatically the user that executes the build needs passwordless sudo.
-
-```bash
-sudo bash -c "echo 'YOUR_USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
-```
-
-### jq for configs <a name="jq-for-configs"/></a>
-
-***Arch Linux***  
-```bash
-$ sudo pacman -S jq
-```
-
-***Ubuntu Install***  
-```bash
-$ sudo apt install jq
- ```
-
-### Docker to build <a name="docker-to-build"/></a>
-
-***Arch Linux***  
-1. Install docker:
+### Arch Linux <a name="arch-linux"/></a>
+1. Passwordless sudo access is required for automation:
    ```bash
-   $ sudo pacman -S docker
-   $ sudo usermod -aG docker USER
+   $ sudo bash -c "echo '$USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
    ```
-2. Enable and start docker:
+2. Install dependencies:
    ```bash
+   $ sudo pacman -S jq docker virtualbox virtualbox-host-modules-arch
+   $ sudo usermod -aG disk,docker,vboxusers $USER
+
    $ sudo systemctl enable docker
    $ sudo systemctl start docker
    ```
+3. Add your user to the appropriate groups:
+   ```bash
+   $ sudo apt install jq
+   ```
 
-***Ubuntu Install***  
-1. Install docker:
+### Ubuntu <a name="ubuntu"/></a>
+1. Passwordless sudo access is required for automation:
+   ```bash
+   $ sudo bash -c "echo 'YOUR_USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
+   ```
+2. Install dependencies:
    ```bash
    $ sudo apt update
-   $ sudo apt install docker
-   $ sudo usermod -aG docker USER
+   $ sudo apt install jq docker
    ```
-2. Enable and start docker:
+3. Add your user to the appropriate groups:
    ```bash
+   $ sudo usermod -aG disk,docker,vboxusers $USER
    ```
-
-### VirtualBox for testing <a name="virtualbox-for-testing"/></a>
-
-***Arch Linux***  
-```bash
-$ sudo pacman -S virtualbox virtualbox-host-modules-arch
-$ sudo usermod -aG vboxusers USER
-$ sudo reboot
-```
-
-***Ubuntu Install***  
-```bash
-$ sudo apt update
-$ sudo apt install virtualbox
-$ sudo usermod -aG vboxusers USER
-$ sudo reboot
-```
 
 ## Create multiboot USB <a name="create-multiboot-usb"/></a>
 
@@ -136,14 +107,36 @@ $ sudo reboot
    $ ./build.sh -a
    ```
 
-3. Burn resulting ISO to USB:
+3. Copy the ISO to the USB:
    ```bash
    # Determine the correct USB device
    $ lsblk
 
-   # Burn to USB using dd
-   $ sudo dd bs=4M if=temp/output/cyberlinux.iso of=/dev/sdd status=progress oflag=sync
+   # Copy to the dev leaving off the partition
+   $ sudo cp temp/output/cyberlinux.iso /dev/sdd
    ```
+
+### Test USB in VirtualBox <a name="test-usb-in-virtualbox"/></a>
+1. Determine which device is your USB
+   ```bash
+   $ lsblk
+   ```
+2. Create a raw vmdk boot stub from the USB
+   ```
+   $ sudo vboxmanage internalcommands createrawvmdk -filename usb.vmdk -rawdisk /dev/sdd
+   RAW host disk access VMDK file usb.vmdk created successfully.
+
+   # Change ownership of new image to your user
+   $ sudo chown $USER: usb.vmdk
+
+   # Add your user to the disk group
+   $ sudo usermod -a -G disk $USER
+
+   # Logout and back in and launch virtualbox
+   ```
+3. Create a new VM in VirtualBox  
+   a. On the `Virtual Hard Disk` option choose `Use existing hard disk`  
+   b. Browse to and select the `usb.vmdk` you just created  
 
 # Configuration <a name="configuration"/></a>
 ## dconf <a name="dconf"/></a>
@@ -156,6 +149,21 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
 ```
 
 # Hardware <a name="hardware"/></a>
+
+## ACEPC AK1 <a name="acepc-ak1"/></a>
+1. Boot Into the `BIOS`:  
+   a. Press `F7` repeatedly until the boot menu pops up  
+   b. Select `Enter Setup`  
+   c. Navigate to `Security >Secure Boot`  
+   d. Ensure it is `Disabled`
+
+1. Boot the AK1 form the USB:  
+   a. Plug in the USB from [Create multiboot USB](#create-multiboot-usb)  
+   b. Press `F7` repeatedly until the boot menu pops up  
+   c. Select your device e.g. `KingstonDataTravelor 2.01.00`  
+   d. 
+
+2. Boot while pressing ``
 
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
@@ -301,12 +309,64 @@ contain the tooling necessary to install the system. After which the initramfs i
 the system into the newly installed OS.
 
 **References**:
+* [GRUB lower level](http://www.dolda2000.com/~fredrik/doc/grub2)
 * [GRUB Documentation](https://www.gnu.org/software/grub/manual/grub/html_node/index.html)
 * [GRUB Developers Manual](https://www.gnu.org/software/grub/manual/grub-dev/html_node/index.html)
 * [GFXMenu Components](https://www.gnu.org/software/grub/manual/grub-dev/html_node/GUI-Components.html#GUI-Components)
 
-### GRUB2 configuration <a name="grub2-configuration"/></a>
-GRUB2 is configured via its 
+### GRUB structure <a name="grub-structure"/></a>
+GRUB is composed of a `kernel` which contains the fundamental features from memory allocation to
+basic commands the module loader and a simplistic rescue shell. The `modules` can be loaded by the
+kernel to add functionality such as additional commands or support for various filesystems. The `core`
+image which is constructed via `grub-mkimage` consists of the `kernel` the `specified modules` the
+`prefix string` put together in a platform specific format.
+
+Once GRUB is running the first thing it will do is try to load modules from the `prefix string`
+location post fixed with the architecture e.g. `/boot/grub/x86_64-efi`. The modules included in the
+core image are just enough to be able to load additional modules from the real filesystem usually
+bios and filesystem modules.
+
+Questions:
+* Given that the core image contains the spedified modules do we also need to include them on disk at
+`/boot/grub/<arch>`?
+
+### incompatible license <a name="incompatible-license"/></a>
+If you get an ugly GRUB license error as follows upon boot you'll need to re-examine the GRUB modules
+you've included on your EFI boot.
+```
+GRUB loading...
+Welcome to GRUB!
+
+incompatible license
+Aborted. Press any key to exit.
+```
+During boot `GRUB` will check for licenses embedded in the EFI boot modules. You can test ahead of
+time to see of any are flagged. Acceptable licenses are `GPLv2+`, `GPLv3` and `GPLv3+`.
+
+Following the instructions in [Test USB in VirtualBox](#test-usb-in-virtualbox) I was able to
+determine that the problem existed in VirtualBox as well so its not unique to the target machine I
+was attempting to test my USB on. This means that either:
+
+* A non-compliant licensed module being included could cause this
+  * Looking through all modules wih `for x in *.mod; do strings $x | grep LICENS; done` revealed
+  everything is kosher.
+* GRUB doesn't have a stable binary ABI so mixing modules versions could cause this
+  * Ensuring that all modules were removed before recreating didn't help
+* Copying the ISO to the USB incorrectly may cause this
+  * Validated the same process with the Arch Linux ISO and it works 
+* The construction of the GRUB boot images isn't accurate
+* The construction of the ISO isn't accurate
+* Actual ISO creation with xorriso might be suspect
+
+
+Examining the archiso construction process:
+1. Install the bits: `sudo pacman -S archiso`
+2. :w
+
+```bash
+$ sudo mkdir /mnt/iso
+$ sudo mount ~/Downloads/archlinux-2021.08.01-x86_64.iso /mnt/iso
+```
 
 ### GFXMenu module <a name="gfxmenu-module"/></a>
 The [gfxmenu](https://www.gnu.org/software/grub/manual/grub-dev/html_node/Introduction_005f2.html#Introduction_005f2)

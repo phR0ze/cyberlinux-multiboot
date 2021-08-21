@@ -834,7 +834,7 @@ run_hook()
     [ -z ${DNS1+x} ] && DNS1="1.1.1.1"
     [ -z ${DNS2+x} ] && DNS2="1.0.0.1"
     [ -z ${TIMEZONE+x} ] && TIMEZONE="America/Boise"
-    [ -z ${GROUPS+x} ] && GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
+    [ -z ${GROUPS+x} ] && GROUPS="lp,wheel,network,storage,users,video,audio,adbusers,uucp,disk,docker,vboxusers"
     [ -z ${KERNEL_PARAMS+x} ] && KERNEL_PARAMS="rd.systemd.show_status=auto rd.udev.log_priority=3 ipv6.disable=1"
 
     # Detect an EFI supported system
