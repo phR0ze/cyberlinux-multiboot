@@ -1,12 +1,11 @@
 cyberlinux standard profile
-[![build-badge](https://travis-ci.com/phR0ze/cyberlinux-multiboot.svg?branch=master)](https://travis-ci.com/phR0ze/cyberlinux-multiboot)
 [![license-badge](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ====================================================================================================
 
 <img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
 The <b>cyberlinux standard profile</b> provides a reference build with multiple highly opinionated
-pre-configured deployments ready to install. The **standard** was developed carefully to exclude any
-applications that were not free to use for commercial purposes.
+pre-configured deployments ready to install. The **standard** profile was developed carefully to
+exclude any applications that were not free to use for commercial purposes.
 
 ### Disclaimer
 ***cyberlinux*** and any of its components come with absolutely no guarantees or support of any kind.

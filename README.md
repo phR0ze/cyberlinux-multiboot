@@ -367,24 +367,17 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Add GTK Arc Dark theme
-* Current GTK icon themes is missing Thunar icons
-* devede and asunder icons in Paper are both the same?
-* Add utshushi menu entry
-* Desktop: Asunder missing icon in menu
 * Validate
   * theater: desktop icons, wallpaper
-  * desktop: 
-    * devede icon in menu
-    * openshot icon in menu
-    * asunder icon in menu
-    * vscode launch in menu
-    * Tune vscode settings: rust, golang, plugins
 * Personal packages
   * TeamViewer
   * Wallpaper
 
 # Later <a name="later"/></a>
+* Add GTK Arc Dark theme
+* Add utshushi menu entry
+* devede and asunder icons in Paper are both the same?
+* Switch to XFWM because openbox doesn't have nice window edge control
 * Add gtk2fontsel to menu in lite
 * clu - cyberlinux automation
   * replace conky scripts, cal.rb, date.rb and radio.rb

@@ -247,8 +247,8 @@ build_deployments()
 
       # Ensure the layer destination path exists and is owned by root to avoid warnings
       local layer_dir="${LAYERS_DIR}/${layer}"
-      local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"                  # e.g. /home/build/layers/stanard/core
-      local cont_layer_image_dir="${CONT_IMAGES_DIR}/$(dirname ${layer})" # e.g. /home/build/iso/images/standard
+      local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"                  # e.g.  /home/build/layers/openbox/core
+      local cont_layer_image_dir="${CONT_IMAGES_DIR}/$(dirname ${layer})" # e.g.  /home/build/iso/images/openbox
       docker_exec ${BUILDER} "mkdir -p ${cont_layer_dir} ${cont_layer_image_dir} ${CONT_WORK_DIR}"
 
       # Mount the layer destination path 
@@ -297,7 +297,7 @@ build_deployments()
     for i in "${!LAYERS[@]}"; do
       local layer="${LAYERS[$i]}"
       local cont_layer_dir="${CONT_LAYERS_DIR}/${layer}"
-      local cont_layer_image="${CONT_IMAGES_DIR}/${layer}.sqfs" # e.g.  iso/images/standard/core.sqfs
+      local cont_layer_image="${CONT_IMAGES_DIR}/${layer}.sqfs" # e.g.  iso/images/openbox/core.sqfs
       if [ -f "${IMAGES_DIR}/${layer}.sqfs" ]; then
         echo -e ":: Squashfs image ${cyan}${cont_layer_image}${none} already exists"
       else
@@ -395,7 +395,7 @@ clean()
         echo -e "${yellow}:: Cleaning all layer images${none}"
         sudo rm -rf "${IMAGES_DIR}"
       else
-        local layer_image="${IMAGES_DIR}/${x#*/}.sqfs" # e.g. .../images/standard/core.sqfs
+        local layer_image="${IMAGES_DIR}/${x#*/}.sqfs" # e.g. .../images/openbox/core.sqfs
         echo -e "${yellow}:: Cleaning sqfs layer image${none} ${cyan}${layer_image}${none}"
         sudo rm -f "${layer_image}"
       fi
@@ -556,18 +556,18 @@ usage()
   echo -e "  -i               Build the initramfs installer"
   echo -e "  -m               Build the grub multiboot environment"
   echo -e "  -I               Build the acutal ISO image"
-  echo -e "  -p               Set the profile to use (default: standard)"
+  echo -e "  -p               Set the profile to use (default: openbox)"
   echo -e "  -r               Build repo packages for deployment/s and/or profile"
-  echo -e "  -c               Clean build artifacts, commad delimited (all|builder|iso|layers/standard/core)"
+  echo -e "  -c               Clean build artifacts, commad delimited (all|builder|iso|layers/openbox/core)"
   echo -e "  -h               Display usage help\n"
   echo -e "Examples:"
   echo -e "  ${green}Build everything:${none} ./${SCRIPT} -a"
   echo -e "  ${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
   echo -e "  ${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
-  echo -e "  ${green}Build packages for standard profile:${none} ./${SCRIPT} -p standard -r"
-  echo -e "  ${green}Build standard base:${none} ./${SCRIPT} -p standard -d base"
-  echo -e "  ${green}Clean standard core,base layers:${none} ./${SCRIPT} -c layers/standard/core,layers/standard/base"
-  echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p standard -m -i"
+  echo -e "  ${green}Build packages for openbox profile:${none} ./${SCRIPT} -p openbox -r"
+  echo -e "  ${green}Build openbox base:${none} ./${SCRIPT} -p openbox -d base"
+  echo -e "  ${green}Clean openbox core,base layers:${none} ./${SCRIPT} -c layers/openbox/core,layers/openbox/base"
+  echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p openbox -m -i"
   echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -p standad -d base"
   echo -e "  ${green}Run the build container attaching to input/output:${none} ./${SCRIPT} -b"
   echo
@@ -598,7 +598,7 @@ header
 [ ! -z ${TEST+x} ] && testing
 
 # Default profile if not set
-[ -z ${PROFILE+x} ] && PROFILE=standard
+[ -z ${PROFILE+x} ] && PROFILE=openbox
 read_profile "$PROFILE"
 
 # Optionally clean artifacts

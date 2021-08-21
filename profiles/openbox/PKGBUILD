@@ -286,10 +286,7 @@ package_cyberlinux-standard-lite()
     'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
 
     # lxde
-    'lxappearance'              # Feature-rich GTK+ theme switcher of the LXDE Desktop, group: lxde
-    'lxappearance-obconf'       # Plugin for LXAppearance to configure Openbox, group: lxde
     'lxde-common'               # Common files of the LXDE Desktop, group: lxde
-    'lxde-icon-theme'           # LXDE default icon theme based on nuoveXT2, group: lxde
     'lxdm'                      # Lightweight display manager, xorg: lxde
     'lxhotkey'                  # Keyboard shortcuts configurator, xorg: lxde
     'lxinput'                   # Keyboard and mouse configuration utility, group: lxde
@@ -298,11 +295,17 @@ package_cyberlinux-standard-lite()
     'lxterminal'                # Terminal for LXDE, alt: terminator, group: lxde
     'arcologout'                # Simple clean logout overlay from, repo: cyberlinux
     'openbox'                   # Lightweight X11 window manager, group: lxde
-    'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
-    'paper-icon-theme'          # Paper icon theme, repo: cyberlinux
-    'papirus-icon-theme'        # Based on the paper icon theme
     'xdg-user-dirs'             # Manage user directories like ~/Desktop
     'xdg-utils'                 # Desktop integration utilities
+
+    # themes and theme tools
+    'gtk-engines'               # GTK theme engines for cyberlinux theme
+    'gtk-engine-murrine'        # GTK theme engine for cyberlinux theme
+    'lxappearance'              # Feature-rich GTK+ theme switcher of the LXDE Desktop, group: lxde
+    'lxappearance-obconf'       # Plugin for LXAppearance to configure Openbox, group: lxde
+    'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
+    'paper-icon-theme'          # Paper icon theme, git version is fixed, repo: cyberlinux
+    'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
 
     # file manager utilities
     'gvfs'                      # Support for Trash and USB, depof: thunar-volman
@@ -318,8 +321,6 @@ package_cyberlinux-standard-lite()
     'dconf'                     # A low-level configuration system
     'dconf-editor'              # General configuration manager that replaces gconf
     'desktop-file-utils'        # Command line utilities for working with desktop entries
-    'gtk-engines'               # GTK theme engines for cyberlinux theme
-    'gtk-engine-murrine'        # GTK theme engine for cyberlinux theme
     'imagescan'                 # EPSON Image Scan v3 front-end for scanners and all-in-ones
     'imagescan-plugin-networkscan' # Plugin for using Epson scanners with Image scan v3 over network
     'nitrogen'                  # Lightweight wallpaper manager
@@ -331,7 +332,6 @@ package_cyberlinux-standard-lite()
     'wmctrl'                    # Control your EWMH compliant window manager from command line
     'xsel'                      # Tool for getting/setting X selection
     'xterm'                     # X terminal emulator
-    'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
 
     # virtualbox-guest
     'virtualbox-guest-utils'    # VirtualBox guest drivers/utilities
