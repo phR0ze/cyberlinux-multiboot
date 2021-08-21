@@ -355,9 +355,18 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* devede and asunder icons in Paper are both the same?
+* Fix missing icons
+* Add Arc Dark theme
+* Add utshushi menu entry
+* Desktop: Asunder missing icon in menu
 * Validate
-  * theater: desktop icons, resolution, wallpaper, conky, menu, kodi, arcologout
+  * theater: desktop icons, wallpaper
   * desktop: 
+    * devede icon in menu
+    * openshot icon in menu
+    * asunder icon in menu
+    * vscode launch in menu
     * Tune vscode settings: rust, golang, plugins
 * Personal packages
   * TeamViewer
