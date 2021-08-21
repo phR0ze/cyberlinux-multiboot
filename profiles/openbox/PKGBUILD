@@ -506,7 +506,7 @@ package_cyberlinux-openbox-desktop()
     'handbrake'                 # Video encoding tool for mp4/mkv
     'handbrake-cli'             # Video encoding tool for mp4/mkv
     'kodi'                      # A software media player and entertainment hub for digital media
-    'losslessscut-bin'          # Crossplatform GUI tool for lossless trimming/cuttong of video/audio files
+    'losslesscut-bin'           # Crossplatform GUI tool for lossless trimming/cuttong of video/audio files
     'mkvtoolnix-gui'            # Set of tools to create, edit and inspect MKV files
     'openshot'                  # Simple powerful Video Editor, alt: pitivi, kdenlive
     'simplescreenrecorder'      # Awesome screen recorder
