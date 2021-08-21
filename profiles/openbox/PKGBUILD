@@ -33,6 +33,7 @@ pkgname=(
     "${pkgbase}-theater"
     "${pkgbase}-desktop"
     "${pkgbase}-laptop"
+    "${pkgbase}-live"
 )
 pkgver=0
 pkgrel=1
@@ -535,4 +536,13 @@ package_cyberlinux-openbox-laptop()
     "cyberlinux-openbox-desktop>=${pkgver}"
   )
   pkg laptop
+}
+
+package_cyberlinux-openbox-live()
+{
+  pkgdesc="Live system - built on top of desktop for recovery"
+  depends=(
+    "cyberlinux-openbox-desktop>=${pkgver}"
+  )
+  pkg live
 }
