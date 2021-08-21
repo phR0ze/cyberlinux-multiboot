@@ -367,9 +367,9 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Add GTK Arc Dark theme
+* Current GTK icon themes is missing Thunar icons
 * devede and asunder icons in Paper are both the same?
-* Fix missing icons
-* Add Arc Dark theme
 * Add utshushi menu entry
 * Desktop: Asunder missing icon in menu
 * Validate
@@ -383,7 +383,6 @@ any additional terms or conditions.
 * Personal packages
   * TeamViewer
   * Wallpaper
-* Current GTK themes is missing Thunar icons
 
 # Later <a name="later"/></a>
 * Add gtk2fontsel to menu in lite

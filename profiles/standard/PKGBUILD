@@ -300,6 +300,7 @@ package_cyberlinux-standard-lite()
     'openbox'                   # Lightweight X11 window manager, group: lxde
     'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
     'paper-icon-theme'          # Paper icon theme, repo: cyberlinux
+    'papirus-icon-theme'        # Based on the paper icon theme
     'xdg-user-dirs'             # Manage user directories like ~/Desktop
     'xdg-utils'                 # Desktop integration utilities
 
@@ -506,6 +507,7 @@ package_cyberlinux-standard-desktop()
     'handbrake'                 # Video encoding tool for mp4/mkv
     'handbrake-cli'             # Video encoding tool for mp4/mkv
     'kodi'                      # A software media player and entertainment hub for digital media
+    'losslessscut_bin'          # Crossplatform GUI tool for lossless trimming/cuttong of video/audio files
     'mkvtoolnix-gui'            # Set of tools to create, edit and inspect MKV files
     'openshot'                  # Simple powerful Video Editor, alt: pitivi, kdenlive
     'simplescreenrecorder'      # Awesome screen recorder

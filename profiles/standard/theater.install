@@ -28,12 +28,8 @@ post_install()
   # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
   # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
 
-  # Lock screen configuration
-  # ---------------------------------------------------------------------------
-
-  # Default background to use for cinnamon-screensaver
-  # /usr/share/wallpaper/dreamfusion003_1280x1024.jpg
-  mv -f /etc/dconf/db/local.d/04-cinnamon_sideload_theater /etc/dconf/db/local.d/04-cinnamon
+  # Default background to use for wallpaper
+  # /usr/share/backgrounds/dreamfusion003_1280x1024.jpg
 
   # idesk configuration
   # ---------------------------------------------------------------------------
