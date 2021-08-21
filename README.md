@@ -41,8 +41,13 @@ of ***cyberlinux-multiboot***.
     * [autodetect](#autodetect)
     * [arch-chroot](#arch-chroot)
 * [GRUB2 bootloader](#grub2-bootloader)
-  * [incompatible license](#incompatible-license)
+  * [GRUB structure](#grub-structure)
   * [GFXMenu module](#gfxmenu-module)
+  * [incompatible license](#incompatible-license)
+  * [grub-mkimage](#grub-mkimage)
+  * [xorriso](#xorriso)
+    * [mkarchiso](#mkarchiso)
+    * [EFI only ISO](#efi-only-iso)
 * [Bash pro tips](#bash-pro-tips)
   * [heredoc](#heredoc)
 * [Contribute](#contribute)
@@ -314,7 +319,7 @@ the system into the newly installed OS.
 * [GRUB Developers Manual](https://www.gnu.org/software/grub/manual/grub-dev/html_node/index.html)
 * [GFXMenu Components](https://www.gnu.org/software/grub/manual/grub-dev/html_node/GUI-Components.html#GUI-Components)
 
-### GRUB structure <a name="grub-structure"/></a>
+## GRUB structure <a name="grub-structure"/></a>
 GRUB is composed of a `kernel` which contains the fundamental features from memory allocation to
 basic commands the module loader and a simplistic rescue shell. The `modules` can be loaded by the
 kernel to add functionality such as additional commands or support for various filesystems. The `core`
@@ -326,11 +331,33 @@ location post fixed with the architecture e.g. `/boot/grub/x86_64-efi`. The modu
 core image are just enough to be able to load additional modules from the real filesystem usually
 bios and filesystem modules.
 
-Questions:
-* Given that the core image contains the spedified modules do we also need to include them on disk at
-`/boot/grub/<arch>`?
+## GFXMenu module <a name="gfxmenu-module"/></a>
+The [gfxmenu](https://www.gnu.org/software/grub/manual/grub-dev/html_node/Introduction_005f2.html#Introduction_005f2)
+module provides a graphical menu interface for GRUB 2. It functions as an alternative to the menu
+interface provided by the `normal` module. The graphical menu uses the GRUB video API supporting
+VESA BIOS extensions (VBE) 2.0+ and supports a number of GUI components.
 
-### incompatible license <a name="incompatible-license"/></a>
+`gfxmenu` supports a container-based layout system. Components can be added to containers, and
+containers (which are a type of component) can then be added to other containers, to form a tree of
+components. The root component of the tree is a `canvas` component, which allows manual layout of its
+child components.
+
+**Non-container components**:
+* `label`
+* `image`
+* `progress_bar`
+* `circular_progress`
+* `list`
+
+**Container components**:
+* `canvas`
+* `hbox`
+* `vbox`
+
+The GUI component instances are created by the theme loader in `gfxmenu/theme_loader.c` when a them
+is loaded.
+
+## incompatible license <a name="incompatible-license"/></a>
 If you get an ugly GRUB license error as follows upon boot you'll need to re-examine the GRUB modules
 you've included on your EFI boot.
 ```
@@ -358,41 +385,66 @@ was attempting to test my USB on. This means that either:
 * The construction of the ISO isn't accurate
 * Actual ISO creation with xorriso might be suspect
 
+## grub-mkimage <a name="grub-mkimage"/></a>
+***grub-mkimage*** is the key to building GRUB bootable systems. All of GRUB's higher level utilities
+like `grub-[install,mkstandalone,mkresuce]` all use `grub-mkimage` to do their work.
 
+Resources:
+* [GRUB on ISO](https://sites.google.com/site/grubefikiss/grub-on-iso-image)
+
+Essential Options:
+* `-c, --config=FILE` is only required if your not using the default `/boot/grub/grub.cfg`
+* `-O, --format=FORMAT` calls out the platform format e.g. `i386-pc` or `x86_64-efi`
+* `-o DESTINATION` output destination for the core image being built e.g. `/efi/boot/bootx64.efi`
+* `-d MODULES_PATH` location to modules during construction defaults to `/usr/lib/grub/<platform>`
+* `-p /boot/grub` directory to find grub once booted i.e. prefix directory
+* `space delimeted modules` list of modules to embedded in the core image
+  * `i386-pc` minimal are `biosdisk part_msdos fat`
+
+## grub-mkresuce <a name="grub-mkrescue"/></a>
+
+## xorriso <a name="xorriso"/></a>
+`genisoimage` is an outdated buggy fork of `mkisofs`. `xorriso` is a more feature rich and
+stable utility that also has a `-as mkisofs` compatible mode.
+
+Options:
+* `-as mkisofs` puts it in mkisofs mode to support options like grub-mkrescue does
+  * `-V volid` specifies the volume id xorriso's version is `-volid volid`
+* `-volid volid` xorriso's direct option rather than the mkisofs compatible optiona `-V`
+
+### mkarchiso <a name="mkarchiso"/></a>
 Examining the archiso construction process:
 1. Install the bits: `sudo pacman -S archiso`
-2. :w
+2. View the source: `sudo vim /usb/bin/mkarchiso`
+
+```bash
+$ xorriso -as mkisofs \
+   -iso-level 3 \
+   -full-iso9660-filenames \
+   -volid "${iso_label}" \
+   -eltorito-boot isolinux/isolinux.bin \
+   -eltorito-catalog isolinux/boot.cat \
+   -no-emul-boot -boot-load-size 4 -boot-info-table \
+   -isohybrid-mbr ~/customiso/isolinux/isohdpfx.bin \
+   -output arch-custom.iso \
+   ~/customiso
+```
 
 ```bash
 $ sudo mkdir /mnt/iso
 $ sudo mount ~/Downloads/archlinux-2021.08.01-x86_64.iso /mnt/iso
 ```
 
-### GFXMenu module <a name="gfxmenu-module"/></a>
-The [gfxmenu](https://www.gnu.org/software/grub/manual/grub-dev/html_node/Introduction_005f2.html#Introduction_005f2)
-module provides a graphical menu interface for GRUB 2. It functions as an alternative to the menu
-interface provided by the `normal` module. The graphical menu uses the GRUB video API supporting
-VESA BIOS extensions (VBE) 2.0+ and supports a number of GUI components.
+### EFI only ISO <a name="efi-only-iso"/></a>
+Useful for testing
 
-`gfxmenu` supports a container-based layout system. Components can be added to containers, and
-containers (which are a type of component) can then be added to other containers, to form a tree of
-components. The root component of the tree is a `canvas` component, which allows manual layout of its
-child components.
-
-**Non-container components**:
-* `label`
-* `image`
-* `progress_bar`
-* `circular_progress`
-* `list`
-
-**Container components**:
-* `canvas`
-* `hbox`
-* `vbox`
-
-The GUI component instances are created by the theme loader in `gfxmenu/theme_loader.c` when a them
-is loaded.
+```bash
+$ xorriso -as mkisofs \
+    -V 'deb10.5.0 preseed amd64 efi' \
+    -e boot/grub/efi.img \
+    -no-emul-boot \
+    -o $ISO_NEW $DIR_EXTRACT
+```
 
 # Bash pro tips <a name="bash-pro-tips"/></a>
 

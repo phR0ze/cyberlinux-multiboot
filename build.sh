@@ -187,9 +187,9 @@ build_multiboot()
 
   # We need to create our core image i.e bios.img that contains just enough code to find the grub
   # configuration and grub modules in /boot/grub/i386-pc directory
-  # -p /boot/grub             Directory to find grub once booted
-  # -d /usr/lib/grub/i386-pc  Use resources from this location when building the boot image
-  # -o $TEMP_DIR/bios.img     Output destination
+  # -p /boot/grub                 Directory to find grub once booted
+  # -d /usr/lib/grub/i386-pc      Use resources from this location when building the boot image
+  # -o $CONT_BUILD_DIR/bios.img   Output destination
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   grub-mkimage --format i386-pc -p /boot/grub -d /usr/lib/grub/i386-pc -o "$CONT_BUILD_DIR/bios.img" \
     biosdisk disk part_msdos part_gpt linux linux16 loopback normal configfile test search search_fs_uuid \
@@ -215,9 +215,9 @@ EOF
 
   # We need to create our core image i.e. bootx64.efi that contains just enough code to find the grub
   # configuration and grub modules in /boot/grub/x86_64-efi directory
-  # -p /boot/grub                     Directory to find grub once booted
-  # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"  Use resources from this location when building the boot image
-  # -o "$ISO_DIR/efi/boot/bootx64.efi"      Output destination, using wellknown compatibility location
+  # -p /boot/grub                               Directory to find grub once booted
+  # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"   Use resources from this location when building the boot image
+  # -o "$ISO_DIR/efi/boot/bootx64.efi"          Output destination, using wellknown compatibility location
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   grub-mkimage --format x86_64-efi -p /boot/grub -d /usr/lib/grub/x86_64-efi -o \
     "$CONT_ISO_DIR/efi/boot/bootx64.efi" disk part_msdos part_gpt linux linux16 loopback normal \
