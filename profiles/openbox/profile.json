@@ -1,69 +1,69 @@
 [
   {
     "name": "live",
-    "entry": "Start live environment            // Based on standard desktop",
+    "entry": "Start live environment            // Based on openbox desktop",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/live"
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook,openbox/desktop,openbox/live"
   },
   {
     "name": "desktop",
-    "entry": "Install standard desktop          // Netbook + dev and media apps",
+    "entry": "Install openbox desktop           // Netbook + dev and media apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop",
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook,openbox/desktop",
     "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
   },
   {
     "name": "laptop",
-    "entry": "Install standard laptop           // Desktop + laptop config",
+    "entry": "Install openbox laptop            // Desktop + laptop config",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook,standard/desktop,standard/laptop",
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook,openbox/desktop,openbox/laptop",
     "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,docker"
   },
   {
     "name": "netbook",
-    "entry": "Install standard netbook          // Lite + office apps",
+    "entry": "Install openbox netbook           // Lite + office apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/netbook",
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/netbook",
     "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp"
   },
   {
     "name": "theater",
-    "entry": "Install standard theater          // Lite + media apps",
+    "entry": "Install openbox theater           // Lite + media apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/theater",
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/theater",
     "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "server",
-    "entry": "Install standard server           // Lite + server apps",
+    "entry": "Install openbox server            // Lite + server apps",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite,standard/server",
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite,openbox/server",
     "groups": "lp,wheel,network,storage,users,video,audio,docker"
   },
   {
     "name": "lite",
-    "entry": "Install standard lite             // Shell + lite desktop env",
+    "entry": "Install openbox lite              // Shell + lite desktop env",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell,standard/lite",
+    "layers": "openbox/core,openbox/base,openbox/shell,openbox/lite",
     "groups": "lp,wheel,network,storage,users,video,audio"
   },
   {
     "name": "shell",
-    "entry": "Install standard shell            // Full bash system",
+    "entry": "Install openbox shell             // Full bash system",
     "kernel": "linux",
-    "layers": "standard/core,standard/base,standard/shell",
+    "layers": "openbox/core,openbox/base,openbox/shell",
     "groups": "lp,wheel,network,storage,users"
   },
   {
     "name": "base",
-    "entry": "Install standard base             // Minimal bash system",
+    "entry": "Install openbox base              // Minimal bash system",
     "kernel": "linux",
-    "layers": "standard/core,standard/base",
+    "layers": "openbox/core,openbox/base",
     "groups": "lp,wheel,network,storage,users"
   },
   {
     "name": "core",
     "entry": "Minimal bash container",
-    "layers": "standard/core"
+    "layers": "openbox/core"
   }
 ]

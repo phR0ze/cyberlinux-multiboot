@@ -1,15 +1,21 @@
-cyberlinux standard profile
+cyberlinux openbox profile
 [![license-badge](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ====================================================================================================
 
 <img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
-The <b>cyberlinux standard profile</b> provides a reference build with multiple highly opinionated
-pre-configured deployments ready to install. The **standard** profile was developed carefully to
-exclude any applications that were not free to use for commercial purposes.
+The <b>cyberlinux openbox profile</b> provides a reference build with multiple highly opinionated
+pre-configured deployments ready to install. All deployments in this profile use the ***OpenBox***
+window manager and have been carefully crafted to be a light as possible without sacrificing
+productivity and style.
+
+### License restrictions
+Some deployments in this profile may include applications licensed only for personal and are not free
+to use for commercial purposes. In these cases the deployments have been clearly labeled as such to
+avoid any confusion.
 
 ### Disclaimer
 ***cyberlinux*** and any of its components come with absolutely no guarantees or support of any kind.
-It is to be used at your own risk.  Any damages, issues, losses or problems caused by the use of
+It is to be used at your own risk. Any damages, issues, losses or problems caused by the use of
 ***cyberlinux*** or its components are strictly the responsiblity of the user and not the
 developer/creator of ***cyberlinux***.
 

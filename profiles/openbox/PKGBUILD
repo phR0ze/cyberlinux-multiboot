@@ -22,7 +22,7 @@
 #-------------------------------------------------------------------------------
 # Maintainer: phR0ze
 #-------------------------------------------------------------------------------
-pkgbase=cyberlinux-standard
+pkgbase=cyberlinux-openbox
 pkgname=(
     "${pkgbase}-core"
     "${pkgbase}-base"
@@ -46,7 +46,6 @@ shopt -s dotglob
 shopt -s extglob
 _none="\e[m"
 _cyan="\e[1;36m"
-_profile=standard
 
 pkgver()
 {
@@ -59,7 +58,7 @@ pkg()
 {
   local name=$1                       # e.g. core
   install=$name.install               # Specific installer script for deployment package
-  local configs="${startdir}/${name}" # /home/build/profiles/standard/core
+  local configs="${startdir}/${name}" # /home/build/profiles/openbox/core
 
   if [ -d "${configs}" ]; then
     msg "${_cyan}Installing '${name}' configuration files${_none}"
@@ -67,7 +66,7 @@ pkg()
   fi
 }
 
-package_cyberlinux-standard-core()
+package_cyberlinux-openbox-core()
 {
   pkgdesc="Minimal bash container"
   depends=(
@@ -81,11 +80,11 @@ package_cyberlinux-standard-core()
   pkg core
 }
 
-package_cyberlinux-standard-base()
+package_cyberlinux-openbox-base()
 {
   pkgdesc="Minimal bash system - a building block for lite deployments"
   depends=(
-    "cyberlinux-standard-core>=${pkgver}"
+    "cyberlinux-openbox-core>=${pkgver}"
 
     'base'                      # Requireed for all Arch Packages, provides: pacman, makepkg, repo-add, useradd ...
     'gnutls'                    # required by systemd-resolved to work
@@ -113,11 +112,11 @@ package_cyberlinux-standard-base()
   pkg base
 }
 
-package_cyberlinux-standard-shell()
+package_cyberlinux-openbox-shell()
 {
   pkgdesc="Full bash system - a building block for heavy deployments"
   depends=(
-    "cyberlinux-standard-base>=${pkgver}"
+    "cyberlinux-openbox-base>=${pkgver}"
 
     # system tools
     'cdrtools'                  # isoinfo, mkisofs
@@ -220,11 +219,11 @@ package_cyberlinux-standard-shell()
   pkg shell
 }
 
-package_cyberlinux-standard-lite()
+package_cyberlinux-openbox-lite()
 {
   pkgdesc="Lite x11 system - a building block specialized x11 deployments"
   depends=(
-    "cyberlinux-standard-shell>=${pkgver}"
+    "cyberlinux-openbox-shell>=${pkgver}"
 
     # xorg
     'xf86-input-libinput'       # x.org generic input driver, group: xorg-drivers
@@ -401,11 +400,11 @@ package_cyberlinux-standard-lite()
   pkg lite
 }
 
-package_cyberlinux-standard-server()
+package_cyberlinux-openbox-server()
 {
   pkgdesc="Server x11 system - built on the lite deployment adding server apps"
   depends=(
-    "cyberlinux-standard-lite>=${pkgver}"
+    "cyberlinux-openbox-lite>=${pkgver}"
 
     # Utils
     'docker'                    # Pack, ship and run any application as a lightweight container
@@ -423,11 +422,11 @@ package_cyberlinux-standard-server()
   pkg server
 }
 
-package_cyberlinux-standard-netbook()
+package_cyberlinux-openbox-netbook()
 {
   pkgdesc="Netbook x11 system - built on the lite deployment adding productivity apps"
   depends=(
-    "cyberlinux-standard-lite>=${pkgver}"
+    "cyberlinux-openbox-lite>=${pkgver}"
 
     # Utils
     'android-tools'             # Android platform tools
@@ -453,11 +452,11 @@ package_cyberlinux-standard-netbook()
   pkg netbook
 }
 
-package_cyberlinux-standard-theater()
+package_cyberlinux-openbox-theater()
 {
   pkgdesc="Theater system - a lean back entertainment experience"
   depends=(
-    "cyberlinux-standard-netbook>=${pkgver}"
+    "cyberlinux-openbox-netbook>=${pkgver}"
 
     'guake'                     # Drop-down python based guake style terminal
     'idesk'                     # Lightweight desktop icons for X
@@ -466,11 +465,11 @@ package_cyberlinux-standard-theater()
   pkg theater
 }
 
-package_cyberlinux-standard-desktop()
+package_cyberlinux-openbox-desktop()
 {
   pkgdesc="Full desktop system - built on top of netbook with additional media and productivity apps"
   depends=(
-    "cyberlinux-standard-netbook>=${pkgver}"
+    "cyberlinux-openbox-netbook>=${pkgver}"
 
     # Utils
     'catfish'                   # System/File Search - File search tool
@@ -526,11 +525,11 @@ package_cyberlinux-standard-desktop()
   pkg desktop
 }
 
-package_cyberlinux-standard-laptop()
+package_cyberlinux-openbox-laptop()
 {
   pkgdesc="Laptop system - built on top of desktop with laptop configuration"
   depends=(
-    "cyberlinux-standard-desktop>=${pkgver}"
+    "cyberlinux-openbox-desktop>=${pkgver}"
   )
   pkg laptop
 }

@@ -69,11 +69,11 @@ post_install()
   # Pacman configuration
   # ---------------------------------------------------------------------------
   # Custom arch linux mirrorlist location
-  # rankmirrors -n 10 profiles/standard/base/etc/pacman.d/archlinux.mirrorlist
+  # rankmirrors -n 10 profiles/openbox/base/etc/pacman.d/archlinux.mirrorlist
   # /etc/pacman.d/archlinux.mirrorlist
 
   # BlackArch linux mirrorlist location
-  # rankmirrors -n 10 profiles/standard/base/etc/pacman.d/blackarch.mirrorlist
+  # rankmirrors -n 10 profiles/openbox/base/etc/pacman.d/blackarch.mirrorlist
   # /etc/pacman.d/blackarch.mirrorlist
 
   # Added configuration to make use of multiple CPU cores
