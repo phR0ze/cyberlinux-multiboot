@@ -580,6 +580,12 @@ config_system()
     echo -en ":: Populating the pacman keyring..."
     chroot ${NEW_ROOT} pacman-key --populate archlinux blackarch &>/dev/null
     check_status
+
+    # Inject a longer delay for conky if live
+    #---------------------------------------------------------------------------
+    if [ $LAYER == "live" ]; then
+        sed -i -e "s/sleep 1/sleep 2/" "${NEW_ROOT}/home/${USER}/.config/autostart/conky.desktop"
+    fi
 }
 
 # Create a new system mount then overlay layers as specified
@@ -599,6 +605,7 @@ installer()
 
     # Print out the given params
     echo -e ":: Incoming deployment options"
+    echo -e "   layer=$LAYER"
     for x in ${PARAMS}; do
         [[ "$x" != BOOT_IMAGE=* ]] && echo -e "   ${x}"
     done
@@ -613,7 +620,7 @@ installer()
     SSD=0
     DEFAULT="n"
     ENABLE_WIFI=0
-    HOSTNAME="${DISTRO}-${LAYER//\//-}"
+    HOSTNAME="${DISTRO}-${LAYER}"
     NETIP='DHCP'
     PROXY='None'
     NO_PROXY='localhost,127.0.0.1'
@@ -839,7 +846,7 @@ run_hook()
     LAYERS=$(echo $LAYERS | awk -F, '{for(i=NF;i>1;i--)printf "%s,",$i;printf "%s",$1}')
 
     # Get the first layer which will be our target
-    LAYER=$(echo $LAYERS | awk -F, '{print $1}')
+    LAYER=$(basename $(echo $LAYERS | awk -F, '{print $1}'))
 
     # Default autologin if live is the target layer
     [ -z ${AUTOLOGIN+x} ] && AUTOLOGIN=0
