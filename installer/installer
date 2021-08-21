@@ -605,7 +605,7 @@ installer()
 
     # Print out the given params
     echo -e ":: Incoming deployment options"
-    echo -e "   layer=$LAYER"
+    echo -e "   deployment=$LAYER"
     for x in ${PARAMS}; do
         [[ "$x" != BOOT_IMAGE=* ]] && echo -e "   ${x}"
     done
