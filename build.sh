@@ -346,39 +346,27 @@ build_iso()
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   cd ~/
   xorriso \
-    `# Use -as mkisofs to support options like grub-mkrescue does` \
-    -as mkisofs \
     \
-    `# Date created YYYYMMDDHHmmsscc e.g. 2021071223322500` \
-    --modification-date=$(date -u +%Y%m%d%H%M%S00) \
+    `# Configure general settings` \
+    -as mkisofs                                     `# Use -as mkisofs to support options like grub-mkrescue does` \
+    -volid CYBERLINUX_INSTALLER                     `# Identifier installer uses to find the install drive` \
+    --modification-date=$(date -u +%Y%m%d%H%M%S00)  `# Date created YYYYMMDDHHmmsscc e.g. 2021071223322500` \
+    -r -iso-level 3                                 `# Use Rock Ridge and level 3 for standard ISO features` \
+    -graft-points                                   `# Check filename separators are handled correctly` \
     \
-    `# Volume identifier used by the installer to find the install drive` \
-    -volid CYBERLINUX_INSTALLER \
+    `# Configure BIOS bootable settings` \
+    -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS bootable ISO/CD-ROM` \
+    -no-emul-boot                                   `# GRUB2 requires no emulation boot mode` \
+    -boot-info-table                                `# GRUB2 writes boot info table into boot image` \
+    --embedded-boot "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img" `# Isohybrid image enables BIOS USB boot` \
     \
-    `# Check that all filename separators are handled correctly` \
-    -graft-points \
-    \
-    `# El Torito boot image to use to make this iso CD-ROM bootable by BIOS` \
-    -b boot/grub/i386-pc/eltorito.img \
-    \
-    `# GRUB2 requires no emulation boot mode` \
-    -no-emul-boot \
-    \
-    `# GRUB2 writes boot info table into boot image` \
-    -boot-info-table \
-    \
-    `# Bootable isohybrid image to make this iso USB stick bootable by BIOS` \
-    --embedded-boot "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img" \
-    \
-    `# Setup a partition table to block other disk partition tools from manipulating this disk` \
-    --protective-msdos-label \
-    \
+    `# Configure UEFI bootable settings` \
     `# EFI boot image location on the iso post creation to use to make this iso USB stick bootable by UEFI` \
     `# Note the use of the well known compatibility path /efi/boot/bootx64.efi` \
     --efi-boot /efi/boot/bootx64.efi \
     \
-    `# Use Rock Ridge permissions and level 3 to support large file sizes` \
-    -r -iso-level 3 \
+    `# Setup a partition table to block other disk partition tools from manipulating this disk` \
+    --protective-msdos-label \
     \
     `# Specify the output iso file path and location to turn into an ISO` \
     -o $CONT_OUTPUT_DIR/cyberlinux.iso "$CONT_ISO_DIR"
