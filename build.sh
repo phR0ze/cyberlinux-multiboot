@@ -358,12 +358,6 @@ build_iso()
     `# Check that all filename separators are handled correctly` \
     -graft-points \
     \
-    `# Store files other than /boot further away from the center of the CD` \
-    --sort-weight 0 / \
-    \
-    `# Store /boot files closer to the center of the CD` \
-    --sort-weight 1 /boot \
-    \
     `# El Torito boot image to use to make this iso CD-ROM bootable by BIOS` \
     -b boot/grub/i386-pc/eltorito.img \
     \
