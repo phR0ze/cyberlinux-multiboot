@@ -391,6 +391,8 @@ like `grub-[install,mkstandalone,mkresuce]` all use `grub-mkimage` to do their w
 
 Resources:
 * [GRUB on ISO](https://sites.google.com/site/grubefikiss/grub-on-iso-image)
+* [GRUB image descriptions](https://www.gnu.org/software/grub/manual/grub/html_node/Images.html)
+* [grub-mkstandalone](https://willhaley.com/blog/custom-debian-live-environment-grub-only/#create-bootable-isocd)
 
 Essential Options:
 * `-c, --config=FILE` is only required if your not using the default `/boot/grub/grub.cfg`
