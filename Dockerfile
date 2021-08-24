@@ -38,6 +38,7 @@ COPY profiles/standard/base/etc/pacman.d/blackarch.mirrorlist /etc/pacman.d/
 # `squashfs-tools`        provides `mksquashfs` for creating squashfs images
 # `jq`                    provides `jq` json manipulation
 # `efibootmgr`            provides `efibootmgr` for EFI boot manager entry manipulation
+# `parted`                provides `partprobe` for partition manipulation
 RUN echo ">> Install blackarch repo" && \
   curl -s -O https://blackarch.org/keyring/blackarch-keyring.pkg.tar.xz && \
   pacman -U --noconfirm blackarch-keyring.pkg.tar.xz && \

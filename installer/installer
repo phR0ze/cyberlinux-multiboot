@@ -20,24 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Booting Linux Systems:
-# http://archlinux.me/brain0/2010/02/13/early-userspace-in-arch-linux/
-# -----------------------------------------------------------------------------
-# BIOS Firmware
-# BIOS looks for a partition on the primary disk that contains the Master Boot
-# Record (MBR) and loads the boot manager from there (e.g. Syslinux/ISOlinux)
-# which in turn loads the chosen Linux kernel and initramfs (early userspace)
-# which then bootstraps then bootstraps the system to the point where it can
-# access the real root filesystem at which point the initramfs turns control
-# over to systemd to complete the boot process.
-#
-# UEFI Firmware
-# UEFI firmware identifies the ESP (i.e. partition with code ef00 formatted as
-# FAT) and loads the binary at /EFI/BOOT/BOOTx86.efi which can be either a boot
-# manager or bootloader. Either way the binary loads the target kernel or target
-# bootloader which loads the target kernel
-# -----------------------------------------------------------------------------
-
 # Configure color codes using tput which requires terminfo set
 # I've overridden bold using the mkinitcpio-vt-colors package to cyberlinux blue
 # which is why simply using blue here will give use cyberlinux blue.
@@ -250,18 +232,18 @@ partition_and_mount_disk()
         PART_ROOT="${INSTALL_DEV}3"
     fi
 
-    # EFI: Create a ESP boot partition
+    # EFI: Create a ESP boot partition EF00
     # https://wiki.archlinux.org/index.php/EFI_System_Partition#Create_the_partition
     if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}ESP boot partition${none}..."
         sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI system" ${INSTALL_DEV} &>/dev/null
         check_status
 
-        echo -en ":: Formatting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}vfat${none}..."
-        mkfs.vfat -n "BOOT" ${PART_BOOT} &>/dev/null
+        echo -en ":: Formatting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}FAT32${none}..."
+        mkfs.fat -F 32 -n "BOOT" ${PART_BOOT} &>/dev/null
         check_status
 
-    # BIOS: Create a BIOS boot partition
+    # BIOS: Create a BIOS boot partition EF00
     else
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}BIOS boot partition${none}..."
         sgdisk -n 0:0:+2M -t 0:EF02 -c 0:"BIOS system" ${INSTALL_DEV} &>/dev/null

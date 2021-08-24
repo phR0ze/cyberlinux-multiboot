@@ -40,14 +40,17 @@ of ***cyberlinux-multiboot***.
   * [docker mkinitcpio issues](#docker-mkinitcpio-issues)
     * [autodetect](#autodetect)
     * [arch-chroot](#arch-chroot)
-* [GRUB2 bootloader](#grub2-bootloader)
-  * [GRUB structure](#grub-structure)
-  * [GFXMenu module](#gfxmenu-module)
-  * [incompatible license](#incompatible-license)
-  * [grub-mkimage](#grub-mkimage)
-  * [xorriso](#xorriso)
-    * [mkarchiso](#mkarchiso)
-    * [EFI only ISO](#efi-only-iso)
+* [Boot Loaders](#boot-loaders)
+  * [BIOS Firmware](#bios-firmware)
+  * [UEFI Firmware](#uefi-firmware)
+  * [Clover](#clover)
+  * [rEFInd](#rEFInd)
+    * [rEFInd vs GRUB2](#rEFInd-vs-grub2)
+  * [GRUB2](#grub2)
+    * [GRUB structure](#grub-structure)
+    * [grub-mkimage](#grub-mkimage)
+    * [GFXMenu module](#gfxmenu-module)
+    * [Trouble-shooting](#trouble-shooting)
 * [Bash pro tips](#bash-pro-tips)
   * [heredoc](#heredoc)
 * [Contribute](#contribute)
@@ -106,19 +109,17 @@ All that is required is ***passwordless sudo*** and ***docker***.
    $ cd ~/Projects
    $ git clone git@github.com:phR0ze/cyberlinux-multiboot
    ```
-
 2. Execute the build:
    ```bash
    $ ./build.sh -a
    ```
-
 3. Copy the ISO to the USB:
    ```bash
    # Determine the correct USB device
    $ lsblk
 
    # Copy to the dev leaving off the partition
-   $ sudo cp temp/output/cyberlinux.iso /dev/sdd
+   $ sudo dd bs=32M if=temp/output/cyberlinux.iso of=/dev/sdd status=progress oflag=sync
    ```
 
 ### Test USB in VirtualBox <a name="test-usb-in-virtualbox"/></a>
@@ -162,13 +163,12 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
    c. Navigate to `Security >Secure Boot`  
    d. Ensure it is `Disabled`
 
-1. Boot the AK1 form the USB:  
+2. Now boot the AK1 from the USB:  
    a. Plug in the USB from [Create multiboot USB](#create-multiboot-usb)  
    b. Press `F7` repeatedly until the boot menu pops up  
    c. Select your device e.g. `KingstonDataTravelor 2.01.00`  
-   d. 
 
-2. Boot while pressing ``
+3. 
 
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
@@ -305,7 +305,83 @@ drwxr-xr-x  3 root root  4096 Jul 30 03:29 5.13.6-arch1-1
 exit
 ```
 
-# GRUB2 bootloader <a name="grub2-bootloader"/></a>
+# Boot Loaders <a name="boot-loaders"/></a>
+UEFI devices now have alternative options for boot loaders that provide options for image display,
+custom fonts, and menus either on par or more advanced than the venerable GRUB2's GFXMenu in
+functionality. What's more GRUB2 doesn't support xUCI usb devices, i.e. the keyboard, and all machines
+are moving towards xUCI. It might be time to find a new boot loader.
+
+**References**:
+* [Arch Linux Early User space](http://archlinux.me/brain0/2010/02/13/early-userspace-in-arch-linux/)
+
+## BIOS Firmware <a name="bios-firmware"/></a>
+BIOS was developed in the 1970s and was prevelant till the late 2000s when it began to be gradually
+replaced by EFI. BIOS provides a basic text-based interface.
+
+### BIOS boot process <a name="bios-boot-process"/></a>
+BIOS looks at the first segment of the drive to find the bootloader. Traditionally this was a `MBR`
+partitioning sceme; however `GPT` partitioning part of the `EFI` spec can be used instead if done
+correctly. In order to accomplish this you need to create a `GPT protective MBR`. The only caveat is
+the boot loader needs to be GPT aware which pretty much all Linux compatible bootloaders are. Instead
+of injecting the boot loader into the MBR space in the first partition you need to create a new `BIOS
+Boot Partition` code `EF02`.
+
+By leveraging the `GPT BIOS Boot Partition EF02` on a BIOS system and instead a normal `ESP EF02`
+boot partition on UEFI systems we create a configuration that is bootable by modern EFI bootloaders
+like Clover in either case. This means we can create a single Clover custom UI that will boot and be
+used on either BIOS or UEFI.
+
+## UEFI Firmware <a name="uefi-firmware"/></a>
+From about 2010 on all computers have been using UEFI as their firmware to interface with the mother
+board rather than thd old BIOS firmware. 
+
+Note: `UEFI` is essentially `EFI 2.0`
+
+Most EFI boot loaders and boot managers reside in their own subdirectories inside the `EFI` directory
+on the `EFI System Partition (ESP)` e.g. `/dev/sda1` mounted at `/boot` thus
+`/boot/efi/<bootloader>`.
+
+### EFI boot process <a name="efi-boot-process"/></a>
+UEFI firmware identifies the `ESP` (i.e. partition with code `ef00` formatted as `FAT32`) and loads
+the binary target at `/efi/boot/bootx86.efi` which can be either a boot manager or bootloader. Either
+way the binary target then loads the target kernel or target bootloader which loads the target
+kernel.
+
+## Clover <a name="clover"/></a>
+Clover EFI is a boot loader developed to boot OSX, Windows and Linux in legacy or UEFI mode.
+
+**References**:
+* [Arch Linux - Clover](https://wiki.archlinux.org/title/Clover)
+
+**Features**:
+* Emulate UEFI on legacy BIOS systems which allows you to boot into EFI mode from legacy mode so you
+can share the same `efi` files and UI
+* Support native resolution GUI with icons, fonts and other UI elements with mouse support
+* Easy to use and customize
+
+
+## rEFInd <a name="rEFInd"/></a>
+`rEFInd themes` are quite intriguing providing custom icons, images, fonts and menus that surpass
+what GRUB2 offers.
+
+References:
+* [The rEFInd Boot Manager](https://www.rodsbooks.com/refind/)
+* [Theming rEFInd](https://www.rodsbooks.com/refind/themes.html)
+* [rEFInd vs GRUB](https://askubuntu.com/questions/760875/any-downside-to-using-refind-instead-of-grub)
+
+### rEFInd vs GRUB2 <a name="refind-vs-grub2"/></a>
+* rEFInd features
+  * scans for kernels on every boot making it more adaptive and less reliant on config files.
+  * configuration files are simpler and is easier to tweak
+  * has `more eye candy`
+  * can boot from CD or USB stick
+  * has an arch linux package
+* rEFInd downsides
+  * has a single developer
+  * doesn't support as many platforms as GRUB
+  * getting `Shim` to work with rEFInd is harder
+
+## GRUB2 <a name="grub2"/></a>
 [GRUB2](https://www.gnu.org/software/grub) offers the ability to easily create a bootable USB drive
 for both BIOS and UEFI systems as well as a customizable menu for arbitrary payloads. This
 combination is ideal for a customizable initramfs based installer. Using GRUB2 we can boot on any
@@ -319,7 +395,7 @@ the system into the newly installed OS.
 * [GRUB Developers Manual](https://www.gnu.org/software/grub/manual/grub-dev/html_node/index.html)
 * [GFXMenu Components](https://www.gnu.org/software/grub/manual/grub-dev/html_node/GUI-Components.html#GUI-Components)
 
-## GRUB structure <a name="grub-structure"/></a>
+### GRUB structure <a name="grub-structure"/></a>
 GRUB is composed of a `kernel` which contains the fundamental features from memory allocation to
 basic commands the module loader and a simplistic rescue shell. The `modules` can be loaded by the
 kernel to add functionality such as additional commands or support for various filesystems. The `core`
@@ -331,7 +407,26 @@ location post fixed with the architecture e.g. `/boot/grub/x86_64-efi`. The modu
 core image are just enough to be able to load additional modules from the real filesystem usually
 bios and filesystem modules.
 
-## GFXMenu module <a name="gfxmenu-module"/></a>
+### grub-mkimage <a name="grub-mkimage"/></a>
+***grub-mkimage*** is the key to building GRUB bootable systems. All of GRUB's higher level utilities
+like `grub-[install,mkstandalone,mkresuce]` all use `grub-mkimage` to do their work.
+
+Resources:
+* [GRUB on ISO](https://sites.google.com/site/grubefikiss/grub-on-iso-image)
+* [GRUB image descriptions](https://www.gnu.org/software/grub/manual/grub/html_node/Images.html)
+* [grub-mkstandalone](https://willhaley.com/blog/custom-debian-live-environment-grub-only/#create-bootable-isocd)
+* [GRUB2 bootable ISO with xorriso](http://lukeluo.blogspot.com/2013/06/grub-how-to-2-make-boot-able-iso-with.html)
+
+Essential Options:
+* `-c, --config=FILE` is only required if your not using the default `/boot/grub/grub.cfg`
+* `-O, --format=FORMAT` calls out the platform format e.g. `i386-pc` or `x86_64-efi`
+* `-o DESTINATION` output destination for the core image being built e.g. `/efi/boot/bootx64.efi`
+* `-d MODULES_PATH` location to modules during construction defaults to `/usr/lib/grub/<platform>`
+* `-p /boot/grub` directory to find grub once booted i.e. prefix directory
+* `space delimeted modules` list of modules to embedded in the core image
+  * `i386-pc` minimal are `biosdisk part_msdos fat`
+
+### GFXMenu module <a name="gfxmenu-module"/></a>
 The [gfxmenu](https://www.gnu.org/software/grub/manual/grub-dev/html_node/Introduction_005f2.html#Introduction_005f2)
 module provides a graphical menu interface for GRUB 2. It functions as an alternative to the menu
 interface provided by the `normal` module. The graphical menu uses the GRUB video API supporting
@@ -357,7 +452,28 @@ child components.
 The GUI component instances are created by the theme loader in `gfxmenu/theme_loader.c` when a them
 is loaded.
 
-## incompatible license <a name="incompatible-license"/></a>
+### Trouble-shooting <a name="trouble-shooting"/></a>
+
+#### Keyboard not working <a name="keyboard-not-working"/></a>
+Booting into the ACEPC AK1 I found that GRUB had no keyboard support. After some research I found
+that newer systems use `XHCI` mode for USB which is a combination of USB 1.0, USB 2.0 and USB 3.0 and
+is newer. On newer Intel motherboards XHCI is the only option meaning that there is no way to fall
+back on EHCI.
+
+**Research:**
+* XHCI GRUB module?
+  * I see a `uhci.mod ehci.mod usb_keyboard.mod` in `/usr/lib/grub/i386-pc`
+  * `uhci.mod` supports USB 1 devices
+  * `ehci.mod` supports USB 2 devices
+  * `xhci.mod` supports all USB devices including USB 3
+* Use Auto rather than Smart Auto or Legacy USB in BIOS
+  * Doesn't seem to help
+
+Turns out that GRUB2 doesn't have any plans to support xHCI. After digging into this futher it
+appears that the community in the UEFI age is pulling away from GRUB2 as the boot manager of choice.
+There are other options out there for newer systems like [rEFInd](#rEFInd)
+
+#### incompatible license <a name="incompatible-license"/></a>
 If you get an ugly GRUB license error as follows upon boot you'll need to re-examine the GRUB modules
 you've included on your EFI boot.
 ```
@@ -382,71 +498,10 @@ was attempting to test my USB on. This means that either:
 * Copying the ISO to the USB incorrectly may cause this
   * Validated the same process with the Arch Linux ISO and it works 
 * The construction of the GRUB boot images isn't accurate
+  * I dropped it down to the minimal modules, possible this helped but unlikely
 * The construction of the ISO isn't accurate
-* Actual ISO creation with xorriso might be suspect
-
-## grub-mkimage <a name="grub-mkimage"/></a>
-***grub-mkimage*** is the key to building GRUB bootable systems. All of GRUB's higher level utilities
-like `grub-[install,mkstandalone,mkresuce]` all use `grub-mkimage` to do their work.
-
-Resources:
-* [GRUB on ISO](https://sites.google.com/site/grubefikiss/grub-on-iso-image)
-* [GRUB image descriptions](https://www.gnu.org/software/grub/manual/grub/html_node/Images.html)
-* [grub-mkstandalone](https://willhaley.com/blog/custom-debian-live-environment-grub-only/#create-bootable-isocd)
-
-Essential Options:
-* `-c, --config=FILE` is only required if your not using the default `/boot/grub/grub.cfg`
-* `-O, --format=FORMAT` calls out the platform format e.g. `i386-pc` or `x86_64-efi`
-* `-o DESTINATION` output destination for the core image being built e.g. `/efi/boot/bootx64.efi`
-* `-d MODULES_PATH` location to modules during construction defaults to `/usr/lib/grub/<platform>`
-* `-p /boot/grub` directory to find grub once booted i.e. prefix directory
-* `space delimeted modules` list of modules to embedded in the core image
-  * `i386-pc` minimal are `biosdisk part_msdos fat`
-
-## grub-mkresuce <a name="grub-mkrescue"/></a>
-
-## xorriso <a name="xorriso"/></a>
-`genisoimage` is an outdated buggy fork of `mkisofs`. `xorriso` is a more feature rich and
-stable utility that also has a `-as mkisofs` compatible mode.
-
-Options:
-* `-as mkisofs` puts it in mkisofs mode to support options like grub-mkrescue does
-  * `-V volid` specifies the volume id xorriso's version is `-volid volid`
-* `-volid volid` xorriso's direct option rather than the mkisofs compatible optiona `-V`
-
-### mkarchiso <a name="mkarchiso"/></a>
-Examining the archiso construction process:
-1. Install the bits: `sudo pacman -S archiso`
-2. View the source: `sudo vim /usb/bin/mkarchiso`
-
-```bash
-$ xorriso -as mkisofs \
-   -iso-level 3 \
-   -full-iso9660-filenames \
-   -volid "${iso_label}" \
-   -eltorito-boot isolinux/isolinux.bin \
-   -eltorito-catalog isolinux/boot.cat \
-   -no-emul-boot -boot-load-size 4 -boot-info-table \
-   -isohybrid-mbr ~/customiso/isolinux/isohdpfx.bin \
-   -output arch-custom.iso \
-   ~/customiso
-```
-
-```bash
-$ sudo mkdir /mnt/iso
-$ sudo mount ~/Downloads/archlinux-2021.08.01-x86_64.iso /mnt/iso
-```
-
-### EFI only ISO <a name="efi-only-iso"/></a>
-Useful for testing
-
-```bash
-$ xorriso -as mkisofs \
-    -V 'deb10.5.0 preseed amd64 efi' \
-    -e boot/grub/efi.img \
-    -no-emul-boot \
-    -o $ISO_NEW $DIR_EXTRACT
-```
+  * I believe the issue was the xorriso properties I had used. After switching back to the original
+  xorriso settings from cyberlinux 1.0 I fixed it.
 
 # Bash pro tips <a name="bash-pro-tips"/></a>
 
@@ -490,8 +545,10 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Migrate to nvim
+* Use rEFInd instead of GRUB2 for EFI boots
+* rEFInd theme to replace GRUB2 GFXmenu
 
+* Migrate to nvim
 * Personal packages: Wallpaper
 * Add GTK Arc Dark theme
 * Add utshushi menu entry
