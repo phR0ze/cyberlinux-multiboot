@@ -222,6 +222,10 @@ choose an `UEFI` boot option in order to get keyboard support during the install
    k. Set `Movies are in separate folders that match the movie title` and select `OK`  
    l. Repeat for any other NFS share paths your server has  
 
+7. Copy over ssh keys to `~/.ssh`  
+
+8. Copy over any wallpaper to `/usr/share/backgrounds`  
+
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
 References:
@@ -705,7 +709,12 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Personal packages: Wallpaper
-* Adding wine packages for gaming
+* Desktop:
+  * Validate: Added wine packages for gaming
+  * Conky's settings didn't take for Desktop
+  * GTK folder sort settings didn't take
+  * Filezilla initial configs not set
+* Add conflicts to PKGBUILD
 
 * Migrate to nvim
 * Add GTK Arc Dark theme
