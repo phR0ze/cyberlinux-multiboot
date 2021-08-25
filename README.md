@@ -708,7 +708,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Personal packages: Wallpaper
+* Support profiles depending on each other
 * Desktop:
   * Validate: Added wine packages for gaming
   * Conky's settings didn't take for Desktop

@@ -30,6 +30,8 @@ post_install()
   # convert -background none -density 384 -resize x32 /usr/share/icons/hicolor/scalable/apps/audacious.svg \
   #   /usr/share/icons/hicolor/32x32/apps/audacious.png
   # /usr/share/icons/hicolor
+  # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
+  # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
 
   # Added some useful fonts and their licences
   # /usr/share/fonts/TTF
