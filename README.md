@@ -160,9 +160,9 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
 
 ## ACEPC AK1 <a name="acepc-ak1"/></a>
 Note because of the `xHCI` USB driver being used by the newer firmware on the ACEPC AK1 you must
-choose an `UEFI` boot option in order to get keyboard support.
+choose an `UEFI` boot option in order to get keyboard support during the install.
 
-1. Boot Into the `BIOS`:  
+1. Boot Into the `Setup firmware`:  
    a. Press `F7` repeatedly until the boot menu pops up  
    b. Select `Enter Setup`  
    c. Navigate to `Security >Secure Boot`  
@@ -200,6 +200,27 @@ choose an `UEFI` boot option in order to get keyboard support.
       ```bash
       $ sudo systemctl restart systemd-networkd
       ```
+
+5. Configure Teamviewer if installed:  
+   a. Launch Teamviewer from the tray icon  
+   b. Navigate to `Extras >Options`  
+   c. Set `Choose a theme` to `Dark` and hit `Apply`  
+   d. Navigate to `Advanced` and set `Personal password` and hit `OK`  
+
+6. Configure Kodi if desired:  
+   a. Hover over selecting `Remove this main menu item` for those not used `Muic Videos, TV, Radio,
+   Games, Favourites`  
+   b. Add NFS shares as desired  
+   c. Navigate to `Movies > Enter files selection > Files >Add videos...`  
+   d. Select `Browse >Add network location...`  
+   e. Select `Protocol` as `Network File System (NFS)`  
+   f. Set `Server address` to your target e.g. `192.168.1.3`  
+   g. Set `Remote path` to your server path e.g. `srv/nfs/Movies`  
+   h. Select your new NFS location in the list and select `OK`  
+   i. Select `OK` then set `This directory contains` to `Movies`  
+   j. Set `Choose information provider` and set `Local information only`  
+   k. Set `Movies are in separate folders that match the movie title` and select `OK`  
+   l. Repeat for any other NFS share paths your server has  
 
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
@@ -684,6 +705,7 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Personal packages: Wallpaper
+* Adding wine packages for gaming
 
 * Migrate to nvim
 * Add GTK Arc Dark theme

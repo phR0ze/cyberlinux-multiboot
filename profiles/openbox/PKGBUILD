@@ -419,8 +419,10 @@ package_cyberlinux-openbox-server()
 
     # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
-    'teamviewer'                # Remote software restricted to Personal Use Only by licensing
     'tiny-media-manager'        # Cross platform media manager, repo: cyberlinux
+
+    # Personal use only licensing restriction
+    'teamviewer'                # Excellent remoting software
   )
   pkg server
 }
@@ -463,8 +465,10 @@ package_cyberlinux-openbox-theater()
 
     'guake'                     # Drop-down python based guake style terminal
     'idesk'                     # Lightweight desktop icons for X
-    'teamviewer'                # Remote software restricted to Personal Use Only by licensing
     'kodi'                      # A software media player and entertainment hub for digital media
+
+    # Personal use only licensing restriction
+    'teamviewer'                # Excellent remoting software
   )
   pkg theater
 }
@@ -498,6 +502,16 @@ package_cyberlinux-openbox-desktop()
     'virtualbox-guest-iso'      # VirtualBox guest additions iso image
     'visual-studio-code-bin'    # Editor for modern development, repo: CYBERLINUX
 
+    # Games
+    'lib32-freetype2'           # TrueType font rendering library (32-bit)
+    'lib32-libpulse'            # A featureful, general-purpose sound server (32-bit client libraries)
+    'lib32-mpg123'              # A console based real time MPEG Audio Player for Layer 1, 2 and 3 (32-bit)
+    'lib32-libusb'              # A cross-platform user library to access USB devices (32-bit)
+    'wintricks'                 # Script to install various redistributable runtime libraries in Wine
+    'wine-gecko'                # Wine's built-in replacement for Microsoft's Internet Explorer
+    'wine-mono'                 # Wine's built-in replacement for Microsoft's .NET Framework
+    'zenity'                    # Display graphical dialog boxes from shell scripts
+
     # Graphics
     'inkscape'                  # Professional vector graphics editor
 
@@ -518,7 +532,6 @@ package_cyberlinux-openbox-desktop()
     # Network
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
     'synergy'                   # Share a single mouse and keyboard between multiple computers
-    'teamviewer'                # Remote software restricted to Personal Use Only by licensing
 
     # Office
     'fbreader'                  # An e-book reader for linux
@@ -526,6 +539,10 @@ package_cyberlinux-openbox-desktop()
     'id3v2'                     # Utility to edit id3v2 tags
     'kolourpaint'               # Paint application that saves jpg in format for GFXBoot
     'scribus'                   # Open Source Desktop Publishing
+
+    # Personal use only licensing restriction
+    'teamviewer'                # Excellent remoting software
+    'ttf-ms-fonts'              # Core TTF Fonts from Microsoft
   )
   pkg desktop
 }
