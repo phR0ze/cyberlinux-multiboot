@@ -643,7 +643,7 @@ installer()
                 local size="$(echo $x | jq -r '.size')"
                 local model="$(echo $x | jq -r '.model')"
                 echo -en "   ${i}) [${cyber}${disk}${none}](${cyber}${size}${none})"
-                [ "$model" != "null"] && echo -en " - ${model}"
+                [ "$model" != "null" ] && echo -en " - ${model}"
                 echo ""
             done
             getsel DESTDEV "$DISKS"
