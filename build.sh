@@ -207,7 +207,8 @@ EOF
   # Creating UEFI boot files
   # ------------------------------------------------------------------------------------------------
   echo -e "${yellow}:: Creating UEFI boot files...${none}"
-  mkdir -p "${ISO_DIR}/efi/boot"
+  rm -rf "${ISO_DIR}/EFI"
+  mkdir -p "${ISO_DIR}/EFI/BOOT"
 
   # Stage the grub modules
   # GRUB doesn't have a stble binary ABI so modules from one version can't be used with another one
@@ -216,17 +217,21 @@ EOF
   docker_cp "$BUILDER:/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
   rm -f "$ISO_DIR/grub/x86_64-efi"/*.img
 
-  # We need to create our core image i.e. bootx64.efi that contains just enough code to find the grub
+  # We need to create our core image i.e. BOOTX64.efi that contains just enough code to find the grub
   # configuration and grub modules in /boot/grub/x86_64-efi directory
   # -p /boot/grub                               Directory to find grub once booted, default is /boot/grub
   # -c /boot/grub/grub.cfg                      Location of the config to use, default is /boot/grub/grub.cfg
   # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"   Use resources from this location when building the boot image
-  # -o "$ISO_DIR/efi/boot/bootx64.efi"          Output destination, using wellknown compatibility location
+  # -o "$ISO_DIR/EFI/BOOT/BOOTX64.efi"          Output destination, using wellknown compatibility location
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   grub-mkimage --format x86_64-efi -d /usr/lib/grub/x86_64-efi -p /boot/grub \
-    -o "$CONT_ISO_DIR/efi/boot/bootx64.efi" fat efi_gop efi_uga ${shared_modules}
+    -o "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.efi" fat efi_gop efi_uga ${shared_modules}
 EOF
   check
+
+  # Experimenting with clover
+  #cp -r /usr/lib/clover/EFI/BOOT "${ISO_DIR}/EFI"
+  #cp -r /usr/lib/clover/EFI/CLOVER "${ISO_DIR}/EFI"
 }
 
 # Build the initramfs based installer
@@ -361,9 +366,9 @@ build_iso()
     --embedded-boot "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img" `# Isohybrid image enables BIOS USB boot` \
     \
     `# Configure UEFI bootable settings` \
-    `# EFI boot image location on the iso post creation to use to make this iso USB stick bootable by UEFI` \
-    `# Note the use of the well known compatibility path /efi/boot/bootx64.efi` \
-    --efi-boot /efi/boot/bootx64.efi \
+    `# EFI boot image location on the iso post creation to make this iso USB bootable by UEFI` \
+    `# Note the use of the well known compatibility path /EFI/BOOT/BOOTX64.efi` \
+    --efi-boot /EFI/BOOT/BOOTX64.efi \
     \
     `# Setup a partition table to block other disk partition tools from manipulating this disk` \
     --protective-msdos-label \

@@ -39,6 +39,7 @@ COPY profiles/standard/base/etc/pacman.d/blackarch.mirrorlist /etc/pacman.d/
 # `jq`                    provides `jq` json manipulation
 # `efibootmgr`            provides `efibootmgr` for EFI boot manager entry manipulation
 # `parted`                provides `partprobe` for partition manipulation
+# `multipath-tools`       provides `kpartx` for paritition manipultion
 RUN echo ">> Install blackarch repo" && \
   curl -s -O https://blackarch.org/keyring/blackarch-keyring.pkg.tar.xz && \
   pacman -U --noconfirm blackarch-keyring.pkg.tar.xz && \
@@ -50,7 +51,7 @@ RUN echo ">> Install blackarch repo" && \
   mkdir -p /root/repo /root/profiles && \
   pacman -Sy --noconfirm vim grub dosfstools mkinitcpio mkinitcpio-vt-colors efibootmgr \
     rsync gptfdisk linux intel-ucode memtest86+ libisoburn linux-firmware \
-    arch-install-scripts squashfs-tools jq && \
+    arch-install-scripts squashfs-tools jq parted multipath-tools && \
   \
   # New user is created with: \
   # -r            to not create a mail directory \

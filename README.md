@@ -44,6 +44,8 @@ of ***cyberlinux-multiboot***.
   * [BIOS Firmware](#bios-firmware)
   * [UEFI Firmware](#uefi-firmware)
   * [Clover](#clover)
+    * [Install Clover (USB)](#install-clover-usb)
+    * [Install Clover (SSD)](#install-clover-ssd)
   * [rEFInd](#rEFInd)
     * [rEFInd vs GRUB2](#rEFInd-vs-grub2)
   * [GRUB2](#grub2)
@@ -51,6 +53,7 @@ of ***cyberlinux-multiboot***.
     * [grub-mkimage](#grub-mkimage)
     * [GFXMenu module](#gfxmenu-module)
     * [Trouble-shooting](#trouble-shooting)
+  * [mkarchiso](#mkarchiso)
 * [Bash pro tips](#bash-pro-tips)
   * [heredoc](#heredoc)
 * [Contribute](#contribute)
@@ -157,6 +160,9 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
 # Hardware <a name="hardware"/></a>
 
 ## ACEPC AK1 <a name="acepc-ak1"/></a>
+Note because of the `xHCI` USB driver being used by the newer firmware on the ACEPC AK1 you must
+choose an `UEFI` boot option in order to get keyboard support.
+
 1. Boot Into the `BIOS`:  
    a. Press `F7` repeatedly until the boot menu pops up  
    b. Select `Enter Setup`  
@@ -166,7 +172,7 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
 2. Now boot the AK1 from the USB:  
    a. Plug in the USB from [Create multiboot USB](#create-multiboot-usb)  
    b. Press `F7` repeatedly until the boot menu pops up  
-   c. Select your device e.g. `KingstonDataTravelor 2.01.00`  
+   c. Select your `UEFI` device entry e.g. `UEFI: USB Flash Disk 1.00`  
 
 3. 
 
@@ -359,6 +365,46 @@ can share the same `efi` files and UI
 * Support native resolution GUI with icons, fonts and other UI elements with mouse support
 * Easy to use and customize
 
+### Install Clover (USB) <a name="install-clover-usb"/></a>
+1. Install the clover pacakge
+   ```bash
+   $ sudo pacman -S clover
+   ```
+2. Copy the install files to the boot location
+   ```bash
+   $ cp -r /usr/lib/clover/EFI/BOOT iso/EFI
+   $ cp -r /usr/lib/clover/EFI/CLOVER iso/EFI
+   ```
+3. Building the ISO
+   ```bash
+    xorriso \
+   \
+   `# Configure general settings` \
+   -as mkisofs                                     `# Use -as mkisofs to support options like grub-mkrescue does` \
+   -volid CYBERLINUX_INSTALLER                     `# Identifier installer uses to find the install drive` \
+   --modification-date=$(date -u +%Y%m%d%H%M%S00)  `# Date created YYYYMMDDHHmmsscc e.g. 2021071223322500` \
+   -r -iso-level 3                                 `# Use Rock Ridge and level 3 for standard ISO features` \
+   -graft-points                                   `# Check filename separators are handled correctly` \
+   \
+   `# Configure BIOS bootable settings` \
+   -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS bootable ISO/CD-ROM` \
+   -no-emul-boot                                   `# GRUB2 requires no emulation boot mode` \
+   -boot-info-table                                `# GRUB2 writes boot info table into boot image` \
+   --embedded-boot "$/boot/grub/i386-pc/isohybrid.img" `# Isohybrid image enables BIOS USB boot` \
+   \
+   `# Configure UEFI bootable settings` \
+   `# EFI boot image location on the iso post creation to make this iso USB bootable by UEFI` \
+   `# Note the use of the well known compatibility path /EFI/BOOT/BOOTX64.efi` \
+   --efi-boot /EFI/BOOT/BOOTX64.efi \
+   \
+   `# Setup a partition table to block other disk partition tools from manipulating this disk` \
+   --protective-msdos-label \
+   \
+   `# Specify the output iso file path and location to turn into an ISO` \
+   -o $CONT_OUTPUT_DIR/cyberlinux.iso "$CONT_ISO_DIR"
+   ```
+
+### Install Clover (SSD) <a name="install-clover-ssd"/></a>
 
 ## rEFInd <a name="rEFInd"/></a>
 `rEFInd themes` are quite intriguing providing custom icons, images, fonts and menus that surpass
@@ -502,6 +548,9 @@ was attempting to test my USB on. This means that either:
 * The construction of the ISO isn't accurate
   * I believe the issue was the xorriso properties I had used. After switching back to the original
   xorriso settings from cyberlinux 1.0 I fixed it.
+
+## mkarchiso <a name="mkarchiso"/></a>
+The Arch Linux ISO has a primitive 
 
 # Bash pro tips <a name="bash-pro-tips"/></a>
 

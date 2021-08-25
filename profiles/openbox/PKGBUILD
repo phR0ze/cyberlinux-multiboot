@@ -132,6 +132,7 @@ package_cyberlinux-openbox-shell()
     'man-db'                    # A utility for reading man pages
     'man-pages'                 # Linux man pages
     'moreutils'                 # Linux utils e.g. parallel-moreutils
+    'multipath-tools'           # Partition mapping tools like kpartx
     'pacutils'                  # Pacman helper utilities for libalpm
     'pkgfile'                   # A pacman files and metadata explorer
     'psmisc'                    # fuser, killall, pstree
