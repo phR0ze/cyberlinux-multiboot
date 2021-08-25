@@ -116,19 +116,19 @@ mount_install_device()
         sleep 0.25 # Sleep for a bit
 
         # Find device by label
-        ISODEV=$(blkid -L ${INSTALLER_LABEL}) &>/dev/null
-        if [ "x${ISODEV}" != "x" ]; then
+        SRCDEV=$(blkid -L ${INSTALLER_LABEL}) &>/dev/null
+        if [ "x${SRCDEV}" != "x" ]; then
             check_status
 
             # Get install device file system type for mount
-            local fstype=$(blkid -s TYPE -o value ${ISODEV}) &>/dev/null
+            local fstype=$(blkid -s TYPE -o value ${SRCDEV}) &>/dev/null
 
             # Trim partition off if not iso to get media type
             # /dev/sda3 to /dev/sda in USB case
             # /dev/sr0 in CD/ISO case
-            local isodev=$ISODEV
+            local isodev=$SRCDEV
             if [ "x${fstype}" != "xiso9660" ]; then
-                isodev=${ISODEV%?}
+                isodev=${SRCDEV%?}
             fi
 
             # Using base iso device get device type and trim to first word
@@ -136,8 +136,8 @@ mount_install_device()
             install_type=${install_type%% *}
 
             # Mount iso device found by label with correct fstype
-            echo -en "   Mounting install ${cyber}${install_type}${none} [${cyber}${ISODEV}${none}] to ${ISO_MNT}..."
-            mount -r -t ${fstype} -o noatime ${ISODEV} ${ISO_MNT} &>/dev/null
+            echo -en "   Mounting install ${cyber}${install_type}${none} [${cyber}${SRCDEV}${none}] to ${ISO_MNT}..."
+            mount -r -t ${fstype} -o noatime ${SRCDEV} ${ISO_MNT} &>/dev/null
             check_status && success=1
 
             # The ISO is the first mount
@@ -204,39 +204,39 @@ mount_layers()
 # Partition disk and mount for install at ${NEW_ROOT}
 partition_and_mount_disk()
 {
-    echo -e "\n:: Partitioning and mounting destination disk ${cyber}${INSTALL_DEV}${none}..."
+    echo -e "\n:: Partitioning and mounting destination disk ${cyber}${DESTDEV}${none}..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
     # Wipe, partition and format disk
     #---------------------------------------------------------------------------
-    echo -en ":: Disk ${cyber}${INSTALL_DEV}${none} identified as destination disk..."
-    [ "x${INSTALL_DEV}" != "x" ]
+    echo -en ":: Disk ${cyber}${DESTDEV}${none} identified as destination disk..."
+    [ "x${DESTDEV}" != "x" ]
     check_status
 
-    echo -en ":: Destroying any magic strings and/or signatures on ${cyber}${INSTALL_DEV}${none}..."
-    wipefs --all --force ${INSTALL_DEV} &>/dev/null
+    echo -en ":: Destroying any magic strings and/or signatures on ${cyber}${DESTDEV}${none}..."
+    wipefs --all --force ${DESTDEV} &>/dev/null
     check_status
 
-    echo -en ":: Wiping partition table on ${cyber}${INSTALL_DEV}${none}..."
-    sgdisk --zap ${INSTALL_DEV} &>/dev/null
+    echo -en ":: Wiping partition table on ${cyber}${DESTDEV}${none}..."
+    sgdisk --zap ${DESTDEV} &>/dev/null
     check_status
 
     # Set partition identifiers
     if [ "x${SSD}" == "x1" ]; then
-        PART_BOOT="${INSTALL_DEV}p1"
-        PART_SWAP="${INSTALL_DEV}p2"
-        PART_ROOT="${INSTALL_DEV}p3"
+        PART_BOOT="${DESTDEV}p1"
+        PART_SWAP="${DESTDEV}p2"
+        PART_ROOT="${DESTDEV}p3"
     else
-        PART_BOOT="${INSTALL_DEV}1"
-        PART_SWAP="${INSTALL_DEV}2"
-        PART_ROOT="${INSTALL_DEV}3"
+        PART_BOOT="${DESTDEV}1"
+        PART_SWAP="${DESTDEV}2"
+        PART_ROOT="${DESTDEV}3"
     fi
 
     # EFI: Create a ESP boot partition EF00
     # https://wiki.archlinux.org/index.php/EFI_System_Partition#Create_the_partition
     if [ "x${EFI}" == "x1" ]; then
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}ESP boot partition${none}..."
-        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI system" ${INSTALL_DEV} &>/dev/null
+        sgdisk -n 0:0:+512M -t 0:EF00 -c 0:"EFI system" ${DESTDEV} &>/dev/null
         check_status
 
         echo -en ":: Formatting ${cyber}${PART_BOOT}${none} (ESP) as ${cyber}FAT32${none}..."
@@ -246,23 +246,23 @@ partition_and_mount_disk()
     # BIOS: Create a BIOS boot partition EF00
     else
         echo -en ":: Creating ${cyber}${PART_BOOT}${none} as ${cyber}BIOS boot partition${none}..."
-        sgdisk -n 0:0:+2M -t 0:EF02 -c 0:"BIOS system" ${INSTALL_DEV} &>/dev/null
+        sgdisk -n 0:0:+2M -t 0:EF02 -c 0:"BIOS system" ${DESTDEV} &>/dev/null
         check_status
     fi
 
     # Create SWAP partition
     echo -en ":: Creating ${cyber}${PART_SWAP}${none} as ${cyber}Linux swap partition${none}..."
-    sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${INSTALL_DEV} &>/dev/null
+    sgdisk -n 0:0:+4G -t 0:8200 -c 0:"Linux swap" ${DESTDEV} &>/dev/null
     check_status
 
     # Create root partition
     echo -en ":: Creating ${cyber}${PART_ROOT}${none} as ${cyber}Linux filesystem partition${none}..."
-    sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${INSTALL_DEV} &>/dev/null
+    sgdisk -n 0:0:0 -t 0:8300 -c 0:"Linux filesystem" ${DESTDEV} &>/dev/null
     check_status
 
     # Set boot flag for device
-    echo -en ":: Setting boot flag on ${cyber}${INSTALL_DEV}${none}..."
-    sgdisk ${INSTALL_DEV} --attributes=3:set:2 &>/dev/null
+    echo -en ":: Setting boot flag on ${cyber}${DESTDEV}${none}..."
+    sgdisk ${DESTDEV} --attributes=3:set:2 &>/dev/null
     check_status
 
     # Configure swap partition
@@ -313,7 +313,7 @@ install_bootloader()
         local esp_mnt="${NEW_ROOT}/boot"
         local boot_conf="${NEW_ROOT}/boot/loader/entries/arch.conf"
 
-        echo -en ":: Installing systemd-boot bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        echo -en ":: Installing systemd-boot bootloader to ${cyber}${DESTDEV}${none}..."
         chroot ${NEW_ROOT} bootctl install &>/dev/null
         check_status
 
@@ -338,10 +338,10 @@ install_bootloader()
         local grub_dir="${NEW_ROOT}/boot/grub"
         local shared_modules="ext2 all_video font gfxterm"
 
-        echo -en ":: Installing GRUB BIOS bootloader to ${cyber}${INSTALL_DEV}${none}..."
+        echo -en ":: Installing GRUB BIOS bootloader to ${cyber}${DESTDEV}${none}..."
         mkdir -p ${grub_dir} &>/dev/null
         chroot ${NEW_ROOT} grub-install --target=${platform} \
-            --modules="part_msdos ${shared_modules}" ${INSTALL_DEV} &>/dev/null
+            --modules="part_msdos ${shared_modules}" ${DESTDEV} &>/dev/null
         check_status
 
         # Install custom GRUB configuration /new_root/boot/grub/grub.cfg to be read at boot
@@ -614,11 +614,12 @@ installer()
     #---------------------------------------------------------------------------
     if [ "$LAYER" != 'live' ]; then
 
-        # Read in the destination disk options to present to the user
+        # Read in the destination disk options to present to the user filtering out
+        # the USB installer device $SRCDEV e.g. /dev/sda
         DISKS_DETAILED=$(lsblk -dn -o NAME,SIZE,MODEL,TYPE -x NAME --json | \
-            jq -rc '[.blockdevices[]|select(.type=="disk")]')
+            jq -rc --arg SRCDEV "${SRCDEV//\/dev\/}" '[.blockdevices[]|select(.type=="disk" and .name!=$SRCDEV)]')
         DISKS=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)|.[]')
-        INSTALL_DEV=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)|.[0]')
+        DESTDEV=$(echo ${DISKS_DETAILED} | jq -rc '[.[].name]|map("/dev/"+.)|.[0]')
 
         # Determine if this is a default deployment
         echo -e "\n${cyber}:: Automatically deploy with defaults?${none}"
@@ -645,7 +646,7 @@ installer()
                 [ "$model" != "null"] && echo -en " - ${model}"
                 echo ""
             done
-            getsel INSTALL_DEV "$DISKS"
+            getsel DESTDEV "$DISKS"
 
             # Determine the type of storage from the three most common types:
             # SSD type storage either NVMe or MMC both use a similar partition naming
@@ -653,7 +654,7 @@ installer()
             # SCSI: /dev/sda        partition1: /dev/sda1
             # NVMe: /dev/nvme0n1    partition1: /dev/nvme0n1p1
             # MMC: /dev/mmcblk0     partition1: /dev/mmcblk0p1
-            [ ${INSTALL_DEV//sda} != "/dev/" ] && SSD=1
+            [ ${DESTDEV//sda} != "/dev/" ] && SSD=1
 
             # Configure networking
             #----------------------------------------------------------------------
@@ -715,7 +716,7 @@ installer()
     fi
     echo -e "   timezone=${cyber}${TIMEZONE}${none}"
     echo -e "   autologin=${cyber}${AUTOLOGIN}${none}"
-    echo -e "   install_dev=${cyber}${INSTALL_DEV}${none}"
+    echo -e "   install_dev=${cyber}${DESTDEV}${none}"
     echo -e "   EFI=${cyber}${EFI}${none}"
 
     if [ $LAYER == "live" ]; then

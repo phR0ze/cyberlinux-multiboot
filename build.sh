@@ -204,9 +204,6 @@ build_multiboot()
 
   echo -e ":: Concatenate cdboot.img to bios.img to create CD-ROM bootable image $CONT_BUILD_DIR/eltorito.img..."
   cat /usr/lib/grub/i386-pc/cdboot.img "$CONT_BUILD_DIR/bios.img" > "$CONT_ISO_DIR/boot/grub/i386-pc/eltorito.img"
-
-  echo -e ":: Concatenate boot.img to bios.img to create isohybrid $CONT_BUILD_DIR/isohybrid.img..."
-  cat /usr/lib/grub/i386-pc/boot.img "$CONT_BUILD_DIR/bios.img" > "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img"
 EOF
   check
 
@@ -389,7 +386,7 @@ build_iso()
     \
     `# Configure UEFI bootable settings` \
     -eltorito-alt-boot                              `# Separates BIOS settings from UEFI settings` \
-    -e boot/grub/efi.img                            `# EFI boot image on the iso post creation` \
+    -e boot/grub/efi.img                            `# EFI boot image on the iso filesystem` \
     -no-emul-boot                                   `# Image is not emulating floppy mode` \
     -isohybrid-gpt-basdat                           `# Announces efi.img is FAT GPT i.e. ESP` \
     \

@@ -53,7 +53,6 @@ of ***cyberlinux-multiboot***.
     * [grub-mkimage](#grub-mkimage)
     * [GFXMenu module](#gfxmenu-module)
     * [Trouble-shooting](#trouble-shooting)
-  * [mkarchiso](#mkarchiso)
 * [Bash pro tips](#bash-pro-tips)
   * [heredoc](#heredoc)
 * [Contribute](#contribute)
@@ -465,6 +464,74 @@ Essential Options:
 * `-p /boot/grub` directory to find grub once booted i.e. prefix directory
 * `space delimeted modules` list of modules to embedded in the core image
   * `i386-pc` minimal are `biosdisk part_msdos fat`
+
+#### BIOS grub-mkimage <a name="bios-grub-mkimage"/></a>
+```bash
+local shared_modules="iso9660 part_gpt ext2"
+
+# Stage the grub modules
+# GRUB doesn't have a stable binary ABI so modules from one version can't be used with another one
+# and will cause failures so we need to remove then all in advance
+cp -r /usr/lib/grub/i386-pc iso/boot/grub
+rm -f iso/boot/grub/i386-pc/*.img
+
+# We need to create our core image i.e bios.img that contains just enough code to find the grub
+# configuration and grub modules in /boot/grub/i386-pc directory
+# -p /boot/grub                 Directory to find grub once booted, default is /boot/grub
+# -c /boot/grub/grub.cfg        Location of the config to use, default is /boot/grub/grub.cfg
+# -d /usr/lib/grub/i386-pc      Use resources from this location when building the boot image
+# -o temp/bios.img              Output destination
+grub-mkimage --format i386-pc -d /usr/lib/grub/i386-pc -p /boot/grub \
+  -o temp/bios.img biosdisk ${shared_modules}
+
+echo -e ":: Concatenate cdboot.img to bios.img to create CD-ROM bootable eltorito.img..."
+cat /usr/lib/grub/i386-pc/cdboot.img temp/bios.img" > iso/boot/grub/i386-pc/eltorito.img
+```
+
+#### UEFI grub-mkimage <a name="uefi-grub-mkimage"/></a>
+The key to making a bootable UEFI USB is to embedded the grub `BOOTX64.EFI` boot image inside an
+official `ESP`, i.e. FAT32 formatted file, at `/EFI/BOOT/BOOTX64.EFI` then pass the resulting
+`efi.img` to xorriso using the `-isohybrid-gpt-basdat` flag.
+
+Resources:
+* [UEFI only bootable USB](https://askubuntu.com/questions/1110651/how-to-produce-an-iso-image-that-boots-only-on-uefi)
+
+**xorriso UEFI bootable settings**
+```bash
+-eltorito-alt-boot               `# Separates BIOS settings from UEFI settings` \
+-e boot/grub/efi.img             `# EFI boot image on the iso filesystem` \
+-no-emul-boot                    `# Image is not emulating floppy mode` \
+-isohybrid-gpt-basdat            `# Announces efi.img is FAT GPT i.e. ESP` \
+```
+
+**ESP creation including grub-mkimage bootable image**
+```bash
+mkdir -p iso/EFI/BOOT
+
+# Stage the grub modules
+# GRUB doesn't have a stble binary ABI so modules from one version can't be used with another one
+# and will cause failures so we need to remove then all in advance
+cp -r /usr/lib/grub/x86_64-efi iso/boot/grub
+rm -f iso/grub/x86_64-efi/*.img
+
+# We need to create our core image i.e. BOOTx64.EFI that contains just enough code to find the grub
+# configuration and grub modules in /boot/grub/x86_64-efi directory.
+# -p /boot/grub                   Directory to find grub once booted, default is /boot/grub
+# -c /boot/grub/grub.cfg          Location of the config to use, default is /boot/grub/grub.cfg
+# -d /usr/lib/grub/x86_64-efi     Use resources from this location when building the boot image
+# -o iso/EFI/BOOT/BOOTX64.EFI     Using wellknown EFI location for fallback compatibility
+grub-mkimage --format x86_64-efi -d /usr/lib/grub/x86_64-efi -p /boot/grub \
+  -o iso/EFI/BOOT/BOOTX64.EFI fat efi_gop efi_uga ${shared_modules}
+
+echo -e ":: Creating ESP with the BOOTX64.EFI binary"
+truncate -s 8M iso/boot/grub/efi.img
+mkfs.vfat iso/boot/grub/efi.img
+mkdir -p temp/esp
+sudo mount iso/boot/grub/efi.img temp/esp
+sudo mkdir -p temp/esp/EFI/BOOT
+sudo cp iso/EFI/BOOT/BOOTX64.EFI temp/esp/EFI/BOOT
+sudo umount temp/esp
+```
 
 ### GFXMenu module <a name="gfxmenu-module"/></a>
 The [gfxmenu](https://www.gnu.org/software/grub/manual/grub-dev/html_node/Introduction_005f2.html#Introduction_005f2)
