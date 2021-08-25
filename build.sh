@@ -32,8 +32,10 @@ PACMAN_CONF_CACHING="${CONFIG_DIR}/pacman.conf_1_for_caching" # Pacman config te
 
 # Container directories and mount locations
 CONT_BUILD_DIR="/home/build"              # Build location for layer components
+CONT_TEMP_DIR="/home/build/temp"          # Build location for layer components
 CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
 CONT_ISO_DIR="${CONT_BUILD_DIR}/iso"      # Build location for staging iso/boot files
+CONT_ESP="${CONT_ISO_DIR}/boot/grub/efi.img" # Build location for staging iso/boot files
 CONT_IMAGES_DIR="${CONT_ISO_DIR}/images"  # Final iso sqfs image locations
 CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage packages being built
 CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
@@ -130,6 +132,11 @@ EOF
 build_multiboot()
 {
   echo -e "${yellow}:: Building multiboot components...${none}"
+
+  # Clean up the prior build
+  rm -rf "${ISO_DIR}/boot"
+  rm -rf "${ISO_DIR}/EFI"
+
   docker_run ${BUILDER}
 
   echo -e ":: Copying kernel, intel ucode patch and memtest to ${cyan}${ISO_DIR}/boot${none}"
@@ -182,7 +189,6 @@ build_multiboot()
   # Stage the grub modules
   # GRUB doesn't have a stble binary ABI so modules from one version can't be used with another one
   # and will cause failures so we need to remove then all in advance
-  rm -rf "${ISO_DIR}/boot/grub/i386-pc"
   docker_cp "${BUILDER}:/usr/lib/grub/i386-pc" "${ISO_DIR}/boot/grub"
   rm -f "${ISO_DIR}/boot/grub/i386-pc"/*.img
 
@@ -205,27 +211,38 @@ EOF
   check
 
   # Creating UEFI boot files
+  # xorriso expects a FAT32 filesystem image which contains a binary file named /EFI/BOOT/BOOTX64.EFI
+  # GRUB2 doesn't create the FAT32 filesystem by default it only creates the binary BOOTX64.EFI. We
+  # need to create the EFI System Partition i.e. ESP and mount it for GRUB2 to deposit the binary in.
+  # Then the resulting ESP is saved as the efi.img and used by xorriso.
   # ------------------------------------------------------------------------------------------------
   echo -e "${yellow}:: Creating UEFI boot files...${none}"
-  rm -rf "${ISO_DIR}/EFI"
   mkdir -p "${ISO_DIR}/EFI/BOOT"
 
   # Stage the grub modules
   # GRUB doesn't have a stble binary ABI so modules from one version can't be used with another one
   # and will cause failures so we need to remove then all in advance
-  rm -rf "${ISO_DIR}/boot/grub/x86_64-efi"
   docker_cp "$BUILDER:/usr/lib/grub/x86_64-efi" "$ISO_DIR/boot/grub"
   rm -f "$ISO_DIR/grub/x86_64-efi"/*.img
 
-  # We need to create our core image i.e. BOOTX64.efi that contains just enough code to find the grub
-  # configuration and grub modules in /boot/grub/x86_64-efi directory
+  # We need to create our core image i.e. BOOTx64.EFI that contains just enough code to find the grub
+  # configuration and grub modules in /boot/grub/x86_64-efi directory.
   # -p /boot/grub                               Directory to find grub once booted, default is /boot/grub
   # -c /boot/grub/grub.cfg                      Location of the config to use, default is /boot/grub/grub.cfg
   # -d "$BUILDER_DIR/usr/lib/grub/x86_64-efi"   Use resources from this location when building the boot image
-  # -o "$ISO_DIR/EFI/BOOT/BOOTX64.efi"          Output destination, using wellknown compatibility location
+  # -o "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.EFI"     Using wellknown EFI location for fallback compatibility
   cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   grub-mkimage --format x86_64-efi -d /usr/lib/grub/x86_64-efi -p /boot/grub \
-    -o "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.efi" fat efi_gop efi_uga ${shared_modules}
+    -o "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.EFI" fat efi_gop efi_uga ${shared_modules}
+
+  echo -e ":: Creating ESP with the BOOTX64.EFI binary"
+  truncate -s 8M "${CONT_ESP}"
+  mkfs.vfat "${CONT_ESP}"
+  mkdir -p "${CONT_TEMP_DIR}"
+  sudo mount "${CONT_ESP}" "${CONT_TEMP_DIR}"
+  sudo mkdir -p "${CONT_TEMP_DIR}/EFI/BOOT"
+  sudo cp "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.EFI" "${CONT_TEMP_DIR}/EFI/BOOT"
+  sudo umount "${CONT_TEMP_DIR}"
 EOF
   check
 
@@ -338,12 +355,18 @@ build_deployments()
 }
 
 # Build the ISO
-# ISOHYBRID is the format used to create an ISO that is going to be bootable as both a burned CD-ROM
-# or as a USB stick or as a raw ISO. Effectively we store a boot loader in the 32K system area that
-# will get loaded at boot time. The boot loader i.e. GRUB then presents the user with a configurable
-# list of menu options and has the capability to understand ISO9660 file formats to load your target.
+# El-Torito is a standard for creating bootable optical media. The Boot Catalog is created during the
+# production of the ISO. The Boot Catalog lists the available boot images called 'platforms'. BIOS
+# reads from the Boot Catalog the number of blocks to load, loads them then executes them as code.
+# EFI interprets the boot image as a FAT filesystem and looks up a standardized file paath for futher
+# processing i.e /EFI/BOOT/BOOTX86.EFI In either case El-Torito is required. The boot image that gets
+# run is the boot loader that then looks for its configuration and presents its UI from simple text
+# menu like systemd-boot or graphical menus with GRUB2's GFXMenu.
 #
-# Reference: https://lukeluo.blogspot.com/2013/06/grub-how-to-2-make-boot-able-iso-with.html
+# Reference:
+# https://wiki.osdev.org/El-Torito
+# https://lukeluo.blogspot.com/2013/06/grub-how-to-2-make-boot-able-iso-with.html
+# https://www.0xf8.org/2020/03/recreating-isos-that-boot-from-both-dvd-and-mass-storage-such-as-usb-sticks-and-in-both-legacy-bios-and-uefi-environments/
 build_iso()
 {
   echo -e "${yellow}:: Building an ISOHYBRID bootable image...${none}"
@@ -356,25 +379,22 @@ build_iso()
     -as mkisofs                                     `# Use -as mkisofs to support options like grub-mkrescue does` \
     -volid CYBERLINUX_INSTALLER                     `# Identifier installer uses to find the install drive` \
     --modification-date=$(date -u +%Y%m%d%H%M%S00)  `# Date created YYYYMMDDHHmmsscc e.g. 2021071223322500` \
-    -r -iso-level 3                                 `# Use Rock Ridge and level 3 for standard ISO features` \
-    -graft-points                                   `# Check filename separators are handled correctly` \
+    -r -iso-level 3 -full-iso9660-filenames         `# Use Rock Ridge and level 3 for standard ISO features` \
     \
     `# Configure BIOS bootable settings` \
-    -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS bootable ISO/CD-ROM` \
-    -no-emul-boot                                   `# GRUB2 requires no emulation boot mode` \
-    -boot-info-table                                `# GRUB2 writes boot info table into boot image` \
-    --embedded-boot "$CONT_ISO_DIR/boot/grub/i386-pc/isohybrid.img" `# Isohybrid image enables BIOS USB boot` \
+    -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS boot` \
+    -no-emul-boot                                   `# Image is not emulating floppy mode` \
+    -boot-load-size 4                               `# Specifies (4) 512byte blocks: 2048 total` \
+    -boot-info-table                                `# Updates boot image with boot info table` \
     \
     `# Configure UEFI bootable settings` \
-    `# EFI boot image location on the iso post creation to make this iso USB bootable by UEFI` \
-    `# Note the use of the well known compatibility path /EFI/BOOT/BOOTX64.efi` \
-    --efi-boot /EFI/BOOT/BOOTX64.efi \
-    \
-    `# Setup a partition table to block other disk partition tools from manipulating this disk` \
-    --protective-msdos-label \
+    -eltorito-alt-boot                              `# Separates BIOS settings from UEFI settings` \
+    -e boot/grub/efi.img                            `# EFI boot image on the iso post creation` \
+    -no-emul-boot                                   `# Image is not emulating floppy mode` \
+    -isohybrid-gpt-basdat                           `# Announces efi.img is FAT GPT i.e. ESP` \
     \
     `# Specify the output iso file path and location to turn into an ISO` \
-    -o $CONT_OUTPUT_DIR/cyberlinux.iso "$CONT_ISO_DIR"
+    -o "${CONT_OUTPUT_DIR}/cyberlinux.iso" "$CONT_ISO_DIR"
 EOF
   check
 }
