@@ -174,8 +174,6 @@ choose an `UEFI` boot option in order to get keyboard support.
    b. Press `F7` repeatedly until the boot menu pops up  
    c. Select your `UEFI` device entry e.g. `UEFI: USB Flash Disk 1.00`  
 
-3. 
-
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
 References:
@@ -314,8 +312,7 @@ exit
 # Boot Loaders <a name="boot-loaders"/></a>
 UEFI devices now have alternative options for boot loaders that provide options for image display,
 custom fonts, and menus either on par or more advanced than the venerable GRUB2's GFXMenu in
-functionality. What's more GRUB2 doesn't support xUCI usb devices, i.e. the keyboard, and all machines
-are moving towards xUCI. It might be time to find a new boot loader.
+functionality. It might be time to find a new boot loader.
 
 **References**:
 * [Arch Linux Early User space](http://archlinux.me/brain0/2010/02/13/early-userspace-in-arch-linux/)
@@ -377,31 +374,28 @@ can share the same `efi` files and UI
    ```
 3. Building the ISO
    ```bash
-    xorriso \
-   \
-   `# Configure general settings` \
-   -as mkisofs                                     `# Use -as mkisofs to support options like grub-mkrescue does` \
-   -volid CYBERLINUX_INSTALLER                     `# Identifier installer uses to find the install drive` \
-   --modification-date=$(date -u +%Y%m%d%H%M%S00)  `# Date created YYYYMMDDHHmmsscc e.g. 2021071223322500` \
-   -r -iso-level 3                                 `# Use Rock Ridge and level 3 for standard ISO features` \
-   -graft-points                                   `# Check filename separators are handled correctly` \
-   \
-   `# Configure BIOS bootable settings` \
-   -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS bootable ISO/CD-ROM` \
-   -no-emul-boot                                   `# GRUB2 requires no emulation boot mode` \
-   -boot-info-table                                `# GRUB2 writes boot info table into boot image` \
-   --embedded-boot "$/boot/grub/i386-pc/isohybrid.img" `# Isohybrid image enables BIOS USB boot` \
-   \
-   `# Configure UEFI bootable settings` \
-   `# EFI boot image location on the iso post creation to make this iso USB bootable by UEFI` \
-   `# Note the use of the well known compatibility path /EFI/BOOT/BOOTX64.efi` \
-   --efi-boot /EFI/BOOT/BOOTX64.efi \
-   \
-   `# Setup a partition table to block other disk partition tools from manipulating this disk` \
-   --protective-msdos-label \
-   \
-   `# Specify the output iso file path and location to turn into an ISO` \
-   -o $CONT_OUTPUT_DIR/cyberlinux.iso "$CONT_ISO_DIR"
+   xorriso \
+    \
+    `# Configure general settings` \
+    -as mkisofs                                     `# Use -as mkisofs to support options like grub-mkrescue does` \
+    -volid CYBERLINUX_INSTALLER                     `# Identifier installer uses to find the install drive` \
+    --modification-date=$(date -u +%Y%m%d%H%M%S00)  `# Date created YYYYMMDDHHmmsscc e.g. 2021071223322500` \
+    -r -iso-level 3 -full-iso9660-filenames         `# Use Rock Ridge and level 3 for standard ISO features` \
+    \
+    `# Configure BIOS bootable settings` \
+    -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS boot` \
+    -no-emul-boot                                   `# Image is not emulating floppy mode` \
+    -boot-load-size 4                               `# Specifies (4) 512byte blocks: 2048 total` \
+    -boot-info-table                                `# Updates boot image with boot info table` \
+    \
+    `# Configure UEFI bootable settings` \
+    -eltorito-alt-boot                              `# Separates BIOS settings from UEFI settings` \
+    -e boot/grub/efi.img                            `# EFI boot image on the iso post creation` \
+    -no-emul-boot                                   `# Image is not emulating floppy mode` \
+    -isohybrid-gpt-basdat                           `# Announces efi.img is FAT GPT i.e. ESP` \
+    \
+    `# Specify the output iso file path and location to turn into an ISO` \
+    -o "${CONT_OUTPUT_DIR}/cyberlinux.iso" "$CONT_ISO_DIR"
    ```
 
 ### Install Clover (SSD) <a name="install-clover-ssd"/></a>

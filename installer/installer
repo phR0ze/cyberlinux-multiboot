@@ -641,7 +641,9 @@ installer()
                 local disk="/dev/$(echo $x | jq -r '.name')"
                 local size="$(echo $x | jq -r '.size')"
                 local model="$(echo $x | jq -r '.model')"
-                echo -e "   ${i}) [${cyber}${disk}${none}](${cyber}${size}${none}) - ${model}"
+                echo -en "   ${i}) [${cyber}${disk}${none}](${cyber}${size}${none})"
+                [ "$model" != "null"] && echo -en " - ${model}"
+                echo ""
             done
             getsel INSTALL_DEV "$DISKS"
 
