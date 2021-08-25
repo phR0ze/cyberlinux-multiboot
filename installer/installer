@@ -563,6 +563,13 @@ config_system()
     chroot ${NEW_ROOT} pacman-key --populate archlinux blackarch &>/dev/null
     check_status
 
+    # Configure system services as chosen in wizard
+    #---------------------------------------------------------------------------
+    if [ "x$ENABLE_WIFI" == "x1" ]; then
+        chroot ${NEW_ROOT} systemctl enable wpa_supplicant@wlo1 &>/dev/null
+        chroot ${NEW_ROOT} systemctl start wpa_supplicant@wlo1 &>/dev/null
+    fi
+
     # Inject a longer delay for conky if live
     #---------------------------------------------------------------------------
     if [ $LAYER == "live" ]; then

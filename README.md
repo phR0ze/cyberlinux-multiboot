@@ -173,6 +173,34 @@ choose an `UEFI` boot option in order to get keyboard support.
    b. Press `F7` repeatedly until the boot menu pops up  
    c. Select your `UEFI` device entry e.g. `UEFI: USB Flash Disk 1.00`  
 
+3. Install `cyberlinux`:  
+   a. Select the desired deployment type e.g. `Desktop`  
+   b. Walk through the wizard enabling WiFi on the way  
+   c. Complete out the process and login to your new system  
+   d. Unplug the USB, reboot and log back in  
+
+4. Configure WiFi:  
+   a. WPA GUI will be launched automatically  
+   b. Select `Scan >Scan` then doblue click the chosen `SSID`  
+   c. Enter the pre-shared secret `PSK` and click `Add`  
+   d. You should have an ip now you can verify with `ip a` in a shell  
+   e. Set a static ip if desired, edit `sudo /etc/systemd/network/30-wireless.network`  
+      ```
+      [Match]
+      Name=wl*
+
+      [Network]
+      Address=192.168.1.7/24
+      Gateway=192.168.1.1
+      DNS=1.1.1.1
+      DNS=1.0.0.1
+      IPForward=kernel
+      ```
+   f. Restart networking:  
+      ```bash
+      $ sudo systemctl restart systemd-networkd
+      ```
+
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
 References:
@@ -655,11 +683,9 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Use rEFInd instead of GRUB2 for EFI boots
-* rEFInd theme to replace GRUB2 GFXmenu
+* Personal packages: Wallpaper
 
 * Migrate to nvim
-* Personal packages: Wallpaper
 * Add GTK Arc Dark theme
 * Add utshushi menu entry
 * devede and asunder icons in Paper are both the same?
