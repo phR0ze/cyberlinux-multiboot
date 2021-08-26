@@ -708,6 +708,11 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* ACEPC
+  * Need overscan, white line on right of monitor
+  * Vulkan support
+    * `sudo pacman -S vulkan-intel vulkan-tools`
+    * `vulkaninfo` if you get info about your graphics card its working
 * Support profiles depending on each other
 * Desktop:
   * Validate: Added wine packages for gaming
