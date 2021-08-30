@@ -507,7 +507,7 @@ package_cyberlinux-openbox-desktop()
     'lib32-libpulse'            # A featureful, general-purpose sound server (32-bit client libraries)
     'lib32-mpg123'              # A console based real time MPEG Audio Player for Layer 1, 2 and 3 (32-bit)
     'lib32-libusb'              # A cross-platform user library to access USB devices (32-bit)
-    'wintricks'                 # Script to install various redistributable runtime libraries in Wine
+    'winetricks'                 # Script to install various redistributable runtime libraries in Wine
     'wine-gecko'                # Wine's built-in replacement for Microsoft's Internet Explorer
     'wine-mono'                 # Wine's built-in replacement for Microsoft's .NET Framework
     'zenity'                    # Display graphical dialog boxes from shell scripts
@@ -530,6 +530,7 @@ package_cyberlinux-openbox-desktop()
     'simplescreenrecorder'      # Awesome screen recorder
 
     # Network
+    'chromium'                  # Open source base of Google's Chrome browser
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
     'synergy'                   # Share a single mouse and keyboard between multiple computers
 
