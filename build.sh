@@ -110,7 +110,7 @@ build_repo_packages()
 
     # makepkg will modify the PKGBUILD to inject the most recent version.
     # saving off the original and replacing it will avoid having that file changed all the time
-    echo -e "${yellow}:: Building packages for${none} ${cyan}${x}${none} profile..."
+    echo -e "${yellow}:: Building packages for profile ${none}${cyan}${x}${none}..."
     cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   cp "${CONT_PROFILES_DIR}/${x}/PKGBUILD" "${CONT_BUILD_DIR}/PKGBUILD"
   cd "${CONT_PROFILES_DIR}/${x}"
@@ -120,15 +120,15 @@ build_repo_packages()
   exit $rc
 EOF
     check
+  done
 
-    # Ensure the builder repo exists locally
-    echo -e "${yellow}:: Build the repo locally...${none}"
-    cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  # Build the builder repo if it doesn't exist
+  echo -e "${yellow}:: Build the builder repo...${none}"
+  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   cd "${CONT_REPO_DIR}"
   repo-add builder.db.tar.gz *.pkg.tar.*
 EOF
-    check
-  done
+  check
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
