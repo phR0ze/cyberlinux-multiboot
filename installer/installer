@@ -432,6 +432,11 @@ config_system()
     echo -e "\n:: Configuring general system settings..."
     echo -e "${cyber}:: $(bash -c "printf '%0.1s' '-'{1..107}")${none}"
 
+    echo -en ":: Set unique machine-id..."
+    chroot ${NEW_ROOT} dbus-uuidgen --ensure=/etc/machine-id &>/dev/null
+    chroot ${NEW_ROOT} ln -sf /etc/machine-id /var/lib/dbus/machine-id &>/dev/null
+    check_status
+
     # Configure localization to US by default
     LOCALE="en_US"
     echo -en ":: Setting localization to ${cyber}${LOCALE}${none}..."
@@ -441,9 +446,20 @@ config_system()
     chroot ${NEW_ROOT} locale-gen &>/dev/null
     check_status
 
-    # Configure timezone
+    # Configure time and date
+    #---------------------------------------------------------------------------
     echo -en ":: Setting timezone to ${cyber}${TIMEZONE}${none}..."
     chroot ${NEW_ROOT} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
+    check_status
+
+    if [ "x$TIMEDATE_SET" == "x1" ]; then
+        echo -en ":: Set time and date to ${cyber}$(date +"%d %b %Y %r")${none}..."
+        local now=$(date +"%d %b %Y %r")
+        chroot ${NEW_ROOT} date -s ${now} &>/dev/null
+        check_status
+    fi
+
+    echo -en ":: Set hwclock to system clock ${cyber}${TIMEDATE}${none}..."
     chroot ${NEW_ROOT} hwclock --systohc &>/dev/null
     check_status
 
@@ -462,6 +478,7 @@ config_system()
         chroot ${NEW_ROOT} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
         chroot ${NEW_ROOT} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
         check_status
+        chroot ${NEW_ROOT} systemctl enable wpa_supplicant@wlo1 &>/dev/null
     fi
 
     # Configure static LAN
@@ -562,13 +579,6 @@ config_system()
     echo -en ":: Populating the pacman keyring..."
     chroot ${NEW_ROOT} pacman-key --populate archlinux blackarch &>/dev/null
     check_status
-
-    # Configure system services as chosen in wizard
-    #---------------------------------------------------------------------------
-    if [ "x$ENABLE_WIFI" == "x1" ]; then
-        chroot ${NEW_ROOT} systemctl enable wpa_supplicant@wlo1 &>/dev/null
-        chroot ${NEW_ROOT} systemctl start wpa_supplicant@wlo1 &>/dev/null
-    fi
 
     # Inject a longer delay for conky if live
     #---------------------------------------------------------------------------
@@ -675,10 +685,19 @@ installer()
             [ "x${PROXY}" != "xNone" ] && getinput NO_PROXY 'Enter no_proxy, comma delim' $NO_PROXY
             getinput ENABLE_WIFI 'Enter wifi state' 0
 
-            # Configure timezone
+            # Configure time and date
             #----------------------------------------------------------------------
-            echo -e "\n${cyber}:: Configure timezone:${none}"
-            getinput TIMEZONE 'Enter timezone' $TIMEZONE
+            echo -e "\n${cyber}:: Configure time and date:${none}"
+            getinput TIMEZONE 'Enter timezone' "$TIMEZONE"
+            getinput TIMEDATE_SET "Change system '$(date +"%d %b %Y %r")' time?" 'n'
+            if [ "x$TIMEDATE_SET" == "xy" ]; then
+                local valid_date=1
+                while [ $valid_date -ne 0 ]; do
+                    getinput TIMEDATE "Use 'date -s' string format" "$(date +"%d %b %Y %r")"
+                    date -s "${TIMEDATE}"
+                    valid_date=$?
+                done
+            fi
 
             # Create new user account
             #----------------------------------------------------------------------
@@ -754,10 +773,6 @@ installer()
     # Configure system
     #---------------------------------------------------------------------------
     config_system
-    echo -en ":: Set unique machine-id..."
-    chroot ${NEW_ROOT} dbus-uuidgen --ensure=/etc/machine-id &>/dev/null
-    chroot ${NEW_ROOT} ln -sf /etc/machine-id /var/lib/dbus/machine-id &>/dev/null
-    check_status
 
     # Unmount chroot dirs for either
     umount_chroot_dirs
