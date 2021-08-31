@@ -105,26 +105,30 @@ build_repo_packages()
   docker_run ${BUILDER}
   cp "${PROJECT_DIR}/VERSION" "${PROFILES_DIR}"
 
-  # makepkg will modify the PKGBUILD to inject the most recent version.
-  # saving off the original and replacing it will avoid having that file changed all the time
-  echo -e "${yellow}:: Building packages for${none} ${cyan}${PROFILE}${none} profile..."
-  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
-  cp "${CONT_PROFILES_DIR}/${PROFILE}/PKGBUILD" "${CONT_BUILD_DIR}/PKGBUILD"
-  cd "${CONT_PROFILES_DIR}/${PROFILE}"
+  # Build packages for all profile repos
+  for x in "${PROFILES[@]}"; do
+
+    # makepkg will modify the PKGBUILD to inject the most recent version.
+    # saving off the original and replacing it will avoid having that file changed all the time
+    echo -e "${yellow}:: Building packages for${none} ${cyan}${x}${none} profile..."
+    cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+  cp "${CONT_PROFILES_DIR}/${x}/PKGBUILD" "${CONT_BUILD_DIR}/PKGBUILD"
+  cd "${CONT_PROFILES_DIR}/${x}"
   BUILDDIR=${CONT_BUILD_DIR} PKGDEST=${CONT_REPO_DIR} makepkg
   rc=$?
-  cp "${CONT_BUILD_DIR}/PKGBUILD" "${CONT_PROFILES_DIR}/${PROFILE}/PKGBUILD"
+  cp "${CONT_BUILD_DIR}/PKGBUILD" "${CONT_PROFILES_DIR}/${x}/PKGBUILD"
   exit $rc
 EOF
-  check
+    check
 
-  # Ensure the builder repo exists locally
-  echo -e "${yellow}:: Build the repo locally...${none}"
-  cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
+    # Ensure the builder repo exists locally
+    echo -e "${yellow}:: Build the repo locally...${none}"
+    cat <<EOF | docker exec --privileged -i ${BUILDER} sudo -u build bash
   cd "${CONT_REPO_DIR}"
   repo-add builder.db.tar.gz *.pkg.tar.*
 EOF
-  check
+    check
+  done
 }
 
 # Configure grub theme and build supporting BIOS and EFI boot images required to make
@@ -466,6 +470,29 @@ read_deployment()
   LAYERS=($(echo "$layer" | jq -r '.layers | split(",") | join(" ")'))
 }
 
+# Based on the given profile process all deployments and determine which
+# profiles are referenced and set a distinct array of them.
+# e.g. openbox standard
+unique_profiles()
+{
+  PROFILES=()
+
+  # Extract just the layers, split them on comma, add them together as a single array
+  # ensuring each entry is unique then join them as a single space delimeted string
+  for layer in $(echo "$PROFILE_JSON" | jq -r '[.[].layers | split(",")] | add | unique | join(" ")'); do
+    local profile=${layer%/*}
+
+    # Search the PROFILES array for the given profile
+    local found=0
+    for x in "${PROFILES[@]}"; do
+      [[ "${profile}" == "${x}" ]] && found=1
+    done
+
+    # Add the profile if not found
+    [ $found -ne 1 ] && PROFILES+=("${profile}")
+  done
+}
+
 # Retrieve all deployments in reverse sequential order
 read_deployments()
 {
@@ -482,6 +509,7 @@ read_profile()
   echo -en "${yellow}:: Using profile${none} ${cyan}${PROFILE_PATH}${none}..."
   PROFILE_JSON=$(jq -r '.' "$PROFILE_PATH")
   check
+  unique_profiles
 }
 
 # Docker utility functions
