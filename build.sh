@@ -622,7 +622,7 @@ usage()
   echo -e "  ${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
   echo -e "  ${green}Build installable ISO with base deployment:${none} ./${SCRIPT} -d base -rimI"
   echo -e "  ${green}Build packages for openbox profile:${none} ./${SCRIPT} -p openbox -r"
-  echo -e "  ${green}Build openbox base:${none} ./${SCRIPT} -p openbox -d base"
+  echo -e "  ${green}Build everything for an openbox ISO:${none} ./${SCRIPT} -p openbox -a"
   echo -e "  ${green}Clean openbox core,base layers:${none} ./${SCRIPT} -c layers/openbox/core,layers/openbox/base"
   echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p openbox -m -i"
   echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -d base"
