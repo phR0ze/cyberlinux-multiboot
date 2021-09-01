@@ -5,15 +5,15 @@ FROM archlinux:base-devel
 ARG USER_ID
 
 # Copy in basic configuration
-COPY profiles/openbox/core/etc/skel/.bash_profile_sideload /root/.bash_profile
-COPY profiles/openbox/core/etc/skel/.bashrc_sideload /root/.bashrc
-COPY profiles/openbox/base/etc/skel/.vimrc /root/
+COPY profiles/standard/core/etc/skel/.bash_profile_sideload /root/.bash_profile
+COPY profiles/standard/core/etc/skel/.bashrc_sideload /root/.bashrc
+COPY profiles/standard/base/etc/skel/.vimrc /root/
 
 # Configure pacman
 COPY config/mkinitcpio.conf /etc/
 COPY config/pacman.conf_2_for_builder /etc/pacman.conf
-COPY profiles/openbox/base/etc/pacman.d/archlinux.mirrorlist /etc/pacman.d/
-COPY profiles/openbox/base/etc/pacman.d/blackarch.mirrorlist /etc/pacman.d/
+COPY profiles/standard/base/etc/pacman.d/archlinux.mirrorlist /etc/pacman.d/
+COPY profiles/standard/base/etc/pacman.d/blackarch.mirrorlist /etc/pacman.d/
 
 # Packages to add for building cyberlinux
 # --------------------------------------------------------------------------------------------------
