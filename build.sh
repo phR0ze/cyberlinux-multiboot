@@ -606,7 +606,7 @@ usage()
   header
   echo -e "Usage: ${cyan}./$(basename $0)${none} [options]\n"
   echo -e "Options:"
-  echo -e "  -a               Build all components"
+  echo -e "  -a               Build all components for the given profile"
   echo -e "  -b               Run the builder attaching to standard input and output"
   echo -e "  -d DEPLOYMENTS   Build deployments, comma delimited (all|shell|lite)"
   echo -e "  -i               Build the initramfs installer"
@@ -620,11 +620,12 @@ usage()
   echo -e "  ${green}Build everything:${none} ./${SCRIPT} -a"
   echo -e "  ${green}Build shell deployment:${none} ./${SCRIPT} -d shell"
   echo -e "  ${green}Build just bootable installer:${none} ./${SCRIPT} -imI"
+  echo -e "  ${green}Build installable ISO with base deployment:${none} ./${SCRIPT} -d base -rimI"
   echo -e "  ${green}Build packages for openbox profile:${none} ./${SCRIPT} -p openbox -r"
   echo -e "  ${green}Build openbox base:${none} ./${SCRIPT} -p openbox -d base"
   echo -e "  ${green}Clean openbox core,base layers:${none} ./${SCRIPT} -c layers/openbox/core,layers/openbox/base"
   echo -e "  ${green}Rebuild builder, multiboot and installer:${none} ./${SCRIPT} -c all -p openbox -m -i"
-  echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -p standad -d base"
+  echo -e "  ${green}Don't automatically destroy the build container:${none} RELEASED=1 ./${SCRIPT} -d base"
   echo -e "  ${green}Run the build container attaching to input/output:${none} ./${SCRIPT} -b"
   echo
   RELEASED=1
@@ -654,7 +655,7 @@ header
 [ ! -z ${TEST+x} ] && testing
 
 # Default profile if not set
-[ -z ${PROFILE+x} ] && PROFILE=openbox
+[ -z ${PROFILE+x} ] && PROFILE=standard
 read_profile "$PROFILE"
 
 # Optionally clean artifacts

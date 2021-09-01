@@ -72,10 +72,10 @@ getinput()
             read value
         fi
         [ "$value" == "exit" ] && exit_to_shell
-        [ "x$value" != "x" ] && local result=$value
+        [ "x$value" != "x" ] && local result="$value"
     fi
 
-    eval $_result=$result
+    eval "$_result"="$result"
 }
 
 getsel()
@@ -448,16 +448,16 @@ config_system()
 
     # Configure time and date
     #---------------------------------------------------------------------------
-    echo -en ":: Setting timezone to ${cyber}${TIMEZONE}${none}..."
-    chroot ${NEW_ROOT} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
-    check_status
-
-    if [ "x$TIMEDATE_SET" == "x1" ]; then
-        echo -en ":: Set time and date to ${cyber}$(date +"%d %b %Y %r")${none}..."
-        local now=$(date +"%d %b %Y %r")
+    if [ "x$TIMEDATE_SET" == "xy" ]; then
+        local now=$(date --iso-8601=seconds)
+        echo -en ":: Set time and date to ${cyber}${now}${none}..."
         chroot ${NEW_ROOT} date -s ${now} &>/dev/null
         check_status
     fi
+
+    echo -en ":: Setting timezone to ${cyber}${TIMEZONE}${none}..."
+    chroot ${NEW_ROOT} ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime &>/dev/null
+    check_status
 
     echo -en ":: Set hwclock to system clock ${cyber}${TIMEDATE}${none}..."
     chroot ${NEW_ROOT} hwclock --systohc &>/dev/null
@@ -689,13 +689,12 @@ installer()
             #----------------------------------------------------------------------
             echo -e "\n${cyber}:: Configure time and date:${none}"
             getinput TIMEZONE 'Enter timezone' "$TIMEZONE"
-            getinput TIMEDATE_SET "Change system '$(date +"%d %b %Y %r")' time?" 'n'
+            getinput TIMEDATE_SET "Change system time ${cyber}$(date --iso-8601=seconds)${none}" 'n'
             if [ "x$TIMEDATE_SET" == "xy" ]; then
-                local valid_date=1
-                while [ $valid_date -ne 0 ]; do
-                    getinput TIMEDATE "Use 'date -s' string format" "$(date +"%d %b %Y %r")"
-                    date -s "${TIMEDATE}"
-                    valid_date=$?
+                while true; do
+                    getinput TIMEDATE "Use ${cyber}ISO 8601 seconds${none} format" "$(date --iso-8601=seconds)"
+                    date -s "${TIMEDATE}" &>/dev/null
+                    [ $? -eq 0 ] && break
                 done
             fi
 
@@ -706,11 +705,8 @@ installer()
             while true; do
                 getinput PASS 'Enter new password' 'admin' 1
                 getinput PASS2 'Enter password again' 'admin' 1
-                if [ "x$PASS" != "x$PASS2" ]; then
-                    echo -e "   ${red}Passwords don't match, please try again${none}"
-                else
-                    break
-               fi
+                [ "x$PASS" == "x$PASS2" ] && break
+                echo -e "   ${red}Passwords don't match, please try again${none}"
             done
 
             # Prompt for autologin
