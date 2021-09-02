@@ -35,7 +35,7 @@ CONT_BUILD_DIR="/home/build"              # Build location for layer components
 CONT_TEMP_DIR="/home/build/temp"          # Build location for layer components
 CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered filesystems
 CONT_ISO_DIR="${CONT_BUILD_DIR}/iso"      # Build location for staging iso/boot files
-CONT_ESP="${CONT_ISO_DIR}/boot/grub/efi.img" # Build location for staging iso/boot files
+CONT_ESP="${CONT_ISO_DIR}/boot/grub/esp.img" # Build location for staging iso/boot files
 CONT_IMAGES_DIR="${CONT_ISO_DIR}/images"  # Final iso sqfs image locations
 CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage packages being built
 CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
@@ -208,6 +208,9 @@ build_multiboot()
 
   echo -e ":: Concatenate cdboot.img to bios.img to create CD-ROM bootable image $CONT_BUILD_DIR/eltorito.img..."
   cat /usr/lib/grub/i386-pc/cdboot.img "$CONT_BUILD_DIR/bios.img" > "$CONT_ISO_DIR/boot/grub/i386-pc/eltorito.img"
+
+  echo -e ":: Concatenate boot.img to bios.img to create embedded boot $CONT_BUILD_DIR/embedded.img..."
+  cat /usr/lib/grub/i386-pc/boot.img "$CONT_BUILD_DIR/bios.img" > "$CONT_ISO_DIR/boot/grub/i386-pc/embedded.img"
 EOF
   check
 
@@ -215,7 +218,7 @@ EOF
   # xorriso expects a FAT32 filesystem image which contains a binary file named /EFI/BOOT/BOOTX64.EFI
   # GRUB2 doesn't create the FAT32 filesystem by default it only creates the binary BOOTX64.EFI. We
   # need to create the EFI System Partition i.e. ESP and mount it for GRUB2 to deposit the binary in.
-  # Then the resulting ESP is saved as the efi.img and used by xorriso.
+  # Then the resulting ESP is saved as the esp.img and used by xorriso.
   # ------------------------------------------------------------------------------------------------
   echo -e "${yellow}:: Creating UEFI boot files...${none}"
   mkdir -p "${ISO_DIR}/EFI/BOOT"
@@ -246,10 +249,6 @@ EOF
   sudo umount "${CONT_TEMP_DIR}"
 EOF
   check
-
-  # Experimenting with clover
-  #cp -r /usr/lib/clover/EFI/BOOT "${ISO_DIR}/EFI"
-  #cp -r /usr/lib/clover/EFI/CLOVER "${ISO_DIR}/EFI"
 }
 
 # Build the initramfs based installer
@@ -383,16 +382,19 @@ build_iso()
     -r -iso-level 3 -full-iso9660-filenames         `# Use Rock Ridge and level 3 for standard ISO features` \
     \
     `# Configure BIOS bootable settings` \
-    -b boot/grub/i386-pc/eltorito.img               `# El Torito boot image enables BIOS boot` \
+    -b boot/grub/i386-pc/eltorito.img               `# a.k.a -eltorito-boot enables BIOS boot` \
     -no-emul-boot                                   `# Image is not emulating floppy mode` \
     -boot-load-size 4                               `# Specifies (4) 512byte blocks: 2048 total` \
     -boot-info-table                                `# Updates boot image with boot info table` \
+    --embedded-boot iso/boot/grub/i386-pc/embedded.img  `# Copy 32768 bytes to the start of the ISO` \
+    --protective-msdos-label                        `# Seals off the MBR boot space` \
     \
     `# Configure UEFI bootable settings` \
-    -eltorito-alt-boot                              `# Separates BIOS settings from UEFI settings` \
-    -e boot/grub/efi.img                            `# EFI boot image on the iso filesystem` \
-    -no-emul-boot                                   `# Image is not emulating floppy mode` \
-    -isohybrid-gpt-basdat                           `# Announces efi.img is FAT GPT i.e. ESP` \
+    `# the 'esp.img' is a disk image in FAT GPT i.e. ESP specification` \
+    `# https://www.gnu.org/software/xorriso/man_1_xorrisofs.html` \
+    `# --efi-boot IMAGE is an alias for -eltorito-alt-boot, -e IMAGE, -no-emul-boot, -eltorito-alt-boot` \
+    --efi-boot boot/grub/esp.img                    `# Alias for -eltorito-alt-boot, -e with image` \
+    -isohybrid-gpt-basdat                           `# Announces esp.img is FAT GPT i.e. ESP` \
     \
     `# Specify the output iso file path and location to turn into an ISO` \
     -o "${CONT_OUTPUT_DIR}/cyberlinux.iso" "$CONT_ISO_DIR"

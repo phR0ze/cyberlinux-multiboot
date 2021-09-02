@@ -278,7 +278,7 @@ package_cyberlinux-openbox-netbook()
 
     # Utils
     'android-tools'             # Android platform tools
-    'gvfs-mtp'                  # Support for automounting Android phone storage when plugged in
+    'gvfs-mtp'                  # Android phone storage automount on plug-in
     'i3lock-color'              # Simple lightweight screen locker
     'conky'                     # Lightweight system monitor for X
     'light'                     # Control laptop backlights both screen and keyboard

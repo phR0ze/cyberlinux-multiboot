@@ -25,7 +25,12 @@ of ***cyberlinux-multiboot***.
   * [dconf](#dconf)
 * [Hardware](#hardware)
   * [ACEPC AK1](#acepc-ak1)
+    * [Install cyberlinux](#acepc-ak1-install-cyberlinux)
+    * [Configure cyberlinux](#acepc-ak1-configure-cyberlinux)
   * [Dell XPS 13 9310](#dell-xps-13-9310)
+    * [Install cyberlinux](#dell-xps-13-install-cyberlinux)
+    * [Configure cyberlinux](#dell-xps-13-configure-cyberlinux)
+  * [Samsung Chromebook 3 (a.k.a CELES)](#chromebook-3)
 * [Installer](#installer)
   * [initramfs installer](#initramfs-installer)
     * [create initramfs installer](#create-initramfs-installer)
@@ -162,6 +167,7 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
 Note because of the `xHCI` USB driver being used by the newer firmware on the ACEPC AK1 you must
 choose an `UEFI` boot option in order to get keyboard support during the install.
 
+### Install cyberlinux <a name="acepc-ak1-install-cyberlinux"/></a>
 1. Boot Into the `Setup firmware`:  
    a. Press `F7` repeatedly until the boot menu pops up  
    b. Select `Enter Setup`  
@@ -179,7 +185,8 @@ choose an `UEFI` boot option in order to get keyboard support during the install
    c. Complete out the process and login to your new system  
    d. Unplug the USB, reboot and log back in  
 
-4. Configure WiFi:  
+### Configure cyberlinux <a name="acepc-ak1-configure-cyberlinux"/></a>
+1. Configure WiFi:  
    a. WPA GUI will be launched automatically  
    b. Select `Scan >Scan` then doblue click the chosen `SSID`  
    c. Enter the pre-shared secret `PSK` and click `Add`  
@@ -201,13 +208,13 @@ choose an `UEFI` boot option in order to get keyboard support during the install
       $ sudo systemctl restart systemd-networkd
       ```
 
-5. Configure Teamviewer if installed:  
+2. Configure Teamviewer if installed:  
    a. Launch Teamviewer from the tray icon  
    b. Navigate to `Extras >Options`  
    c. Set `Choose a theme` to `Dark` and hit `Apply`  
    d. Navigate to `Advanced` and set `Personal password` and hit `OK`  
 
-6. Configure Kodi if desired:  
+3. Configure Kodi if desired:  
    a. Hover over selecting `Remove this main menu item` for those not used `Muic Videos, TV, Radio,
    Games, Favourites`  
    b. Add NFS shares as desired  
@@ -222,9 +229,9 @@ choose an `UEFI` boot option in order to get keyboard support during the install
    k. Set `Movies are in separate folders that match the movie title` and select `OK`  
    l. Repeat for any other NFS share paths your server has  
 
-7. Copy over ssh keys to `~/.ssh`  
+4. Copy over ssh keys to `~/.ssh`  
 
-8. Copy over any wallpaper to `/usr/share/backgrounds`  
+5. Copy over any wallpaper to `/usr/share/backgrounds`  
 
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
@@ -249,6 +256,108 @@ firmware that comes with the machine will be cryptographically signed for the ma
 6. Select `APPLY CHANGES` at the bottom
 7. Select `OK` on the Apply Settings Confirmation page
 8. Select `EXIT` bottom right of the screen to reboot
+
+## Samsung Chromebook 3 (a.k.a. CELES) <a name="samsung-chromebook-3"/></a>
+With earlier kernel versions and drivers there were some quirks to work out but the latest `5.13.13`
+and associated Arch Linux packages seem to work pretty smooth.
+
+### Prerequisites <a name="chromebook-3-prerequisites"/></a>
+Chromebooks are not setup for Linux out of the box however there has been some excellent work done
+in the community to make Chromebooks behave like normal Linux netbooks.
+
+see [Prepare you system for install](https://wiki.galliumos.org/Installing/Preparing)
+
+### Install cyberlinux <a name="chromebook-3-install-cyberlinux"/></a>
+1. Boot Into the `Setup firmware`:  
+   a. Press `F7` repeatedly until the boot menu pops up  
+   b. Select `Enter Setup`  
+   c. Navigate to `Security >Secure Boot`  
+   d. Ensure it is `Disabled`
+
+2. Now boot the AK1 from the USB:  
+   a. Plug in the USB from [Create multiboot USB](#create-multiboot-usb)  
+   b. Press `F7` repeatedly until the boot menu pops up  
+   c. Select your `UEFI` device entry e.g. `UEFI: USB Flash Disk 1.00`  
+
+3. Install `cyberlinux`:  
+   a. Select the desired deployment type e.g. `Desktop`  
+   b. Walk through the wizard enabling WiFi on the way  
+   c. Complete out the process and login to your new system  
+   d. Unplug the USB, reboot and log back in  
+
+### Configure cyberlinux <a name="chromebook-3-configure-cyberlinux"/></a>
+1. Configure WiFi:  
+   a. WPA GUI will be launched automatically  
+   b. Select `Scan >Scan` then doblue click the chosen `SSID`  
+   c. Enter the pre-shared secret `PSK` and click `Add`  
+   d. You should have an ip now you can verify with `ip a` in a shell  
+   e. Set a static ip if desired, edit `sudo /etc/systemd/network/30-wireless.network`  
+      ```
+      [Match]
+      Name=wl*
+
+      [Network]
+      Address=192.168.1.7/24
+      Gateway=192.168.1.1
+      DNS=1.1.1.1
+      DNS=1.0.0.1
+      IPForward=kernel
+      ```
+   f. Restart networking:  
+      ```bash
+      $ sudo systemctl restart systemd-networkd
+      ```
+
+2. Configure Teamviewer if installed:  
+   a. Launch Teamviewer from the tray icon  
+   b. Navigate to `Extras >Options`  
+   c. Set `Choose a theme` to `Dark` and hit `Apply`  
+   d. Navigate to `Advanced` and set `Personal password` and hit `OK`  
+
+3. Configure Kodi if desired:  
+   a. Hover over selecting `Remove this main menu item` for those not used `Muic Videos, TV, Radio,
+   Games, Favourites`  
+   b. Add NFS shares as desired  
+   c. Navigate to `Movies > Enter files selection > Files >Add videos...`  
+   d. Select `Browse >Add network location...`  
+   e. Select `Protocol` as `Network File System (NFS)`  
+   f. Set `Server address` to your target e.g. `192.168.1.3`  
+   g. Set `Remote path` to your server path e.g. `srv/nfs/Movies`  
+   h. Select your new NFS location in the list and select `OK`  
+   i. Select `OK` then set `This directory contains` to `Movies`  
+   j. Set `Choose information provider` and set `Local information only`  
+   k. Set `Movies are in separate folders that match the movie title` and select `OK`  
+   l. Repeat for any other NFS share paths your server has  
+
+4. Copy over ssh keys to `~/.ssh`  
+
+5. Copy over any wallpaper to `/usr/share/backgrounds`  
+
+### MicroSD Storage <a name="chromebook-3-micro-sd-storage"/></a>
+The MicroSD card is recognized as ***/dev/mmcblk1*** and not as removable device. This would be a
+problem if I intended to be inserting/removing it a lot, however I intend to simply use it as
+personal data storage for things such as Documents and media separate from the main disk. This will
+allow the main disk to be wiped and reinstalled as often as needed while keeping all non-system
+i.e. personal data separate and protected during system re-installs/formats.
+
+Prepare SD card for use and persistently mount:
+
+1. List out devices
+   ```bash
+   $ lsblk
+   ```
+2. Format using `-m 0` to use all space as this is a storage disk
+   ```bash
+   $ sudo mkfs.ext4 -m 0 /dev/mmcblk1
+   ```
+
+3. Mount using `noatime` to improve performance
+   ```bash
+   sudo mkdir /mnt/storage
+   sudo tee -a /etc/fstab <<< "/dev/mmcblk1 /mnt/storage ext4 defaults,noatime 0 0"
+   sudo mount -a
+   sudo chown -R $USER: /mnt/storage
+   ```
 
 # Installer <a name="installer"/></a>
 **Goals:** *boot speed*, *simplicity*, and *automation*
@@ -708,6 +817,19 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+
+### BlueTooth <a name="bluetooth"/></a>
+https://wiki.archlinux.org/index.php/bluetooth
+
+```bash
+# Install Bluetooth management tool and pulse audio plugin
+sudo pacman -S blueman pulseaudio-bluetooth
+# Enable/Start the Bluetooth daemon
+sudo systemctl enable bluetooth
+sudo systemctl start bluetooth
+# Start Blueman
+```
+
 * ACEPC
   * Need overscan, white line on right of monitor
   * Vulkan support
@@ -742,3 +864,7 @@ any additional terms or conditions.
 * Install yay from blackarch into the shell deployment
 * Set standard language defaults: `LANG = "en_US.UTF-8"`
 * Passwords need to be SHA512 to avoid being flagged by pam policies
+
+<!-- 
+vim: ts=2:sw=2:sts=2
+-->
