@@ -99,6 +99,7 @@ package_cyberlinux-standard-base()
     'curl'                      # Adding curl command to pull in packer scripts
 
     # Essential tools
+    'git'                       # Fast distributed version control system
     'sudo'                      # Elevate user commands on demand to root
     'cyberlinux-nvim'           # Installs and configures neovim, vim-plug and default plugins for cyberlinux
   )
@@ -188,7 +189,6 @@ package_cyberlinux-standard-shell()
     'diffutils'                 # Patch file utility programs: diff, cmp
     'gdb'                       # The GNU debugger
     'gcc-multilib'              # GNU Compiler Collection
-    'git'                       # Fast distributed version control system
     'jq'                        # Command line JSON processor, depof: kubectl
     'lld'                       # Linker from the LLVM project
     'llvm'                      # Low Level compiler infrastructure
