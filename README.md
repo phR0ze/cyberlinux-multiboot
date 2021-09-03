@@ -4,33 +4,14 @@ cyberlinux-multiboot
 ====================================================================================================
 
 <img align="left" width="48" height="48" src="https://raw.githubusercontent.com/phR0ze/cyberlinux/master/art/logo_256x256.png">
-<b>cyberlinux-multiboot</b> provides a reference implementation for a GRUB2 based installer and
-recovery system for the <b>cyberlinux project</b> including documentation to build a fully functional
-multiboot ISO that supports booting on both BIOS and UEFI hardware systems as a USB stick or CD-ROM.
-
-### Disclaimer
-***cyberlinux-multiboot*** comes with absolutely no guarantees or support of any kind. It is to be
-used at your own risk.  Any damages, issues, losses or problems caused by the use of
-***cyberlinux-multiboot*** are strictly the responsiblity of the user and not the developer/creator
-of ***cyberlinux-multiboot***.
 
 ### Quick links
-* [Usage](#usage)
-  * [Prerequisites](#prerequisites)
-    * [Arch Linux](#arch-linux)
-    * [Ubuntu](#ubuntu)
-  * [Create multiboot USB](#create-multiboot-usb)
-    * [Test USB in VirtualBox](#test-usb-in-virtualbox)
 * [Configuration](#configuration)
   * [dconf](#dconf)
 * [Hardware](#hardware)
-  * [ACEPC AK1](#acepc-ak1)
-    * [Install cyberlinux](#acepc-ak1-install-cyberlinux)
-    * [Configure cyberlinux](#acepc-ak1-configure-cyberlinux)
   * [Dell XPS 13 9310](#dell-xps-13-9310)
     * [Install cyberlinux](#dell-xps-13-install-cyberlinux)
     * [Configure cyberlinux](#dell-xps-13-configure-cyberlinux)
-  * [Samsung Chromebook 3 (a.k.a CELES)](#chromebook-3)
 * [Installer](#installer)
   * [initramfs installer](#initramfs-installer)
     * [create initramfs installer](#create-initramfs-installer)
@@ -69,88 +50,6 @@ of ***cyberlinux-multiboot***.
 
 ---
 
-# Usage <a name="usage"/></a>
-
-## Prerequisites <a name="prerequisites"/></a>
-The mutli-boot ISO is build entirely in a docker container with data cached on the local host for
-quicker rebuilds. This makes it possible to build on systmes with a minimal amount of dependencies.
-All that is required is ***passwordless sudo*** and ***docker***.
-
-### Arch Linux <a name="arch-linux"/></a>
-1. Passwordless sudo access is required for automation:
-   ```bash
-   $ sudo bash -c "echo '$USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
-   ```
-2. Install dependencies:
-   ```bash
-   $ sudo pacman -S jq docker virtualbox virtualbox-host-modules-arch
-   $ sudo usermod -aG disk,docker,vboxusers $USER
-
-   $ sudo systemctl enable docker
-   $ sudo systemctl start docker
-   ```
-3. Add your user to the appropriate groups:
-   ```bash
-   $ sudo apt install jq
-   ```
-
-### Ubuntu <a name="ubuntu"/></a>
-1. Passwordless sudo access is required for automation:
-   ```bash
-   $ sudo bash -c "echo 'YOUR_USER ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-passwordless"
-   ```
-2. Install dependencies:
-   ```bash
-   $ sudo apt update
-   $ sudo apt install jq docker
-   ```
-3. Add your user to the appropriate groups:
-   ```bash
-   $ sudo usermod -aG disk,docker,vboxusers $USER
-   ```
-
-## Create multiboot USB <a name="create-multiboot-usb"/></a>
-
-1. Clone the multiboot repo:
-   ```bash
-   $ cd ~/Projects
-   $ git clone git@github.com:phR0ze/cyberlinux-multiboot
-   ```
-2. Execute the build:
-   ```bash
-   $ ./build.sh -a
-   ```
-3. Copy the ISO to the USB:
-   ```bash
-   # Determine the correct USB device
-   $ lsblk
-
-   # Copy to the dev leaving off the partition
-   $ sudo dd bs=32M if=temp/output/cyberlinux.iso of=/dev/sdd status=progress oflag=sync
-   ```
-
-### Test USB in VirtualBox <a name="test-usb-in-virtualbox"/></a>
-1. Determine which device is your USB
-   ```bash
-   $ lsblk
-   ```
-2. Create a raw vmdk boot stub from the USB
-   ```
-   $ sudo vboxmanage internalcommands createrawvmdk -filename usb.vmdk -rawdisk /dev/sdd
-   RAW host disk access VMDK file usb.vmdk created successfully.
-
-   # Change ownership of new image to your user
-   $ sudo chown $USER: usb.vmdk
-
-   # Add your user to the disk group
-   $ sudo usermod -a -G disk $USER
-
-   # Logout and back in and launch virtualbox
-   ```
-3. Create a new VM in VirtualBox  
-   a. On the `Virtual Hard Disk` option choose `Use existing hard disk`  
-   b. Browse to and select the `usb.vmdk` you just created  
-
 # Configuration <a name="configuration"/></a>
 ## dconf <a name="dconf"/></a>
 To get setting persisted from dconf configure the target app as desired then dump the settings out
@@ -162,76 +61,6 @@ $ dconf dump /apps/guake/ > /etc/dconf/db/local.d/03-guake
 ```
 
 # Hardware <a name="hardware"/></a>
-
-## ACEPC AK1 <a name="acepc-ak1"/></a>
-Note because of the `xHCI` USB driver being used by the newer firmware on the ACEPC AK1 you must
-choose an `UEFI` boot option in order to get keyboard support during the install.
-
-### Install cyberlinux <a name="acepc-ak1-install-cyberlinux"/></a>
-1. Boot Into the `Setup firmware`:  
-   a. Press `F7` repeatedly until the boot menu pops up  
-   b. Select `Enter Setup`  
-   c. Navigate to `Security >Secure Boot`  
-   d. Ensure it is `Disabled`
-
-2. Now boot the AK1 from the USB:  
-   a. Plug in the USB from [Create multiboot USB](#create-multiboot-usb)  
-   b. Press `F7` repeatedly until the boot menu pops up  
-   c. Select your `UEFI` device entry e.g. `UEFI: USB Flash Disk 1.00`  
-
-3. Install `cyberlinux`:  
-   a. Select the desired deployment type e.g. `Desktop`  
-   b. Walk through the wizard enabling WiFi on the way  
-   c. Complete out the process and login to your new system  
-   d. Unplug the USB, reboot and log back in  
-
-### Configure cyberlinux <a name="acepc-ak1-configure-cyberlinux"/></a>
-1. Configure WiFi:  
-   a. WPA GUI will be launched automatically  
-   b. Select `Scan >Scan` then doblue click the chosen `SSID`  
-   c. Enter the pre-shared secret `PSK` and click `Add`  
-   d. You should have an ip now you can verify with `ip a` in a shell  
-   e. Set a static ip if desired, edit `sudo /etc/systemd/network/30-wireless.network`  
-      ```
-      [Match]
-      Name=wl*
-
-      [Network]
-      Address=192.168.1.7/24
-      Gateway=192.168.1.1
-      DNS=1.1.1.1
-      DNS=1.0.0.1
-      IPForward=kernel
-      ```
-   f. Restart networking:  
-      ```bash
-      $ sudo systemctl restart systemd-networkd
-      ```
-
-2. Configure Teamviewer if installed:  
-   a. Launch Teamviewer from the tray icon  
-   b. Navigate to `Extras >Options`  
-   c. Set `Choose a theme` to `Dark` and hit `Apply`  
-   d. Navigate to `Advanced` and set `Personal password` and hit `OK`  
-
-3. Configure Kodi if desired:  
-   a. Hover over selecting `Remove this main menu item` for those not used `Muic Videos, TV, Radio,
-   Games, Favourites`  
-   b. Add NFS shares as desired  
-   c. Navigate to `Movies > Enter files selection > Files >Add videos...`  
-   d. Select `Browse >Add network location...`  
-   e. Select `Protocol` as `Network File System (NFS)`  
-   f. Set `Server address` to your target e.g. `192.168.1.3`  
-   g. Set `Remote path` to your server path e.g. `srv/nfs/Movies`  
-   h. Select your new NFS location in the list and select `OK`  
-   i. Select `OK` then set `This directory contains` to `Movies`  
-   j. Set `Choose information provider` and set `Local information only`  
-   k. Set `Movies are in separate folders that match the movie title` and select `OK`  
-   l. Repeat for any other NFS share paths your server has  
-
-4. Copy over ssh keys to `~/.ssh`  
-
-5. Copy over any wallpaper to `/usr/share/backgrounds`  
 
 ## Dell XPS 13 9310 <a name="dell-xps-13-9310"/></a>
 
@@ -256,108 +85,6 @@ firmware that comes with the machine will be cryptographically signed for the ma
 6. Select `APPLY CHANGES` at the bottom
 7. Select `OK` on the Apply Settings Confirmation page
 8. Select `EXIT` bottom right of the screen to reboot
-
-## Samsung Chromebook 3 (a.k.a. CELES) <a name="samsung-chromebook-3"/></a>
-With earlier kernel versions and drivers there were some quirks to work out but the latest `5.13.13`
-and associated Arch Linux packages seem to work pretty smooth.
-
-### Prerequisites <a name="chromebook-3-prerequisites"/></a>
-Chromebooks are not setup for Linux out of the box however there has been some excellent work done
-in the community to make Chromebooks behave like normal Linux netbooks.
-
-see [Prepare you system for install](https://wiki.galliumos.org/Installing/Preparing)
-
-### Install cyberlinux <a name="chromebook-3-install-cyberlinux"/></a>
-1. Boot Into the `Setup firmware`:  
-   a. Press `F7` repeatedly until the boot menu pops up  
-   b. Select `Enter Setup`  
-   c. Navigate to `Security >Secure Boot`  
-   d. Ensure it is `Disabled`
-
-2. Now boot the AK1 from the USB:  
-   a. Plug in the USB from [Create multiboot USB](#create-multiboot-usb)  
-   b. Press `F7` repeatedly until the boot menu pops up  
-   c. Select your `UEFI` device entry e.g. `UEFI: USB Flash Disk 1.00`  
-
-3. Install `cyberlinux`:  
-   a. Select the desired deployment type e.g. `Desktop`  
-   b. Walk through the wizard enabling WiFi on the way  
-   c. Complete out the process and login to your new system  
-   d. Unplug the USB, reboot and log back in  
-
-### Configure cyberlinux <a name="chromebook-3-configure-cyberlinux"/></a>
-1. Configure WiFi:  
-   a. WPA GUI will be launched automatically  
-   b. Select `Scan >Scan` then doblue click the chosen `SSID`  
-   c. Enter the pre-shared secret `PSK` and click `Add`  
-   d. You should have an ip now you can verify with `ip a` in a shell  
-   e. Set a static ip if desired, edit `sudo /etc/systemd/network/30-wireless.network`  
-      ```
-      [Match]
-      Name=wl*
-
-      [Network]
-      Address=192.168.1.7/24
-      Gateway=192.168.1.1
-      DNS=1.1.1.1
-      DNS=1.0.0.1
-      IPForward=kernel
-      ```
-   f. Restart networking:  
-      ```bash
-      $ sudo systemctl restart systemd-networkd
-      ```
-
-2. Configure Teamviewer if installed:  
-   a. Launch Teamviewer from the tray icon  
-   b. Navigate to `Extras >Options`  
-   c. Set `Choose a theme` to `Dark` and hit `Apply`  
-   d. Navigate to `Advanced` and set `Personal password` and hit `OK`  
-
-3. Configure Kodi if desired:  
-   a. Hover over selecting `Remove this main menu item` for those not used `Muic Videos, TV, Radio,
-   Games, Favourites`  
-   b. Add NFS shares as desired  
-   c. Navigate to `Movies > Enter files selection > Files >Add videos...`  
-   d. Select `Browse >Add network location...`  
-   e. Select `Protocol` as `Network File System (NFS)`  
-   f. Set `Server address` to your target e.g. `192.168.1.3`  
-   g. Set `Remote path` to your server path e.g. `srv/nfs/Movies`  
-   h. Select your new NFS location in the list and select `OK`  
-   i. Select `OK` then set `This directory contains` to `Movies`  
-   j. Set `Choose information provider` and set `Local information only`  
-   k. Set `Movies are in separate folders that match the movie title` and select `OK`  
-   l. Repeat for any other NFS share paths your server has  
-
-4. Copy over ssh keys to `~/.ssh`  
-
-5. Copy over any wallpaper to `/usr/share/backgrounds`  
-
-### MicroSD Storage <a name="chromebook-3-micro-sd-storage"/></a>
-The MicroSD card is recognized as ***/dev/mmcblk1*** and not as removable device. This would be a
-problem if I intended to be inserting/removing it a lot, however I intend to simply use it as
-personal data storage for things such as Documents and media separate from the main disk. This will
-allow the main disk to be wiped and reinstalled as often as needed while keeping all non-system
-i.e. personal data separate and protected during system re-installs/formats.
-
-Prepare SD card for use and persistently mount:
-
-1. List out devices
-   ```bash
-   $ lsblk
-   ```
-2. Format using `-m 0` to use all space as this is a storage disk
-   ```bash
-   $ sudo mkfs.ext4 -m 0 /dev/mmcblk1
-   ```
-
-3. Mount using `noatime` to improve performance
-   ```bash
-   sudo mkdir /mnt/storage
-   sudo tee -a /etc/fstab <<< "/dev/mmcblk1 /mnt/storage ext4 defaults,noatime 0 0"
-   sudo mount -a
-   sudo chown -R $USER: /mnt/storage
-   ```
 
 # Installer <a name="installer"/></a>
 **Goals:** *boot speed*, *simplicity*, and *automation*
@@ -817,6 +544,7 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
+* Migrate to nvim
 
 ### BlueTooth <a name="bluetooth"/></a>
 https://wiki.archlinux.org/index.php/bluetooth
@@ -843,7 +571,6 @@ sudo systemctl start bluetooth
   * Filezilla initial configs not set
 * Add conflicts to PKGBUILD
 
-* Migrate to nvim
 * Add GTK Arc Dark theme
 * Add utshushi menu entry
 * devede and asunder icons in Paper are both the same?
@@ -855,6 +582,9 @@ sudo systemctl start bluetooth
 * Add cyberlinux-repo README about packages and warnings and how to configure
   * Automate updates to the readme when updating the packages
 * Build a rust replacement for oblogout
+
+# Testing <a name="testing"/></a>
+* Desktop: Added Zoom to the network menu
 
 # Changelog <a name="changelog"/></a>
 * Replaced cinnamon-screensaver with i3lock-color

@@ -55,17 +55,6 @@ post_install()
   # Disable pc speaker
   # /etc/modprobe.d/pcspkr.conf
 
-  # Tools configuration
-  # ---------------------------------------------------------------------------
-  # Default custom vim config without any plugins and only using built in colors
-  # /etc/skel/.vimrc
-
-  # Create neovim config
-  # /etc/skel/.config/nvim/init.vim
-
-  # Create a vim link for neovim
-  ln -sf /usr/bin/nvim /usr/bin/vim
-
   # Pacman configuration
   # ---------------------------------------------------------------------------
   # Custom arch linux mirrorlist location

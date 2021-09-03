@@ -243,6 +243,11 @@ EOF
   mkfs.vfat "${CONT_ESP}"
   mkdir -p "${CONT_TEMP_DIR}"
   sudo mount "${CONT_ESP}" "${CONT_TEMP_DIR}"
+
+  # Debug
+  ls -la "${CONT_ISO_DIR}/boot/grub"
+  find "$CONT_TEMP_DIR"
+
   sudo mkdir -p "${CONT_TEMP_DIR}/EFI/BOOT"
   sudo cp "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.EFI" "${CONT_TEMP_DIR}/EFI/BOOT"
   sudo umount "${CONT_TEMP_DIR}"

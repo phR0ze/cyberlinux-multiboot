@@ -28,7 +28,7 @@ pkgname=(
     "${pkgbase}-base"
     "${pkgbase}-shell"
 )
-pkgver=0
+pkgver=0.0.118
 pkgrel=1
 pkgdesc='Configuration packages for cyberlinux standard profile'
 arch=('any')
@@ -100,7 +100,7 @@ package_cyberlinux-standard-base()
 
     # Essential tools
     'sudo'                      # Elevate user commands on demand to root
-    'neovim'                    # Improved version of vi text editor
+    'cyberlinux-nvim'           # Installs and configures neovim, vim-plug and default plugins for cyberlinux
   )
 
   pkg base
