@@ -157,7 +157,6 @@ build_multiboot()
 
   # Create the target profile's boot entries
   # ------------------------------------------------------------------------------------------------
-  rm -f "$BOOT_CFG_PATH"
   for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
     read_deployment $layer
 
