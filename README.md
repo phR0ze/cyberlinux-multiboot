@@ -544,7 +544,6 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Migrate to nvim
 
 ### BlueTooth <a name="bluetooth"/></a>
 https://wiki.archlinux.org/index.php/bluetooth
@@ -587,6 +586,7 @@ sudo systemctl start bluetooth
 * Desktop: Added Zoom to the network menu
 
 # Changelog <a name="changelog"/></a>
+* Migrated to nvim via cyberlinux-nvim
 * Replaced cinnamon-screensaver with i3lock-color
 * Replaced oblogout with arcologout a simple clean overlay logout app
 * Powerline font doesn't look right in bash - solved set fontconfig

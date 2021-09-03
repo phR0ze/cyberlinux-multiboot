@@ -475,10 +475,9 @@ config_system()
     # Configure wifi before user is created to pick up autostart
     if [ "x$ENABLE_WIFI" == "x1" ]; then
         echo -en ":: Enabling Wifi..."
-        chroot ${NEW_ROOT} cp /usr/share/applications/wpa_gui.desktop /etc/skel/.config/autostart &>/dev/null
         chroot ${NEW_ROOT} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
-        check_status
         chroot ${NEW_ROOT} systemctl enable wpa_supplicant@wlo1 &>/dev/null
+        check_status
     fi
 
     # Configure static LAN
