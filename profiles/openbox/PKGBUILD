@@ -376,6 +376,7 @@ package_cyberlinux-openbox-desktop()
     'chromium'                  # Open source base of Google's Chrome browser
     'qbittorrent'               # BitTorrent client written in C++, based on Qt and libtorrent-rasterbar
     'synergy'                   # Share a single mouse and keyboard between multiple computers
+    'zoom'                      # Video Conferencing and Web Conferencing Service
 
     # Office
     'fbreader'                  # An e-book reader for linux
