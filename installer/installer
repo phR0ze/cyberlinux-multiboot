@@ -475,7 +475,6 @@ config_system()
     # Configure wifi before user is created to pick up autostart
     if [ "x$ENABLE_WIFI" == "x1" ]; then
         echo -en ":: Enabling Wifi..."
-        chroot ${NEW_ROOT} ln -sf /usr/lib/systemd/system/wpa_supplicant@.service /etc/systemd/system/multi-user.target.wants/wpa_supplicant@wlo1.service &>/dev/null
         chroot ${NEW_ROOT} systemctl enable wpa_supplicant@wlo1 &>/dev/null
         check_status
     fi
@@ -513,16 +512,6 @@ config_system()
     echo -e "[Network]\nDHCP=ipv4\nIPForward=kernel\n" >> $conf
     echo -e "[DHCP]\nRouteMetric=20\nUseDomains=true" >> $conf
     check_status
-
-    if [ $PROXY ] && [ "x$PROXY" != "xNone" ]; then
-        echo -en ":: Set PROXY to ${cyber}${PROXY}${none}..."
-        if [ $NO_PROXY ] && [ "x$NO_PROXY" != "xNone" ]; then
-            chroot ${NEW_ROOT} /opt/$DISTRO/bin/setproxy enable $PROXY $NO_PROXY &>/dev/null
-        else
-            chroot ${NEW_ROOT} /opt/$DISTRO/bin/setproxy enable $PROXY &>/dev/null
-        fi
-        check_status
-    fi
 
     # Configure root access for sshd if default deployment
     if [ -e "${NEW_ROOT}/etc/ssh/sshd_config" ]; then
@@ -627,8 +616,6 @@ installer()
     ENABLE_BLUETOOTH=0
     HOSTNAME="${DISTRO}-${LAYER}"
     NETIP='DHCP'
-    PROXY='None'
-    NO_PROXY='localhost,127.0.0.1'
     USER='admin'
     PASS='admin'
     DEFAULT_PASS='admin'
@@ -687,8 +674,6 @@ installer()
             if [ "x${NETIP}" != "xDHCP" ]; then
                 getinput gateway 'Enter gateway' $(echo $NETIP | awk -F. '{print $1"."$2"."$3".1"}')
             fi
-            getinput PROXY 'Enter proxy, url:port format' $PROXY
-            [ "x${PROXY}" != "xNone" ] && getinput NO_PROXY 'Enter no_proxy, comma delim' $NO_PROXY
             getinput ENABLE_WIFI 'Enter wifi state' 0
             getinput ENABLE_BLUETOOTH 'Enter bluetooth state' 0
 
@@ -735,8 +720,6 @@ installer()
     echo -e ":: Options being used for installation"
     echo -e "   hostname=${cyber}${HOSTNAME}${none}"
     echo -e "   networking=${cyber}${NETIP}${none}"
-    echo -e "   proxy=${cyber}${PROXY}${none}"
-    echo -e "   no_proxy=${cyber}${NO_PROXY}${none}"
     echo -e "   user=${cyber}${USER}${none}"
     if [ "x$DEFAULT" == "xy" ] || [ $LAYER == "live" ]; then
         echo -e "   pass=${cyber}${DEFAULT_PASS}${none}"
