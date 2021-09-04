@@ -45,6 +45,7 @@
       <item label="WinFF" icon="/usr/share/icons/hicolor/32x32/apps/winff.png"><action name="Execute"><execute>winff</execute></action></item>
     </menu>
     <menu id="Network" icon="/usr/share/icons/Paper/32x32/categories/applications-internet.png" label="Network">
+      <item label="BlueMan" icon="/usr/share/icons/Paper/32x32/apps/blueman.png"><action name="Execute"><execute>blueman-applet</execute></action></item>
       <item label="Chromium" icon="/usr/share/icons/Paper/32x32/apps/chromium.png"><action name="Execute"><execute>chromium</execute></action></item>
       <item label="Firefox" icon="/usr/share/icons/Paper/32x32/apps/firefox.png"><action name="Execute"><execute>firefox</execute></action></item>
       <item label="Remmina" icon="/usr/share/icons/Paper/32x32/apps/remmina.png"><action name="Execute"><execute>remmina</execute></action></item>

@@ -544,18 +544,9 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-
-### BlueTooth <a name="bluetooth"/></a>
-https://wiki.archlinux.org/index.php/bluetooth
-
-```bash
-# Install Bluetooth management tool and pulse audio plugin
-sudo pacman -S blueman pulseaudio-bluetooth
-# Enable/Start the Bluetooth daemon
-sudo systemctl enable bluetooth
-sudo systemctl start bluetooth
-# Start Blueman
-```
+* Add veracrypt back in
+* Guake settings are not taking
+* Document configuring Firefox
 
 * ACEPC
   * Need overscan, white line on right of monitor
@@ -583,6 +574,8 @@ sudo systemctl start bluetooth
 * Build a rust replacement for oblogout
 
 # Testing <a name="testing"/></a>
+* Netbook: Bluetooth
+* Laptop: wpa ui autostart is disabled
 * Desktop: Added Zoom to the network menu
 
 # Changelog <a name="changelog"/></a>

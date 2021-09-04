@@ -480,6 +480,12 @@ config_system()
         check_status
     fi
 
+    if [ "x$ENABLE_BLUETOOTH" == "x1" ]; then
+        echo -en ":: Enabling Bluetooth..."
+        chroot ${NEW_ROOT} systemctl enable bluetooth &>/dev/null
+        check_status
+    fi
+
     # Configure static LAN
     netmatch='en* eth*'
     if [ "x${NETIP}" != "xDHCP" ]; then
@@ -618,6 +624,7 @@ installer()
     SSD=0
     DEFAULT="n"
     ENABLE_WIFI=0
+    ENABLE_BLUETOOTH=0
     HOSTNAME="${DISTRO}-${LAYER}"
     NETIP='DHCP'
     PROXY='None'
@@ -683,6 +690,7 @@ installer()
             getinput PROXY 'Enter proxy, url:port format' $PROXY
             [ "x${PROXY}" != "xNone" ] && getinput NO_PROXY 'Enter no_proxy, comma delim' $NO_PROXY
             getinput ENABLE_WIFI 'Enter wifi state' 0
+            getinput ENABLE_BLUETOOTH 'Enter bluetooth state' 0
 
             # Configure time and date
             #----------------------------------------------------------------------

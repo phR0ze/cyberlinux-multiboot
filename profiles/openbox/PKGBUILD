@@ -292,6 +292,8 @@ package_cyberlinux-openbox-netbook()
     'pdfmod'                    # Simple PDF editor
 
     # Network
+    'blueman'                   # Bluetooth management tool
+    'pulseaudio-bluetooth'      # Pulse Audio plugin for bluetooth output
     'freerdp'                   # RDP client plugin for remmina
     'remmina'                   # Nice remoting UI for RDP and other protocols
     'wpa_gui'                   # A Qt frontend to wpa_supplicant, repo: cyberlinux
