@@ -544,21 +544,20 @@ any additional terms or conditions.
 ---
 
 # Backlog <a name="backlog"/></a>
-* Add veracrypt back in
+* Detect and install braswell config at install time
+
+* Add veracrypt
 * Guake settings are not taking
 * Document configuring Firefox
-
+* Add wine packages for gaming
+* GTK folder sort settings didn't take
+* Filezilla initial configs not set
 * ACEPC
   * Need overscan, white line on right of monitor
   * Vulkan support
     * `sudo pacman -S vulkan-intel vulkan-tools`
     * `vulkaninfo` if you get info about your graphics card its working
 * Support profiles depending on each other
-* Desktop:
-  * Validate: Added wine packages for gaming
-  * Conky's settings didn't take for Desktop
-  * GTK folder sort settings didn't take
-  * Filezilla initial configs not set
 * Add conflicts to PKGBUILD
 
 * Add GTK Arc Dark theme
@@ -578,7 +577,8 @@ any additional terms or conditions.
 * Lite: fixed powerline default showing up on right
 * Netbook: Bluetooth
 * Laptop: wpa ui autostart is disabled
-* Desktop: Added Zoom to the network menu
+* Desktop:
+  * Added Zoom to the network menu
 
 # Changelog <a name="changelog"/></a>
 * Migrated to nvim via cyberlinux-nvim

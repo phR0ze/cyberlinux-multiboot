@@ -37,6 +37,7 @@ CONT_ROOT_DIR="${CONT_BUILD_DIR}/root"    # Root mount point to build layered fi
 CONT_ISO_DIR="${CONT_BUILD_DIR}/iso"      # Build location for staging iso/boot files
 CONT_ESP="${CONT_ISO_DIR}/boot/grub/esp.img" # Build location for staging iso/boot files
 CONT_IMAGES_DIR="${CONT_ISO_DIR}/images"  # Final iso sqfs image locations
+CONT_PKGS_DIR="${CONT_ISO_DIR}/pkgs"      # Optional install time packages downloaded and stored on the ISO
 CONT_REPO_DIR="${CONT_BUILD_DIR}/repo"    # Local repo location to stage packages being built
 CONT_CACHE_DIR="/var/cache/pacman/pkg"    # Location to mount cache at inside container
 CONT_OUTPUT_DIR="${CONT_BUILD_DIR}/output" # Final built artifacts
@@ -157,7 +158,7 @@ build_multiboot()
 
   # Create the target profile's boot entries
   # ------------------------------------------------------------------------------------------------
-  for layer in $(echo "$PROFILE_JSON" | jq -r '.[].name'); do
+  for layer in $(echo "$DEPLOYMENTS_JSON" | jq -r '.[].name'); do
     read_deployment $layer
 
     # Don't include entries that don't have a kernel called out as they are intended
@@ -258,6 +259,18 @@ EOF
 # Build the initramfs based installer
 build_installer()
 {
+  if [ ${OPTIONAL_PKGS} != "null" ]; then
+    docker_run ${BUILDER}
+    echo -e "${yellow}:: Downloading optional install packages...${none}"
+    cat <<EOF | docker exec --privileged -i ${BUILDER} bash
+  mkdir -p ${CONT_PKGS_DIR}
+  sed -i 's|#CacheDir.*|CacheDir = ${CONT_PKGS_DIR}|g' /etc/pacman.conf
+  pacman -Sy --downloadonly --noconfirm ${OPTIONAL_PKGS}
+EOF
+    check
+    docker_kill ${BUILDER}
+  fi
+
   echo -e "${yellow}:: Stage files for building initramfs based installer...${none}"
   docker_run ${BUILDER}
   docker_cp "${INSTALLER_DIR}/installer" "$BUILDER:/usr/lib/initcpio/hooks"
@@ -444,6 +457,14 @@ clean()
   done
 }
 
+check_fail()
+{
+  if [ $? -ne 0 ]; then
+    echo -e "${red}failed!${none}"
+    exit 1
+  fi
+}
+
 check()
 {
   if [ $? -ne 0 ]; then
@@ -460,7 +481,7 @@ check()
 # Retrieve the deployment's properties
 read_deployment()
 {
-  local layer=$(echo "$PROFILE_JSON" | jq '.[] | select(.name=="'$1'")')
+  local layer=$(echo "$DEPLOYMENTS_JSON" | jq '.[] | select(.name=="'$1'")')
   DE_ENTRY=$(echo "$layer" | jq '.entry')
   DE_KERNEL=$(echo "$layer" | jq -r '.kernel')
   DE_PARAMS=$(echo "$layer" | jq -r '.params')
@@ -485,7 +506,7 @@ unique_profiles()
 
   # Extract just the layers, split them on comma, add them together as a single array
   # ensuring each entry is unique then join them as a single space delimeted string
-  for layer in $(echo "$PROFILE_JSON" | jq -r '[.[].layers | split(",")] | add | unique | join(" ")'); do
+  for layer in $(echo "$DEPLOYMENTS_JSON" | jq -r '[.[].layers | split(",")] | add | unique | join(" ")'); do
     local profile=${layer%/*}
 
     # Search the PROFILES array for the given profile
@@ -503,7 +524,7 @@ unique_profiles()
 read_deployments()
 {
   echo -e "${yellow}:: Reading in all deployments${none}..."
-  DEPLOYMENTS=$(echo "$PROFILE_JSON" | jq -r '[reverse[].name] | join(",")')
+  DEPLOYMENTS=$(echo "$DEPLOYMENTS_JSON" | jq -r '[reverse[].name] | join(",")')
 }
 
 # Read the given profile from disk
@@ -514,7 +535,13 @@ read_profile()
   PROFILE_PATH="${PROFILE_DIR}/profile.json"
   echo -en "${yellow}:: Using profile${none} ${cyan}${PROFILE_PATH}${none}..."
   PROFILE_JSON=$(jq -r '.' "$PROFILE_PATH")
-  check
+  check_fail
+  DEPLOYMENTS_JSON=$(echo "$PROFILE_JSON" | jq -r '.deployments')
+  check_fail
+
+  # Load optional packages that will be downloaded and included on the ISO for a runtime install
+  OPTIONAL_PKGS=$(echo "$PROFILE_JSON" | jq -r '. | if has("optionalPkgs") then (.optionalPkgs | join(" ")) else null end')
+
   unique_profiles
 }
 
