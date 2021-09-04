@@ -14,6 +14,13 @@
       "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,disk,docker,vboxusers"
     },
     {
+      "name": "theater",
+      "entry": "Install openbox theater    // Leanback env for Personal Use Only",
+      "kernel": "linux",
+      "layers": "standard/core,standard/base,standard/shell,openbox/lite,openbox/netbook,openbox/desktop,openbox/theater",
+      "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,disk,docker,vboxusers"
+    },
+    {
       "name": "desktop",
       "entry": "Install openbox desktop    // Full env for Personal Use Only",
       "kernel": "linux",
@@ -26,13 +33,6 @@
       "kernel": "linux",
       "layers": "standard/core,standard/base,standard/shell,openbox/lite,openbox/netbook",
       "groups": "lp,wheel,network,storage,users,video,audio,adbusers,uucp,disk"
-    },
-    {
-      "name": "theater",
-      "entry": "Install openbox theater    // Leanback env for Personal Use Only",
-      "kernel": "linux",
-      "layers": "standard/core,standard/base,standard/shell,openbox/lite,openbox/theater",
-      "groups": "lp,wheel,network,storage,users,video,audio,disk"
     },
     {
       "name": "server",

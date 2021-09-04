@@ -302,22 +302,6 @@ package_cyberlinux-openbox-netbook()
   pkg netbook
 }
 
-package_cyberlinux-openbox-theater()
-{
-  pkgdesc="Theater system - a lean back entertainment experience"
-  depends=(
-    "cyberlinux-openbox-netbook>=${pkgver}"
-
-    'guake'                     # Drop-down python based guake style terminal
-    'idesk'                     # Lightweight desktop icons for X
-    'kodi'                      # A software media player and entertainment hub for digital media
-
-    # Personal use only licensing restriction
-    'teamviewer'                # Excellent remoting software
-  )
-  pkg theater
-}
-
 package_cyberlinux-openbox-desktop()
 {
   pkgdesc="Full desktop system - built on top of netbook with additional media and productivity apps"
@@ -328,9 +312,9 @@ package_cyberlinux-openbox-desktop()
     'catfish'                   # System/File Search - File search tool
     'cyberlinux-plank'          # Light weight, simple clean app dock
     'docker'                    # Pack, ship and run any application as a lightweight container
+    'idesk'                     # Lightweight desktop icons for X
     'gnome-multi-writer'        # Write an ISO file to multiple USB devices at once
     'guake'                     # Drop-down python based guake style terminal
-    'picom'                     # X compositor fork of comptom
     'systemd-docker'            # Wrapper for "docker run" to handle systemd quirks, repo: cyberlinux
 
     # Printing
@@ -392,6 +376,15 @@ package_cyberlinux-openbox-desktop()
     'ttf-ms-fonts'              # Core TTF Fonts from Microsoft
   )
   pkg desktop
+}
+
+package_cyberlinux-openbox-theater()
+{
+  pkgdesc="Theater system - a lean back entertainment experience"
+  depends=(
+    "cyberlinux-openbox-desktop>=${pkgver}"
+  )
+  pkg theater
 }
 
 package_cyberlinux-openbox-laptop()

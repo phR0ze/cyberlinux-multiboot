@@ -545,6 +545,9 @@ any additional terms or conditions.
 
 # Backlog <a name="backlog"/></a>
 * Detect and install braswell config at install time
+* Add slack to desktop
+* Braswell screen brightness
+* Create screen brightness tool in rust
 
 * Add veracrypt
 * Guake settings are not taking
@@ -574,6 +577,7 @@ any additional terms or conditions.
 * Build a rust replacement for oblogout
 
 # Testing <a name="testing"/></a>
+* Theater based on desktop
 * Lite: fixed powerline default showing up on right
 * Netbook: Bluetooth
 * Laptop: wpa ui autostart is disabled
