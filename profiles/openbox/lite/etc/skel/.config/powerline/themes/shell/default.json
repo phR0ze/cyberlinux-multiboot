@@ -25,6 +25,7 @@
                 "function": "powerline.segments.shell.jobnum",
                 "priority": 20
             }
-        ]
+        ],
+        "right": []
     }
 }

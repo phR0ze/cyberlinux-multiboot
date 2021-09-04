@@ -562,6 +562,7 @@ any additional terms or conditions.
 * Add conflicts to PKGBUILD
 
 * Add GTK Arc Dark theme
+* Replace powerline with powerline-go or powerline-rs
 * Add utshushi menu entry
 * devede and asunder icons in Paper are both the same?
 * Switch to XFWM because openbox doesn't have nice window edge control
@@ -574,6 +575,7 @@ any additional terms or conditions.
 * Build a rust replacement for oblogout
 
 # Testing <a name="testing"/></a>
+* Lite: fixed powerline default showing up on right
 * Netbook: Bluetooth
 * Laptop: wpa ui autostart is disabled
 * Desktop: Added Zoom to the network menu
