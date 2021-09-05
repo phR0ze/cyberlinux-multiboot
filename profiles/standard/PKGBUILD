@@ -28,7 +28,7 @@ pkgname=(
     "${pkgbase}-base"
     "${pkgbase}-shell"
 )
-pkgver=0.0.118
+pkgver=0
 pkgrel=1
 pkgdesc='Configuration packages for cyberlinux standard profile'
 arch=('any')
