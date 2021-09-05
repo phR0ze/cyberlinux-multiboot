@@ -87,9 +87,6 @@ build_env()
     docker build --build-arg USER_ID=$(id -u) --force-rm -t ${BUILDER} "${PROJECT_DIR}"
   fi
 
-  # Build repo packages
-  build_repo_packages
-
   # Attach to builder if set
   if [ ! -z ${RUN_BUILDER+x} ]; then
     docker_run ${BUILDER}
@@ -241,14 +238,13 @@ EOF
 
   echo -e ":: Creating ESP with the BOOTX64.EFI binary"
   truncate -s 8M "${CONT_ESP}"
-  mkfs.vfat "${CONT_ESP}"
+  mkfs.vfat "${CONT_ESP}" &>/dev/null
   mkdir -p "${CONT_TEMP_DIR}"
-  sudo mount "${CONT_ESP}" "${CONT_TEMP_DIR}"
-
-  # Debug
-  ls -la "${CONT_ISO_DIR}/boot/grub"
-  find "$CONT_TEMP_DIR"
-
+  while :; do
+    echo -e ":: Attempting to mount ${CONT_ESP} as ${CONT_TEMP_DIR}"
+    sleep 1 && sudo mount "${CONT_ESP}" "${CONT_TEMP_DIR}"
+    [ $? -eq 0 ] && break
+  done
   sudo mkdir -p "${CONT_TEMP_DIR}/EFI/BOOT"
   sudo cp "$CONT_ISO_DIR/EFI/BOOT/BOOTX64.EFI" "${CONT_TEMP_DIR}/EFI/BOOT"
   sudo umount "${CONT_TEMP_DIR}"
@@ -289,6 +285,7 @@ EOF
 # Build deployments
 build_deployments() 
 {
+  build_repo_packages
   echo -e "${yellow}:: Building deployments${none} ${cyan}${1}${none}..."
   docker_run ${BUILDER}
   docker_exec ${BUILDER} "mkdir -p ${CONT_ROOT_DIR}"
@@ -702,7 +699,7 @@ if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ] || \
   build_env
 fi
 
-# Build the grub multiboot images
+# 2. Build the grub multiboot images
 if [ ! -z ${BUILD_ALL+x} ] || [ ! -z ${BUILD_MULTIBOOT+x} ]; then
   build_multiboot
 fi
