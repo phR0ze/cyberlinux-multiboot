@@ -66,68 +66,9 @@ pkg()
 
 package_cyberlinux-openbox-lite()
 {
-  pkgdesc="Lite x11 system - a building block specialized x11 deployments"
+  pkgdesc="Lite openbox system - a building block specialized openbox deployments"
   depends=(
-    "cyberlinux-standard-shell>=${pkgver}"
-
-    # xorg
-    'xf86-input-libinput'       # x.org generic input driver, group: xorg-drivers
-    'xf86-video-vesa'           # x.org vesa video driver, group: xorg, xorg-drivers
-    'xorg-bdftopcf'             # Convert X font from Bitmap to PNG, group: xorg, xorg-apps
-    'xorg-docs'                 # X.org documentation, group: xorg
-    'xorg-font-util'            # X.org font utilities, group: xorg
-    'xorg-fonts-100dpi'         # X.org 100dpi fonts, group: xorg
-    'xorg-fonts-75dpi'          # X.org 75dpi fonts, group: xorg
-    'xorg-fonts-encodings'      # X.org font encoding files, group: xorg
-    'xorg-iceauth'              # ICE authority file utility, gruop: xorg
-    'xorg-mkfontscale'          # Create an index of scalable font files for X, group: xorg, xorg-apps
-    'xorg-server'               # Xorg X server, group: xorg
-    'xorg-server-common'        # Xorg X server common files, group: xorg
-    'xorg-server-devel'         # Development files for X.org X server, group: xorg
-    'xorg-server-xephyr'        # A nested X server that runs as an X application, group: xorg
-    'xorg-server-xnest'         # A nested X server that runs as an X application, group: xorg
-    'xorg-server-xvfb'          # Virtual framebuffer X server, group: xorg
-    'xorg-sessreg'              # Register X sessions in system utmp/utmpx database, group: xorg
-    'xorg-setxkbmap'            # Set the keyboard using the X Keyboard Extension, group: xorg, xorg-apps
-    'xorg-smproxy'              # Allows X applications that do not support X11R6 session, group: xorg
-    'xorg-x11perf'              # Simple X server performance benchmarker, group: xorg
-    'xorg-xauth'                # X.Org authorization settings program, group: xorg, xorg-apps
-    'xorg-xbacklight'           # RandR-based backlight control application, group: xorg
-    'xorg-xcmsdb'               # Device Color Characterization utility for X Color Management System, group: xorg
-    'xorg-xcursorgen'           # Create an X cursor file from PNG images, group: xorg, xorg-apps
-    'xorg-xdpyinfo'             # Display information utility for X, group: xorg, xorg-apps
-    'xorg-xdriinfo'             # Query configuration information of DRI drivers
-    'xorg-xev'                  # Print contents of X events, group: xorg, xorg-apps
-    'xorg-xgamma'               # Alter a monitor's gamma correction, group: xorg
-    'xorg-xhost'                # Server access control program for X, group: xorg
-    'xorg-xinput'               # Small commandline tool to configure devices, group: xorg, xorg-apps
-    'xorg-xkbcomp'              # X Keyboard description compiler, group: xorg, xorg-apps
-    'xorg-xkbevd'               # XKB event daemon, group: xorg, xorg-apps
-    'xorg-xkbutils'             # XKB utility demos, group: xorg, xorg-apps
-    'xorg-xkill'                # Kill a client by its X resource, group: xorg, xorg-apps
-    'xorg-xlsatoms'             # List interned atoms defined on server, group: xorg
-    'xorg-xlsclients'           # List client applications running on a display, group: xorg
-    'xorg-xmodmap'              # Utility for modifying keymaps and button mappings, group: xorg, xorg-apps
-    'xorg-xpr'                  # Print an X window dump from xwda, group: xorg
-    'xorg-xprop'                # Property displayer for X, group: xorg, xorg-apps
-    'xorg-xrandr'               # Primitive command line interface to RandR extension, group: xorg, xorg-apps
-    'xorg-xrdb'                 # X server resource database utility, group: xorg
-    'xorg-xrefresh'             # Refresh all or part of an X screen, group: xorg
-    'xorg-xset'                 # User preference utility for X, group: xorg, xorg-apps
-    'xorg-xsetroot'             # X utility to set your root window background to a pattern or color, group: xorg
-    'xorg-xvinfo'               # Prints out the capabilities of any video adaptors, group: xorg
-    'xorg-xwayland'             # Run X clients under wayland, group: xorg
-    'xorg-xwd'                  # X Window System image dumping utility, group: xorg
-    'xorg-xwininfo'             # Command-line util to print info about windows, group: xorg, xorg-apps
-    'xorg-xwud'                 # X Window System image undumping utility, group: xorg
-
-    # opengl
-    'libglvnd'                  # GL Vendor-Neutral Dispatch, depof: mesa
-    'lib32-mesa'                # OpenGL opensource implementation, depof: kodi, steam
-    'lib32-mesa-vdpau'          # Mesa vdpau drivers, depof: kodi,steam
-    'mesa'                      # Open-source OpenGL implementation
-    'mesa-demos'                # Mesa demos and tools e.g glxinfo, glxgears
-    'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
+    "cyberlinux-standard-x11>=${pkgver}"
 
     # lxde
     'lxde-common'               # Common files of the LXDE Desktop, group: lxde
@@ -139,8 +80,6 @@ package_cyberlinux-openbox-lite()
     'lxterminal'                # Terminal for LXDE, alt: terminator, group: lxde
     'arcologout'                # Simple clean logout overlay from, repo: cyberlinux
     'openbox'                   # Lightweight X11 window manager, group: lxde
-    'xdg-user-dirs'             # Manage user directories like ~/Desktop
-    'xdg-utils'                 # Desktop integration utilities
 
     # themes and theme tools
     'gtk-engines'               # GTK theme engines for cyberlinux theme
@@ -152,7 +91,6 @@ package_cyberlinux-openbox-lite()
     'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
 
     # file manager utilities
-    'gvfs'                      # Support for Trash and USB, depof: thunar-volman
     'file-roller'               # System/Compression integrates well in Thunar
     'ffmpegthumbnailer'         # Lightweight video thumbnailer that can be used by file managers
     'thunar'                    # Lightweight File Manager from Xfce
@@ -173,9 +111,6 @@ package_cyberlinux-openbox-lite()
     'pnmixer'                   # Volume controls in system tray, repo: cyberlinux
     'pulseaudio-alsa'           # ALSA Configuration for PulseAudio
     'tint2'                     # Lightweight taskmanager and system tray
-    'wmctrl'                    # Control your EWMH compliant window manager from command line
-    'xsel'                      # Tool for getting/setting X selection
-    'xterm'                     # X terminal emulator
 
     # virtualbox-guest
     'virtualbox-guest-utils'    # VirtualBox guest drivers/utilities
@@ -192,19 +127,9 @@ package_cyberlinux-openbox-lite()
     'xfce4-screenshooter'       # Plugin that makes screenshots for the Xfce panel
 
     # Media
-    'audacious'                 # Lightweight advanced audio player
     'dvdbackup'                 # Tool to rip video DVDs from the command line
-    'flac'                      # Free lossless audio codec
     'gpicview'                  # Image viewer, alt: shotwell, viewnior
-    'lame'                      # High quality MPEG layer III audio encoder
-    'parallel'                  # Shell tool for executing jobs in parallel
-    'qt5-base'                  # A cross-platform application and UI framework, depof: mkvtoolnix-gui
-    'smplayer'                  # UI wrapper around mplayer with click to pause, alt: vlc
-    'smplayer-skins'            # Skins for SMPlayer
-    'smplayer-themes'           # Themes for SMPlayer
-    'vlc'                       # Multi-platform MPEG, VCD/DVD, and DivX player
     'winff'                     # GUI for ffmpeg, repo: cyberlinux
-    'xnviewmp'                  # A digital photo organizer, repo: cyberlinux
 
     # Network
     'firefox'                   # Standalone web browser from mozilla.org 
@@ -277,10 +202,8 @@ package_cyberlinux-openbox-netbook()
     "cyberlinux-openbox-lite>=${pkgver}"
 
     # Utils
-    'android-tools'             # Android platform tools
-    'gvfs-mtp'                  # Android phone storage automount on plug-in
-    'i3lock-color'              # Simple lightweight screen locker
     'conky'                     # Lightweight system monitor for X
+    'i3lock-color'              # Simple lightweight screen locker
     'light'                     # Control laptop backlights both screen and keyboard
 
     # Media
@@ -404,3 +327,5 @@ package_cyberlinux-openbox-live()
   )
   pkg live
 }
+
+# vim: ts=2:sw=2:sts=2

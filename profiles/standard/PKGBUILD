@@ -27,6 +27,7 @@ pkgname=(
     "${pkgbase}-core"
     "${pkgbase}-base"
     "${pkgbase}-shell"
+    "${pkgbase}-x11"
 )
 pkgver=0
 pkgrel=1
@@ -128,6 +129,7 @@ package_cyberlinux-standard-shell()
     'moreutils'                 # Linux utils e.g. parallel-moreutils
     'multipath-tools'           # Partition mapping tools like kpartx
     'pacutils'                  # Pacman helper utilities for libalpm
+    'parallel'                  # Shell tool for executing jobs in parallel
     'pkgfile'                   # A pacman files and metadata explorer
     'psmisc'                    # fuser, killall, pstree
     'smartmontools'             # Control/monitor S.M.A.R.T. Drives
@@ -213,3 +215,109 @@ package_cyberlinux-standard-shell()
   )
   pkg shell
 }
+
+package_cyberlinux-openbox-x11()
+{
+  pkgdesc="X11 base system - a building block for specialized x11 deployments"
+  depends=(
+    "cyberlinux-standard-shell>=${pkgver}"
+
+    # Utilities
+    'gvfs'                      # Support for Trash and USB, depof: thunar-volman
+    'qt5-base'                  # A cross-platform application and UI framework, depof: mkvtoolnix-gui
+    'xdg-user-dirs'             # Manage user directories like ~/Desktop
+    'xdg-utils'                 # Desktop integration utilities
+
+    # Media
+    'audacious'                 # Lightweight advanced audio player
+    'flac'                      # Free lossless audio codec
+    'lame'                      # High quality MPEG layer III audio encoder
+    'smplayer'                  # UI wrapper around mplayer with click to pause, alt: vlc
+    'smplayer-skins'            # Skins for SMPlayer
+    'smplayer-themes'           # Themes for SMPlayer
+    'vlc'                       # Multi-platform MPEG, VCD/DVD, and DivX player
+    'xnviewmp'                  # A digital photo organizer, repo: cyberlinux
+
+    # Android  access
+    'android-tools'             # Android platform tools
+    'gvfs-mtp'                  # Android phone storage automount on plug-in
+
+    # opengl
+    'libglvnd'                  # GL Vendor-Neutral Dispatch, depof: mesa
+    'lib32-mesa'                # OpenGL opensource implementation, depof: kodi, steam
+    'lib32-mesa-vdpau'          # Mesa vdpau drivers, depof: kodi,steam
+    'mesa'                      # Open-source OpenGL implementation
+    'mesa-demos'                # Mesa demos and tools e.g glxinfo, glxgears
+    'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
+
+    # X11-fonts
+    'adobe-source-code-pro-fonts'  # Mono-spaced coding environments
+    'terminus-font'             # Monospace bitmap font for consoles
+    'ttf-bitstream-vera'        # Bitstream vera fonts
+    'ttf-dejavu'                # Bitstream Vera Fonts w/more characters
+    'ttf-droid'                 # Google Android general purpose fonts
+    'ttf-google-fonts-fun'      # Handful of fun fonts from the Google Fonts project, repo: cyberlinux
+    'ttf-google-fonts-work'     # 40 best fonts from the Google Fonts project, repo: cyberlinux
+    'ttf-hack'                  # Hand groomed/optically balanced typeface based on Bitstream Vera Mono
+    'ttf-inconsolata-g'         # Best monospace terminal font, repo: cyberlinux
+    'ttf-indic-otf'             # Indic Opentype Fonts collection
+    'ttf-liberation'            # Red Hats Liberation fonts. 
+    'ttf-nerd-fonts-symbols'    # Nerd Font Symbols, repo: cyberlinux
+
+    # xorg
+    'xf86-input-libinput'       # x.org generic input driver, group: xorg-drivers
+    'xf86-video-vesa'           # x.org vesa video driver, group: xorg, xorg-drivers
+    'xorg-bdftopcf'             # Convert X font from Bitmap to PNG, group: xorg, xorg-apps
+    'xorg-docs'                 # X.org documentation, group: xorg
+    'xorg-font-util'            # X.org font utilities, group: xorg
+    'xorg-fonts-100dpi'         # X.org 100dpi fonts, group: xorg
+    'xorg-fonts-75dpi'          # X.org 75dpi fonts, group: xorg
+    'xorg-fonts-encodings'      # X.org font encoding files, group: xorg
+    'xorg-iceauth'              # ICE authority file utility, gruop: xorg
+    'xorg-mkfontscale'          # Create an index of scalable font files for X, group: xorg, xorg-apps
+    'xorg-server'               # Xorg X server, group: xorg
+    'xorg-server-common'        # Xorg X server common files, group: xorg
+    'xorg-server-devel'         # Development files for X.org X server, group: xorg
+    'xorg-server-xephyr'        # A nested X server that runs as an X application, group: xorg
+    'xorg-server-xnest'         # A nested X server that runs as an X application, group: xorg
+    'xorg-server-xvfb'          # Virtual framebuffer X server, group: xorg
+    'xorg-sessreg'              # Register X sessions in system utmp/utmpx database, group: xorg
+    'xorg-setxkbmap'            # Set the keyboard using the X Keyboard Extension, group: xorg, xorg-apps
+    'xorg-smproxy'              # Allows X applications that do not support X11R6 session, group: xorg
+    'xorg-x11perf'              # Simple X server performance benchmarker, group: xorg
+    'xorg-xauth'                # X.Org authorization settings program, group: xorg, xorg-apps
+    'xorg-xbacklight'           # RandR-based backlight control application, group: xorg
+    'xorg-xcmsdb'               # Device Color Characterization utility for X Color Management System, group: xorg
+    'xorg-xcursorgen'           # Create an X cursor file from PNG images, group: xorg, xorg-apps
+    'xorg-xdpyinfo'             # Display information utility for X, group: xorg, xorg-apps
+    'xorg-xdriinfo'             # Query configuration information of DRI drivers
+    'xorg-xev'                  # Print contents of X events, group: xorg, xorg-apps
+    'xorg-xgamma'               # Alter a monitor's gamma correction, group: xorg
+    'xorg-xhost'                # Server access control program for X, group: xorg
+    'xorg-xinput'               # Small commandline tool to configure devices, group: xorg, xorg-apps
+    'xorg-xkbcomp'              # X Keyboard description compiler, group: xorg, xorg-apps
+    'xorg-xkbevd'               # XKB event daemon, group: xorg, xorg-apps
+    'xorg-xkbutils'             # XKB utility demos, group: xorg, xorg-apps
+    'xorg-xkill'                # Kill a client by its X resource, group: xorg, xorg-apps
+    'xorg-xlsatoms'             # List interned atoms defined on server, group: xorg
+    'xorg-xlsclients'           # List client applications running on a display, group: xorg
+    'xorg-xmodmap'              # Utility for modifying keymaps and button mappings, group: xorg, xorg-apps
+    'xorg-xpr'                  # Print an X window dump from xwda, group: xorg
+    'xorg-xprop'                # Property displayer for X, group: xorg, xorg-apps
+    'xorg-xrandr'               # Primitive command line interface to RandR extension, group: xorg, xorg-apps
+    'xorg-xrdb'                 # X server resource database utility, group: xorg
+    'xorg-xrefresh'             # Refresh all or part of an X screen, group: xorg
+    'xorg-xset'                 # User preference utility for X, group: xorg, xorg-apps
+    'xorg-xsetroot'             # X utility to set your root window background to a pattern or color, group: xorg
+    'xorg-xvinfo'               # Prints out the capabilities of any video adaptors, group: xorg
+    'xorg-xwayland'             # Run X clients under wayland, group: xorg
+    'xorg-xwd'                  # X Window System image dumping utility, group: xorg
+    'xorg-xwininfo'             # Command-line util to print info about windows, group: xorg, xorg-apps
+    'xorg-xwud'                 # X Window System image undumping utility, group: xorg
+    'wmctrl'                    # Control your EWMH compliant window manager from command line
+    'xsel'                      # Tool for getting/setting X selection
+  ) 
+  pkg x11
+}
+
+# vim: ts=2:sw=2:sts=2

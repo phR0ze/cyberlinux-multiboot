@@ -1,6 +1,12 @@
 {
   "deployments": [
     {
+      "name": "lite",
+      "entry": "Lite X11 base to build on for custom desktop environments",
+      "layers": "standard/core,standard/base,standard/shell,standard/lite",
+      "groups": "lp,wheel,network,storage,users,disk"
+    },
+    {
       "name": "shell",
       "entry": "Install openbox shell      // Minimal bash system to build from",
       "kernel": "linux",
