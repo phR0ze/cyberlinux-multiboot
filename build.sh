@@ -535,7 +535,7 @@ read_profile()
   PROFILE_PATH="${PROFILE_DIR}/profile.json"
   echo -en "${yellow}:: Using profile${none} ${cyan}${PROFILE_PATH}${none}..."
   PROFILE_JSON=$(jq -r '.' "$PROFILE_PATH")
-  check_fail
+  check
   DEPLOYMENTS_JSON=$(echo "$PROFILE_JSON" | jq -r '.deployments')
   check_fail
 

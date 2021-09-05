@@ -7,7 +7,7 @@ ARG USER_ID
 # Copy in basic configuration
 COPY profiles/standard/core/etc/skel/.bash_profile_sideload /root/.bash_profile
 COPY profiles/standard/core/etc/skel/.bashrc_sideload /root/.bashrc
-COPY profiles/standard/base/etc/skel/.vimrc /root/
+COPY profiles/standard/base/etc/skel/.config/vim/.vimrc /root/
 
 # Configure pacman
 COPY config/mkinitcpio.conf /etc/
