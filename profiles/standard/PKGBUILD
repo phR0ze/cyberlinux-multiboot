@@ -216,7 +216,7 @@ package_cyberlinux-standard-shell()
   pkg shell
 }
 
-package_cyberlinux-openbox-x11()
+package_cyberlinux-standard-x11()
 {
   pkgdesc="X11 base system - a building block for specialized x11 deployments"
   depends=(

@@ -256,6 +256,7 @@ EOF
 build_installer()
 {
   if [ ${OPTIONAL_PKGS} != "null" ]; then
+    build_repo_packages
     docker_run ${BUILDER}
     echo -e "${yellow}:: Downloading optional install packages...${none}"
     cat <<EOF | docker exec --privileged -i ${BUILDER} bash
