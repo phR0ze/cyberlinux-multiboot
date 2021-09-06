@@ -222,21 +222,70 @@ package_cyberlinux-openbox-x11()
   depends=(
     "cyberlinux-standard-shell>=${pkgver}"
 
-    # Utilities
-    'gvfs'                      # Support for Trash and USB, depof: thunar-volman
-    'qt5-base'                  # A cross-platform application and UI framework, depof: mkvtoolnix-gui
+    # Desktop components
+    'arcologout'                # Simple clean logout overlay from, repo: cyberlinux
+    'lxdm'                      # Lightweight display manager, xorg: lxde
+    'lxsession'                 # Enable .desktop files in ~/.config/autostart, /etc/xdg/autostart, group: lxde
+    'thunar'                    # Lightweight File Manager from Xfce
+    'thunar-archive-plugin'     # Thunar integration with file-roller
+    'thunar-media-tags-plugin'  # Thunar plugin to view media details
+    'thunar-volman'             # Thunar plugin to automatically manage removeable devices
+    'tumbler'                   # D-Bus thumbnail service for apps like Thunar
     'xdg-user-dirs'             # Manage user directories like ~/Desktop
     'xdg-utils'                 # Desktop integration utilities
+    'xfce4-screenshooter'       # Plugin that makes screenshots for the Xfce panel
+
+    # Utilities
+    'dconf'                     # A low-level configuration system
+    'dconf-editor'              # General configuration manager that replaces gconf
+    'desktop-file-utils'        # Command line utilities for working with desktop entries
+    'dmenu'                     # Super light weight application runner
+    'filelight'                 # View disk usage information
+    'file-roller'               # System/Compression integrates well in Thunar
+    'ffmpegthumbnailer'         # Lightweight video thumbnailer that can be used by file managers
+    'galculator'                # Office/Calculator
+    'gvfs'                      # Support for Trash and USB, depof: thunar-volman
+    'powerline'                 # Status line plugin for bash
+    'powerline-fonts'           # Powerline font symbols
+    'powerline-gitstatus'       # Powerline plugin for git status, repo: cyberlinux
+    'qt5-base'                  # A cross-platform application and UI framework, depof: mkvtoolnix-gui
 
     # Media
     'audacious'                 # Lightweight advanced audio player
+    'dvdbackup'                 # Tool to rip video DVDs from the command line
     'flac'                      # Free lossless audio codec
+    'gpicview'                  # Image viewer, alt: shotwell, viewnior
     'lame'                      # High quality MPEG layer III audio encoder
     'smplayer'                  # UI wrapper around mplayer with click to pause, alt: vlc
     'smplayer-skins'            # Skins for SMPlayer
     'smplayer-themes'           # Themes for SMPlayer
     'vlc'                       # Multi-platform MPEG, VCD/DVD, and DivX player
+    'winff'                     # GUI for ffmpeg, repo: cyberlinux
     'xnviewmp'                  # A digital photo organizer, repo: cyberlinux
+
+    # Media-codecs
+    'gst-libav'                 # GStreamer libav Plugin
+    'gst-plugins-bad'           # GStreamer Bad Plugins
+    'gst-plugins-base'          # GStreamer Base Plugins
+    'gst-plugins-good'          # GStreamer Good Plugins
+    'gst-plugins-ugly'          # GStreamer Ugly Plugins
+    'libdvdcss'                 # DVD media codec support
+    'x264'                      # Open Source H264/AVC video encoder, depof: smplayer
+
+    # Network
+    'firefox'                   # Standalone web browser from mozilla.org 
+    'filezilla'                 # Network/Transfer
+    'openvpn'                   # An easy-to-use, robust and highly configurable VPN (Virtual Private Network)
+    'vopono'                    # Run applications through VPN connections in network namespaces, repo: cyberlinux
+    'openvpn-update-systemd-resolved' # OpenVPN systemd-resolved updater, repo: cyberlinux
+
+    # Office
+    'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
+    'geany'                     # Fast and lightweight IDE
+    'geany-plugins'             # Plugins for Geany
+    'imagescan'                 # EPSON Image Scan v3 front-end for scanners and all-in-ones
+    'imagescan-plugin-networkscan' # Plugin for using Epson scanners with Image scan v3 over network
+    'keepass'                   # Password manager written in .net
 
     # Android  access
     'android-tools'             # Android platform tools
@@ -249,6 +298,14 @@ package_cyberlinux-openbox-x11()
     'mesa'                      # Open-source OpenGL implementation
     'mesa-demos'                # Mesa demos and tools e.g glxinfo, glxgears
     'mesa-vdpau'                # Mesa vdpau drivers, depof: kodi, steam
+
+    # Themes and icons
+    'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
+    'paper-icon-theme'          # Paper icon theme, git version is fixed, repo: cyberlinux
+    'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
+
+    # virtualbox-guest
+    'virtualbox-guest-utils'    # VirtualBox guest drivers/utilities
 
     # X11-fonts
     'adobe-source-code-pro-fonts'  # Mono-spaced coding environments

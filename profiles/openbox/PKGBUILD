@@ -27,8 +27,8 @@ pkgname=(
     "${pkgbase}-lite"
     "${pkgbase}-server"
     "${pkgbase}-netbook"
-    "${pkgbase}-theater"
     "${pkgbase}-desktop"
+    "${pkgbase}-theater"
     "${pkgbase}-laptop"
     "${pkgbase}-live"
 )
@@ -71,101 +71,26 @@ package_cyberlinux-openbox-lite()
     "cyberlinux-standard-x11>=${pkgver}"
 
     # lxde
-    'lxde-common'               # Common files of the LXDE Desktop, group: lxde
-    'lxdm'                      # Lightweight display manager, xorg: lxde
-    'lxhotkey'                  # Keyboard shortcuts configurator, xorg: lxde
-    'lxinput'                   # Keyboard and mouse configuration utility, group: lxde
-    'lxrandr'                   # Monitor configuration tool, group: lxde
-    'lxsession'                 # Enable .desktop files in ~/.config/autostart, /etc/xdg/autostart, group: lxde
-    'lxterminal'                # Terminal for LXDE, alt: terminator, group: lxde
-    'arcologout'                # Simple clean logout overlay from, repo: cyberlinux
-    'openbox'                   # Lightweight X11 window manager, group: lxde
-
-    # themes and theme tools
     'gtk-engines'               # GTK theme engines for cyberlinux theme
     'gtk-engine-murrine'        # GTK theme engine for cyberlinux theme
     'lxappearance'              # Feature-rich GTK+ theme switcher of the LXDE Desktop, group: lxde
     'lxappearance-obconf'       # Plugin for LXAppearance to configure Openbox, group: lxde
-    'numix-frost-themes'        # Numix frost GTK2, GTK3 and OpenBox themes, repo: cyberlinux
-    'paper-icon-theme'          # Paper icon theme, git version is fixed, repo: cyberlinux
-    'xcursor-numix-frost'       # Numix frost cursor theme, repo: cyberlinux
+    'lxde-common'               # Common files of the LXDE Desktop, group: lxde
+    'lxhotkey'                  # Keyboard shortcuts configurator, xorg: lxde
+    'lxinput'                   # Keyboard and mouse configuration utility, group: lxde
+    'lxrandr'                   # Monitor configuration tool, group: lxde
+    'lxterminal'                # Terminal for LXDE, alt: terminator, group: lxde
+    'openbox'                   # Lightweight X11 window manager, group: lxde
 
-    # file manager utilities
-    'file-roller'               # System/Compression integrates well in Thunar
-    'ffmpegthumbnailer'         # Lightweight video thumbnailer that can be used by file managers
-    'thunar'                    # Lightweight File Manager from Xfce
-    'thunar-archive-plugin'     # Thunar integration with file-roller
-    'thunar-media-tags-plugin'  # Thunar plugin to view media details
-    'thunar-volman'             # Thunar plugin to automatically manage removeable devices
-    'tumbler'                   # D-Bus thumbnail service for Thunar
-
-    # utilities
-    'dconf'                     # A low-level configuration system
-    'dconf-editor'              # General configuration manager that replaces gconf
-    'desktop-file-utils'        # Command line utilities for working with desktop entries
-    'imagescan'                 # EPSON Image Scan v3 front-end for scanners and all-in-ones
-    'imagescan-plugin-networkscan' # Plugin for using Epson scanners with Image scan v3 over network
+    # Utilities
+    'gsimplecal'                # Simple calendar like windows systray calendar
+    'gtk2fontsel'               # Simple font viewer
     'nitrogen'                  # Lightweight wallpaper manager
     'paprefs'                   # Configuration dialog for pulse audio
     'pavucontrol'               # PulseAudio Volume Control
     'pnmixer'                   # Volume controls in system tray, repo: cyberlinux
     'pulseaudio-alsa'           # ALSA Configuration for PulseAudio
     'tint2'                     # Lightweight taskmanager and system tray
-
-    # virtualbox-guest
-    'virtualbox-guest-utils'    # VirtualBox guest drivers/utilities
-
-    # Utils
-    'dmenu'                     # Super light weight application runner
-    'galculator'                # Office/Calculator
-    'gsimplecal'                # Simple calendar like windows systray calendar
-    'gtk2fontsel'               # Simple font viewer
-    'filelight'                 # View disk usage information
-    'powerline'                 # Status line plugin for bash
-    'powerline-fonts'           # Powerline font symbols
-    'powerline-gitstatus'       # Powerline plugin for git status, repo: cyberlinux
-    'xfce4-screenshooter'       # Plugin that makes screenshots for the Xfce panel
-
-    # Media
-    'dvdbackup'                 # Tool to rip video DVDs from the command line
-    'gpicview'                  # Image viewer, alt: shotwell, viewnior
-    'winff'                     # GUI for ffmpeg, repo: cyberlinux
-
-    # Network
-    'firefox'                   # Standalone web browser from mozilla.org 
-    'filezilla'                 # Network/Transfer
-    'openvpn'                   # An easy-to-use, robust and highly configurable VPN (Virtual Private Network)
-    'vopono'                    # Run applications through VPN connections in network namespaces, repo: cyberlinux
-    'openvpn-update-systemd-resolved' # OpenVPN systemd-resolved updater, repo: cyberlinux
-
-    # Office
-    'evince'                    # Document viewer for PDF, djvu, tiff, dvi, XPS, cbr, cbz, cb7, cbt
-    'geany'                     # Fast and lightweight IDE
-    'geany-plugins'             # Plugins for Geany
-    'keepass'                   # Password manager written in .net
-
-    # Media-codecs
-    'gst-libav'                 # GStreamer libav Plugin
-    'gst-plugins-bad'           # GStreamer Bad Plugins
-    'gst-plugins-base'          # GStreamer Base Plugins
-    'gst-plugins-good'          # GStreamer Good Plugins
-    'gst-plugins-ugly'          # GStreamer Ugly Plugins
-    'libdvdcss'                 # DVD media codec support
-    'x264'                      # Open Source H264/AVC video encoder, depof: smplayer
-
-    # X11-fonts
-    'adobe-source-code-pro-fonts'  # Mono-spaced coding environments
-    'terminus-font'             # Monospace bitmap font for consoles
-    'ttf-bitstream-vera'        # Bitstream vera fonts
-    'ttf-dejavu'                # Bitstream Vera Fonts w/more characters
-    'ttf-droid'                 # Google Android general purpose fonts
-    'ttf-google-fonts-fun'      # Handful of fun fonts from the Google Fonts project, repo: cyberlinux
-    'ttf-google-fonts-work'     # 40 best fonts from the Google Fonts project, repo: cyberlinux
-    'ttf-hack'                  # Hand groomed/optically balanced typeface based on Bitstream Vera Mono
-    'ttf-inconsolata-g'         # Best monospace terminal font, repo: cyberlinux
-    'ttf-indic-otf'             # Indic Opentype Fonts collection
-    'ttf-liberation'            # Red Hats Liberation fonts. 
-    'ttf-nerd-fonts-symbols'    # Nerd Font Symbols, repo: cyberlinux
   ) 
   pkg lite
 }

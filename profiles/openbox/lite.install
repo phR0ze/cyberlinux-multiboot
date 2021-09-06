@@ -21,40 +21,6 @@
 
 post_install()
 {
-  # General configuration
-  # ---------------------------------------------------------------------------
-  # Added wallpaper
-  # /usr/share/backgrounds
-
-  # Added missing icons to the hicolor fallback icons
-  # convert -background none -density 384 -resize x32 /usr/share/icons/hicolor/scalable/apps/audacious.svg \
-  #   /usr/share/icons/hicolor/32x32/apps/audacious.png
-  # /usr/share/icons/hicolor
-  # /usr/share/icons/hicolor/96x96/actions/system-reboot.png
-  # /usr/share/icons/hicolor/96x96/actions/system-shutdown.png
-
-  # Added some useful fonts and their licences
-  # /usr/share/fonts/TTF
-  # /usr/share/doc/TTF
-
-  # Added conky systemd user service
-  # /usr/lib/systemd/user/conky.service
-
-  # Configure default user directories
-  # Documents, Downloads, Music, Pictures, Projects, bin
-  mv -f /etc/xdg/user-dirs.defaults_sideload /etc/xdg/user-dirs.defaults
-
-  # X11 configuration
-  # ---------------------------------------------------------------------------
-
-  # Disable blanking of screen 
-  # /etc/X11/xorg.conf.d/20-dpms.conf
-
-  # Configure mouns, keyboard and touchpads to be controlled by libinput
-  # Set mouse acceleration to 0.6
-  # Set touchpad to tapping, accleration 1, naturalscrolling on
-  # /etc/X11/xorg.conf.d/40-input.conf
-
   # Openbox configuration
   # ---------------------------------------------------------------------------
   # Added custom cyberlinux openbox theme
@@ -69,36 +35,6 @@ post_install()
   # Nitrogen background
   # ---------------------------------------------------------------------------
   mv -f /etc/skel/.config/nitrogen/bg-saved.cfg_lite /etc/skel/.config/nitrogen/bg-saved.cfg
-
-  # GTK configuration
-  # ---------------------------------------------------------------------------
-
-  # Set file chooser to
-  # show-hidden=true
-  # sort-directories-first=true
-  # /etc/dconf/db/local.d/02-gtk
-
-  # LXDM configuration
-  # ---------------------------------------------------------------------------
-
-  # Modifying the original lxdm script to inject a hook to execute
-  # /usr/bin/pre-xorg for dynamic system adjustments
-  mv -f /usr/sbin_sideload/lxdm /usr/sbin/lxdm
-
-  # - enable numlock on boot
-  # - set /usr/bin/lxsession -s default -e default as the session manager
-  # - set bg=/usr/share/backgrounds/dreamfusion003_1280x1024.jpg
-  # - disabled the user list control
-  # - disabled the bottom panel from being displayed
-  mv -f /etc/lxdm/lxdm.conf_sideload /etc/lxdm/lxdm.conf
-
-  # Modify the default Industrial lxdm theme
-  # - change the prompt to white 18 font size
-  mv -f /usr/share/lxdm/themes/Industrial/gtkrc_sideload /usr/share/lxdm/themes/Industrial/gtkrc
-
-  # Enable lxdm service to start at boot
-  # -f will automatically disable the old display manager
-  systemctl enable -f lxdm
 }
 
 post_upgrade() {
