@@ -1,10 +1,10 @@
 {
   "deployments": [
     {
-      "name": "lite",
+      "name": "x11",
       "entry": "Install X11 system         // Lite X11 env w/out window manager",
       "kernel": "linux",
-      "layers": "standard/core,standard/base,standard/shell,standard/lite",
+      "layers": "standard/core,standard/base,standard/shell,standard/x11",
       "groups": "lp,wheel,network,storage,users,disk"
     },
     {
