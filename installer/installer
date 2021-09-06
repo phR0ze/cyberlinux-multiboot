@@ -681,7 +681,7 @@ installer()
             #----------------------------------------------------------------------
             echo -e "\n${cyber}:: Configure time and date:${none}"
             getinput TIMEZONE 'Enter timezone' "$TIMEZONE"
-            getinput TIMEDATE_SET "Change system time ${cyber}$(date --iso-8601=seconds)${none}" 'n'
+            getinput TIMEDATE_SET "Change time ${cyber}$(date --iso-8601=seconds) UTC${none}" 'n'
             if [ "x$TIMEDATE_SET" == "xy" ]; then
                 while true; do
                     getinput TIMEDATE "Use ${cyber}ISO 8601 seconds${none} format" "$(date --iso-8601=seconds)"

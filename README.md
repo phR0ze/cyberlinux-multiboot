@@ -548,6 +548,7 @@ any additional terms or conditions.
 * Add slack to desktop
 * Braswell screen brightness
 * Create screen brightness tool in rust
+* Display time in installer using given timezone offset
 
 * Add veracrypt
 * Guake settings are not taking

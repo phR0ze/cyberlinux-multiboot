@@ -43,7 +43,7 @@
     },
     {
       "name": "lite",
-      "entry": "Install openbox lite       // Lite X11 env with minimal apps",
+      "entry": "Install openbox lite       // Lite openbox env with minimal apps",
       "kernel": "linux",
       "layers": "standard/core,standard/base,standard/shell,standard/x11,openbox/lite",
       "groups": "lp,wheel,network,storage,users,video,audio,disk"
